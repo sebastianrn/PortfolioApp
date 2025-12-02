@@ -7,11 +7,11 @@ import androidx.room.PrimaryKey
 data class GoldCoin(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
-    val originalPrice: Double, // Price PER COIN
-    val currentPrice: Double,  // Price PER COIN
-    val quantity: Double       // Number of coins
+    val originalPrice: Double,
+    val currentPrice: Double,
+    val quantity: Int
 ) {
-    // Helper properties (computed on the fly)
+    // Math automatically works (Int * Double = Double)
     val totalCurrentValue: Double
         get() = currentPrice * quantity
 

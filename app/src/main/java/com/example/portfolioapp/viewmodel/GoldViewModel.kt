@@ -33,7 +33,7 @@ class GoldViewModel(application: Application) : AndroidViewModel(application) {
 
     fun getHistoryForCoin(coinId: Int): Flow<List<PriceHistory>> = dao.getHistoryForCoin(coinId)
 
-    fun insert(name: String, price: Double, qty: Double) {
+    fun insert(name: String, price: Double, qty: Int) {
         viewModelScope.launch(Dispatchers.IO) {
             val coin = GoldCoin(name = name, originalPrice = price, currentPrice = price, quantity = qty)
             val id = dao.insert(coin)

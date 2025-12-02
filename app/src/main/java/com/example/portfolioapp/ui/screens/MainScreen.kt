@@ -189,30 +189,74 @@ fun CoinItem(coin: GoldCoin, onClick: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(containerColor = SurfaceGray),
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp).clickable { onClick() }
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clickable { onClick() }
     ) {
-        Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(48.dp).clip(CircleShape).background(Charcoal), contentAlignment = Alignment.Center) {
-                Text(coin.name.take(1).uppercase(), color = GoldStart, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(Charcoal),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = coin.name.take(1).uppercase(),
+                    color = GoldStart,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                )
             }
+
             Spacer(modifier = Modifier.width(16.dp))
+
             Column(modifier = Modifier.weight(1f)) {
-                Text(coin.name, style = MaterialTheme.typography.titleMedium, color = TextWhite, fontWeight = FontWeight.Bold)
-                Text("${coin.quantity} units", style = MaterialTheme.typography.bodySmall, color = TextGray)
+                Text(
+                    text = coin.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = TextWhite,
+                    fontWeight = FontWeight.Bold
+                )
+                // UPDATED LABEL
+                Text(
+                    text = "${coin.quantity} coins",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextGray
+                )
             }
+
             Column(horizontalAlignment = Alignment.End) {
-                Text(coin.totalCurrentValue.toCurrencyString, style = MaterialTheme.typography.titleMedium, color = TextWhite, fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = coin.totalCurrentValue.toCurrencyString,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = TextWhite,
+                    fontWeight = FontWeight.SemiBold
+                )
+
                 val isProfit = coin.totalProfitOrLoss >= 0
-                val color = if (isProfit) ProfitGreen else LossRed
                 val sign = if (isProfit) "+" else "-"
-                Text("$sign${abs(coin.totalProfitOrLoss).toCurrencyString}", style = MaterialTheme.typography.bodySmall, color = color, fontWeight = FontWeight.Bold)
+                val color = if (isProfit) ProfitGreen else LossRed
+
+                Text(
+                    text = "$sign${abs(coin.totalProfitOrLoss).toCurrencyString}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = color,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
 }
 
 @Composable
-fun AddCoinDialog(onDismiss: () -> Unit, onAdd: (String, Double, Double) -> Unit) {
+fun AddCoinDialog(onDismiss: () -> Unit, onAdd: (String, Double, Int) -> Unit) { // Int callback
     var name by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
     var qty by remember { mutableStateOf("") }
@@ -227,19 +271,38 @@ fun AddCoinDialog(onDismiss: () -> Unit, onAdd: (String, Double, Double) -> Unit
             Column {
                 ModernTextField(value = name, onValueChange = { name = it }, label = "Coin Name")
                 Spacer(modifier = Modifier.height(12.dp))
-                ModernTextField(value = qty, onValueChange = { qty = it }, label = "Quantity", isNumber = true)
+
+                // Qty Input
+                ModernTextField(
+                    value = qty,
+                    onValueChange = {
+                        // Only allow numeric digits (no dots)
+                        if (it.all { char -> char.isDigit() }) qty = it
+                    },
+                    label = "Number of Coins", // Updated Label
+                    isNumber = true
+                )
+
                 Spacer(modifier = Modifier.height(12.dp))
-                ModernTextField(value = price, onValueChange = { price = it }, label = "Price (CHF)", isNumber = true)
+                ModernTextField(value = price, onValueChange = { price = it }, label = "Price per Coin (CHF)", isNumber = true)
             }
         },
         confirmButton = {
             Button(
-                onClick = { if(name.isNotEmpty()) onAdd(name, price.toDoubleOrNull() ?: 0.0, qty.toDoubleOrNull() ?: 0.0) },
+                onClick = {
+                    if(name.isNotEmpty()) {
+                        // Parse as Int
+                        onAdd(name, price.toDoubleOrNull() ?: 0.0, qty.toIntOrNull() ?: 0)
+                    }
+                },
                 colors = ButtonDefaults.buttonColors(containerColor = GoldStart, contentColor = Color.Black)
             ) { Text("Add Asset") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, colors = ButtonDefaults.textButtonColors(contentColor = TextGray)) { Text("Cancel") }
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(contentColor = TextGray)
+            ) { Text("Cancel") }
         }
     )
 }
