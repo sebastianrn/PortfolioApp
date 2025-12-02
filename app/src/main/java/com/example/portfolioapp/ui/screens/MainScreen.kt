@@ -9,6 +9,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.portfolioapp.data.GoldCoin
 import com.example.portfolioapp.ui.components.ModernTextField
-import com.example.portfolioapp.ui.components.rememberMarker // <--- NEW IMPORT
+import com.example.portfolioapp.ui.components.rememberMarker
 import com.example.portfolioapp.ui.theme.*
 import com.example.portfolioapp.util.toCurrencyString
 import com.example.portfolioapp.viewmodel.GoldViewModel
@@ -71,27 +73,49 @@ fun MainScreen(viewModel: GoldViewModel, onCoinClick: (GoldCoin) -> Unit) {
             }
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
+            // 1. Header: Total Balance
             Box(modifier = Modifier.padding(top = 8.dp)) {
                 TotalBalanceHeader(totalInvestment)
             }
 
+            // 2. Chart: Portfolio Performance (Wrapped in Premium Card)
             if (portfolioPoints.isNotEmpty()) {
-                PortfolioChart(points = portfolioPoints)
+                PortfolioPerformanceCard(portfolioPoints)
             } else {
-                Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(150.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text("Add assets to see performance", color = TextGray)
                 }
             }
 
-            Text(
-                text = "Your Assets",
-                style = MaterialTheme.typography.titleMedium,
-                color = TextGray,
+            // 3. Section Title: Your Assets (With Icon)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp)
-            )
+            ) {
+                Icon(Icons.Default.Star, contentDescription = null, tint = GoldStart, modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Your Assets",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = TextGray
+                )
+            }
 
-            LazyColumn(contentPadding = PaddingValues(bottom = 80.dp), modifier = Modifier.weight(1f)) {
+            // 4. Coin List
+            LazyColumn(
+                contentPadding = PaddingValues(bottom = 80.dp),
+                modifier = Modifier.weight(1f)
+            ) {
                 items(coins) { coin ->
                     CoinItem(coin, onClick = { onCoinClick(coin) })
                 }
@@ -107,6 +131,39 @@ fun MainScreen(viewModel: GoldViewModel, onCoinClick: (GoldCoin) -> Unit) {
                 showDialog = false
             }
         )
+    }
+}
+
+/**
+ * COMPONENT: Premium Chart Card for Main Screen
+ */
+@Composable
+fun PortfolioPerformanceCard(points: List<Pair<Long, Double>>) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Charcoal),
+        shape = RoundedCornerShape(24.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Title Row
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.DateRange, contentDescription = null, tint = GoldStart)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Portfolio Performance",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = TextWhite,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // The Graph
+            PortfolioChart(points = points)
+        }
     }
 }
 
@@ -148,7 +205,7 @@ fun PortfolioChart(points: List<Pair<Long, Double>>) {
             valueFormatter = verticalFormatter,
             guideline = null,
             tickLength = 0.dp,
-            itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 5)
+            itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 5) // Clean Y-Axis
         ),
         bottomAxis = rememberBottomAxis(
             label = axisLabelStyle,
@@ -156,13 +213,11 @@ fun PortfolioChart(points: List<Pair<Long, Double>>) {
             guideline = null,
             tickLength = 0.dp
         ),
-        // --- NEW: Add Marker ---
-        marker = rememberMarker(),
-
+        marker = rememberMarker(), // Tooltip interaction
         modifier = Modifier
             .fillMaxWidth()
-            .height(220.dp)
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .height(200.dp)
+            .padding(horizontal = 8.dp)
     )
 }
 
@@ -173,7 +228,11 @@ fun TotalBalanceHeader(total: Double) {
             .fillMaxWidth()
             .padding(16.dp)
             .clip(RoundedCornerShape(24.dp))
-            .background(Brush.linearGradient(colors = listOf(Charcoal, Color(0xFF252525))))
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(Charcoal, Color(0xFF252525))
+                )
+            )
             .padding(24.dp)
     ) {
         Column {
@@ -195,16 +254,11 @@ fun CoinItem(coin: GoldCoin, onClick: () -> Unit) {
             .clickable { onClick() }
     ) {
         Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(Charcoal),
+                modifier = Modifier.size(48.dp).clip(CircleShape).background(Charcoal),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -214,36 +268,21 @@ fun CoinItem(coin: GoldCoin, onClick: () -> Unit) {
                     fontSize = 20.sp
                 )
             }
-
             Spacer(modifier = Modifier.width(16.dp))
-
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = coin.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = TextWhite,
-                    fontWeight = FontWeight.Bold
-                )
-                // UPDATED LABEL
-                Text(
-                    text = "${coin.quantity} coins",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextGray
-                )
+                Text(coin.name, style = MaterialTheme.typography.titleMedium, color = TextWhite, fontWeight = FontWeight.Bold)
+                Text("${coin.quantity} coins", style = MaterialTheme.typography.bodySmall, color = TextGray)
             }
-
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = coin.totalCurrentValue.toCurrencyString,
+                    coin.totalCurrentValue.toCurrencyString,
                     style = MaterialTheme.typography.titleMedium,
                     color = TextWhite,
                     fontWeight = FontWeight.SemiBold
                 )
-
                 val isProfit = coin.totalProfitOrLoss >= 0
                 val sign = if (isProfit) "+" else "-"
                 val color = if (isProfit) ProfitGreen else LossRed
-
                 Text(
                     text = "$sign${abs(coin.totalProfitOrLoss).toCurrencyString}",
                     style = MaterialTheme.typography.bodySmall,
@@ -256,7 +295,7 @@ fun CoinItem(coin: GoldCoin, onClick: () -> Unit) {
 }
 
 @Composable
-fun AddCoinDialog(onDismiss: () -> Unit, onAdd: (String, Double, Int) -> Unit) { // Int callback
+fun AddCoinDialog(onDismiss: () -> Unit, onAdd: (String, Double, Int) -> Unit) {
     var name by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
     var qty by remember { mutableStateOf("") }
@@ -271,18 +310,12 @@ fun AddCoinDialog(onDismiss: () -> Unit, onAdd: (String, Double, Int) -> Unit) {
             Column {
                 ModernTextField(value = name, onValueChange = { name = it }, label = "Coin Name")
                 Spacer(modifier = Modifier.height(12.dp))
-
-                // Qty Input
                 ModernTextField(
                     value = qty,
-                    onValueChange = {
-                        // Only allow numeric digits (no dots)
-                        if (it.all { char -> char.isDigit() }) qty = it
-                    },
-                    label = "Number of Coins", // Updated Label
+                    onValueChange = { if (it.all { char -> char.isDigit() }) qty = it },
+                    label = "Number of Coins",
                     isNumber = true
                 )
-
                 Spacer(modifier = Modifier.height(12.dp))
                 ModernTextField(value = price, onValueChange = { price = it }, label = "Price per Coin (CHF)", isNumber = true)
             }
@@ -291,7 +324,6 @@ fun AddCoinDialog(onDismiss: () -> Unit, onAdd: (String, Double, Int) -> Unit) {
             Button(
                 onClick = {
                     if(name.isNotEmpty()) {
-                        // Parse as Int
                         onAdd(name, price.toDoubleOrNull() ?: 0.0, qty.toIntOrNull() ?: 0)
                     }
                 },

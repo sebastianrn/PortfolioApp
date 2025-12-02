@@ -66,6 +66,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.google.material)
+    implementation(libs.androidx.material.icons.extended)
 
     // Room Database (Kotlin + KSP)
     implementation(libs.androidx.room.runtime)
