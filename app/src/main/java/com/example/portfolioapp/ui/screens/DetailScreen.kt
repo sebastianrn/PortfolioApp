@@ -1,25 +1,60 @@
 package com.example.portfolioapp.ui.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.portfolioapp.ui.theme.GoldStart
+import com.example.portfolioapp.ui.theme.SurfaceGray
+import com.example.portfolioapp.ui.theme.TextGray
+import com.example.portfolioapp.ui.theme.TextWhite
 import com.example.portfolioapp.util.toCurrencyString
 import com.example.portfolioapp.viewmodel.GoldViewModel
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,26 +64,29 @@ fun DetailScreen(
     coinName: String,
     onBackClick: () -> Unit
 ) {
-    // Collect history from ViewModel
     val history by viewModel.getHistoryForCoin(coinId).collectAsState(initial = emptyList())
     var showSheet by remember { mutableStateOf(false) }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background, // Premium Black
         topBar = {
             TopAppBar(
-                title = { Text(coinName) },
+                title = { Text(coinName, color = TextWhite) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextWhite)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 text = { Text("Update Value") },
                 icon = { Icon(Icons.Default.Add, "Add") },
-                onClick = { showSheet = true }
+                onClick = { showSheet = true },
+                containerColor = GoldStart,
+                contentColor = Color.Black
             )
         }
     ) { padding ->
@@ -59,14 +97,15 @@ fun DetailScreen(
             item {
                 Text(
                     "Price History",
-                    fontSize = 20.sp,
+                    color = GoldStart,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
             }
             items(history) { record ->
                 HistoryItem(date = record.dateTimestamp, price = record.price)
-                HorizontalDivider()
+                HorizontalDivider(color = SurfaceGray, thickness = 1.dp)
             }
         }
     }
@@ -88,67 +127,66 @@ fun HistoryItem(date: Long, price: Double) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(vertical = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(sdf.format(Date(date)))
-        Text(price.toCurrencyString, fontWeight = FontWeight.Bold)
+        // Date (Left)
+        Text(
+            text = sdf.format(Date(date)),
+            color = TextGray
+        )
+        // Price (Right)
+        Text(
+            text = price.toCurrencyString,
+            color = TextWhite,
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp
+        )
     }
 }
 
-/**
- * Bottom Sheet with PRICE INPUT and DATE PICKER
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UpdatePriceSheet(onDismiss: () -> Unit, onSave: (Double, Long) -> Unit) {
     var price by remember { mutableStateOf("") }
-
-    // State for the Date
     var selectedDate by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var showDatePicker by remember { mutableStateOf(false) }
-
-    // Formatter for display
     val sdf = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
 
-    // Logic to handle Date Picker Dialog
+    // Date Picker Dialog
     if (showDatePicker) {
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = selectedDate
-        )
-
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = selectedDate)
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let {
-                        selectedDate = it
-                    }
+                    datePickerState.selectedDateMillis?.let { selectedDate = it }
                     showDatePicker = false
-                }) {
-                    Text("OK")
-                }
+                }) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancel")
-                }
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
             }
-        ) {
-            DatePicker(state = datePickerState)
-        }
+        ) { DatePicker(state = datePickerState) }
     }
 
-    // The actual Bottom Sheet content
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    // Bottom Sheet Content
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = SurfaceGray,
+        contentColor = TextWhite
+    ) {
         Column(modifier = Modifier.padding(24.dp)) {
-            Text("Update Coin Value", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(16.dp))
+            Text("Update Value", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // 1. Date Selection Button
+            // Date Selection Button
             OutlinedButton(
                 onClick = { showDatePicker = true },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = GoldStart),
+                border = androidx.compose.foundation.BorderStroke(1.dp, GoldStart)
             ) {
                 Icon(Icons.Default.DateRange, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
@@ -157,28 +195,17 @@ fun UpdatePriceSheet(onDismiss: () -> Unit, onSave: (Double, Long) -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 2. Price Input
-            OutlinedTextField(
-                value = price,
-                onValueChange = { price = it },
-                label = { Text("New Price (CHF)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
-            )
+            // Price Input
+            ModernTextField(value = price, onValueChange = { price = it }, label = "New Price (CHF)", isNumber = true)
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 3. Save Button
+            // Save Button
             Button(
-                onClick = {
-                    if (price.isNotEmpty()) {
-                        onSave(price.toDouble(), selectedDate)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Save Record")
-            }
+                onClick = { if (price.isNotEmpty()) onSave(price.toDouble(), selectedDate) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = GoldStart, contentColor = Color.Black)
+            ) { Text("Save Record") }
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
