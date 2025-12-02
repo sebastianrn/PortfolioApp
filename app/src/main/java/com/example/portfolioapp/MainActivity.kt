@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -15,22 +17,30 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.portfolioapp.ui.theme.PortfolioAppTheme
 import com.example.portfolioapp.ui.screens.DetailScreen
 import com.example.portfolioapp.ui.screens.MainScreen
+import com.example.portfolioapp.ui.theme.PortfolioAppTheme
 import com.example.portfolioapp.viewmodel.GoldViewModel
+import com.example.portfolioapp.viewmodel.ThemeViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            PortfolioAppTheme {
+            // 1. Get ViewModels
+            val themeViewModel: ThemeViewModel = viewModel()
+
+            // 2. Collect Theme State (Requires the import above)
+            val isDark by themeViewModel.isDarkTheme.collectAsState()
+
+            // 3. Apply Theme
+            PortfolioAppTheme(darkTheme = isDark) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation()
+                    AppNavigation(themeViewModel)
                 }
             }
         }
@@ -38,24 +48,25 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(themeViewModel: ThemeViewModel) {
     val navController = rememberNavController()
-    val viewModel: GoldViewModel = viewModel() // Shared ViewModel
+    // Shared instance of GoldViewModel for the scope of this graph
+    val goldViewModel: GoldViewModel = viewModel()
 
     NavHost(navController = navController, startDestination = "main") {
 
-        // 1. Main Screen
+        // Main Screen
         composable("main") {
             MainScreen(
-                viewModel = viewModel,
+                viewModel = goldViewModel,
+                themeViewModel = themeViewModel,
                 onCoinClick = { coin ->
-                    // Navigate to detail passing ID and Name
                     navController.navigate("detail/${coin.id}/${coin.name}")
                 }
             )
         }
 
-        // 2. Detail Screen (with arguments)
+        // Detail Screen
         composable(
             route = "detail/{coinId}/{coinName}",
             arguments = listOf(
@@ -67,7 +78,7 @@ fun AppNavigation() {
             val coinName = backStackEntry.arguments?.getString("coinName") ?: ""
 
             DetailScreen(
-                viewModel = viewModel,
+                viewModel = goldViewModel,
                 coinId = coinId,
                 coinName = coinName,
                 onBackClick = { navController.popBackStack() }

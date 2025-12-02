@@ -2,27 +2,41 @@ package com.example.portfolioapp.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 
+// Map Dark Colors to M3 Slots
 private val DarkColorScheme = darkColorScheme(
     primary = GoldStart,
-    onPrimary = Color.Black,
-    secondary = GoldEnd,
-    onSecondary = Color.Black,
     background = PremiumBlack,
+    surface = Charcoal,          // Card Background
+    surfaceVariant = SurfaceGray,// Secondary Cards
     onBackground = TextWhite,
-    surface = Charcoal,
     onSurface = TextWhite,
-    surfaceVariant = SurfaceGray,
     onSurfaceVariant = TextGray
 )
 
+// Map Light Colors to M3 Slots
+private val LightColorScheme = lightColorScheme(
+    primary = GoldStart,
+    background = LuxuryCream,
+    surface = PearlWhite,        // Card Background
+    surfaceVariant = SoftBeige,  // Secondary Cards
+    onBackground = TextBlack,
+    onSurface = TextBlack,
+    onSurfaceVariant = TextDarkGray
+)
+
 @Composable
-fun PortfolioAppTheme(content: @Composable () -> Unit) {
+fun PortfolioAppTheme(
+    darkTheme: Boolean = true, // We will pass this dynamically
+    content: @Composable () -> Unit
+) {
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+
     MaterialTheme(
-        colorScheme = DarkColorScheme,
-        typography = MaterialTheme.typography, // You can customize typography here if needed
+        colorScheme = colorScheme,
+        typography = MaterialTheme.typography,
         content = content
     )
 }
