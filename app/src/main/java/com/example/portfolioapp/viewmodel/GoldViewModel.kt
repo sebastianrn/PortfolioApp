@@ -11,26 +11,35 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
+// Data class to hold the summary
+data class PortfolioSummary(
+    val totalValue: Double = 0.0,
+    val totalProfit: Double = 0.0,
+    val totalInvested: Double = 0.0
+)
+
 class GoldViewModel(application: Application) : AndroidViewModel(application) {
     private val dao = AppDatabase.getDatabase(application).goldCoinDao()
 
     val allCoins: StateFlow<List<GoldCoin>> = dao.getAllCoins()
-        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList<GoldCoin>())
 
-    val totalInvestment: StateFlow<Double> = dao.getTotalInvestment()
-        .map { it ?: 0.0 }
-        .stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
+    // --- NEW: Calculate Global Stats (Value vs Profit) ---
+    val portfolioStats: StateFlow<PortfolioSummary> = allCoins.map { coins ->
+        val value = coins.sumOf { it.totalCurrentValue }
+        val profit = coins.sumOf { it.totalProfitOrLoss }
+        val invested = coins.sumOf { it.originalPrice * it.quantity }
+        PortfolioSummary(value, profit, invested)
+    }.stateIn(viewModelScope, SharingStarted.Lazily, PortfolioSummary())
 
     val portfolioCurve: StateFlow<List<Pair<Long, Double>>> = combine(
         dao.getAllHistory(),
         allCoins
     ) { history, coins ->
         calculatePortfolioCurve(coins, history)
-    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList<Pair<Long, Double>>())
 
-    // --- NEW: Get Specific Coin ---
     fun getCoinById(id: Int): Flow<GoldCoin> = dao.getCoinById(id)
-
     fun getHistoryForCoin(coinId: Int): Flow<List<PriceHistory>> = dao.getHistoryForCoin(coinId)
 
     fun insert(name: String, price: Double, qty: Int) {

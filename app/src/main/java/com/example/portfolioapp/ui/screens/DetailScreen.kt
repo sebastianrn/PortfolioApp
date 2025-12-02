@@ -400,7 +400,7 @@ fun UpdatePriceSheet(onDismiss: () -> Unit, onSave: (Double, Long) -> Unit) {
         contentColor = TextWhite
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
-            Text("Update Value", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+            Text("Add daily rate", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextWhite)
             Spacer(modifier = Modifier.height(24.dp))
             OutlinedButton(
                 onClick = { showDatePicker = true },
