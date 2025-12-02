@@ -1,60 +1,27 @@
 package com.example.portfolioapp.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.portfolioapp.ui.theme.GoldStart
-import com.example.portfolioapp.ui.theme.SurfaceGray
-import com.example.portfolioapp.ui.theme.TextGray
-import com.example.portfolioapp.ui.theme.TextWhite
+import com.example.portfolioapp.ui.theme.*
 import com.example.portfolioapp.util.toCurrencyString
 import com.example.portfolioapp.viewmodel.GoldViewModel
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,7 +35,7 @@ fun DetailScreen(
     var showSheet by remember { mutableStateOf(false) }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background, // Premium Black
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text(coinName, color = TextWhite) },
@@ -123,7 +90,8 @@ fun DetailScreen(
 
 @Composable
 fun HistoryItem(date: Long, price: Double) {
-    val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+    // UPDATED: Now shows Time as well (HH:mm)
+    val sdf = SimpleDateFormat("MMM dd, yyyy • HH:mm", Locale.getDefault())
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -131,12 +99,11 @@ fun HistoryItem(date: Long, price: Double) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Date (Left)
         Text(
             text = sdf.format(Date(date)),
-            color = TextGray
+            color = TextGray,
+            fontSize = 14.sp
         )
-        // Price (Right)
         Text(
             text = price.toCurrencyString,
             color = TextWhite,
@@ -154,9 +121,17 @@ fun UpdatePriceSheet(onDismiss: () -> Unit, onSave: (Double, Long) -> Unit) {
     var showDatePicker by remember { mutableStateOf(false) }
     val sdf = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
 
-    // Date Picker Dialog
     if (showDatePicker) {
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = selectedDate)
+        // VALIDATOR: Disable future dates
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = selectedDate,
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    return utcTimeMillis <= System.currentTimeMillis()
+                }
+            }
+        )
+
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
@@ -171,7 +146,6 @@ fun UpdatePriceSheet(onDismiss: () -> Unit, onSave: (Double, Long) -> Unit) {
         ) { DatePicker(state = datePickerState) }
     }
 
-    // Bottom Sheet Content
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = SurfaceGray,
@@ -195,12 +169,10 @@ fun UpdatePriceSheet(onDismiss: () -> Unit, onSave: (Double, Long) -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Price Input
             ModernTextField(value = price, onValueChange = { price = it }, label = "New Price (CHF)", isNumber = true)
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Save Button
             Button(
                 onClick = { if (price.isNotEmpty()) onSave(price.toDouble(), selectedDate) },
                 modifier = Modifier.fillMaxWidth(),
