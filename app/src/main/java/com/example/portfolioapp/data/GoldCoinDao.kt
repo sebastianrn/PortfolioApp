@@ -1,10 +1,10 @@
 package com.example.portfolioapp.data
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
-import androidx.room.Delete
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -14,6 +14,10 @@ interface GoldCoinDao {
 
     @Update
     suspend fun update(coin: GoldCoin)
+
+    // --- NEW: Delete Coin ---
+    @Delete
+    suspend fun deleteCoin(coin: GoldCoin)
 
     @Query("UPDATE gold_coins SET currentPrice = :newPrice WHERE id = :coinId")
     suspend fun updateCurrentPrice(coinId: Int, newPrice: Double)

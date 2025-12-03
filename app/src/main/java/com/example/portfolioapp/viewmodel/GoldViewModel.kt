@@ -62,50 +62,44 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
         }
     }
 
+    // --- NEW: Delete Coin ---
+    fun deleteCoin(coin: GoldCoin) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dao.deleteCoin(coin)
+        }
+    }
+
     // --- API UPDATE LOGIC ---
     fun updateAllPricesFromApi() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                // 1. Notify User
                 withContext(Dispatchers.Main) {
                     Toast.makeText(application, "Fetching Spot Price...", Toast.LENGTH_SHORT).show()
                 }
 
-                // 2. Fetch Spot Price (Raw Gold Value 24k/100%)
-                val apiKey = "***REMOVED***"
+                val apiKey = "***REMOVED***" // Replace if needed
                 val response = NetworkModule.api.getGoldPrice("CHF", apiKey)
                 val spotPricePerGram24k = response.price_gram_24k
 
                 Log.d("GoldApp", "Spot Price (100% Pure): $spotPricePerGram24k CHF/g")
 
-                // 3. Update ALL coins
                 val coins = dao.getAllCoins().first()
                 val timestamp = System.currentTimeMillis()
                 var updatedCount = 0
-
-                // 4. The "999.9" Fineness Factor
-                // The API gives us the price for 100% pure gold (1.000).
-                // Most investment coins (Vreneli, Philharmoniker) are 99.99% pure.
                 val coinFineness = 0.9999
 
                 for (coin in coins) {
-                    // Step A: Calculate Intrinsic Material Value
-                    // (Spot Price * Weight) * Fineness
                     val intrinsicValue = spotPricePerGram24k * coin.weightInGrams * coinFineness
-
-                    // Step B: Apply Dealer Premium
-                    // Value * (1 + Premium%)
                     val premiumMultiplier = 1 + (coin.premiumPercent / 100.0)
                     val finalPrice = intrinsicValue * premiumMultiplier
 
-                    // Save
                     dao.insertHistory(PriceHistory(coinId = coin.id, dateTimestamp = timestamp, price = finalPrice))
                     dao.updateCurrentPrice(coin.id, finalPrice)
                     updatedCount++
                 }
 
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(application, "Updated $updatedCount coins. Spot: ${String.format("%.2f", spotPricePerGram24k)} CHF/g", Toast.LENGTH_LONG).show()
+                    Toast.makeText(application, "Updated $updatedCount coins.", Toast.LENGTH_LONG).show()
                 }
 
             } catch (e: Exception) {
@@ -117,7 +111,6 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
         }
     }
 
-    // Manual Update
     fun addDailyRate(coinId: Int, newPrice: Double, selectedDate: Long) {
         val currentTimestamp = System.currentTimeMillis()
         if (selectedDate > currentTimestamp + 60_000) return
@@ -150,7 +143,11 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
         for (date in uniqueDates) {
             historyByDate[date]?.forEach { record -> priceMap[record.coinId] = record.price }
             var totalValue = 0.0
-            qtyMap.forEach { (id, qty) -> totalValue += (qty * (priceMap[id] ?: 0.0)) }
+            qtyMap.forEach { (id, qty) ->
+                if (qtyMap.containsKey(id)) {
+                    totalValue += (qty * (priceMap[id] ?: 0.0))
+                }
+            }
             points.add(date to totalValue)
         }
         return points
