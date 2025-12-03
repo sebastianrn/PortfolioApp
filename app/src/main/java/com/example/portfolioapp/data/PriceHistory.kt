@@ -2,6 +2,7 @@ package com.example.portfolioapp.data
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(
@@ -11,7 +12,9 @@ import androidx.room.PrimaryKey
         parentColumns = ["id"],
         childColumns = ["coinId"],
         onDelete = ForeignKey.CASCADE
-    )]
+    )],
+    // --- FIX: Add Index for the Foreign Key ---
+    indices = [Index(value = ["coinId"])]
 )
 data class PriceHistory(
     @PrimaryKey(autoGenerate = true) val historyId: Int = 0,

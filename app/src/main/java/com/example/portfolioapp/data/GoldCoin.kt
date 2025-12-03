@@ -9,9 +9,12 @@ data class GoldCoin(
     val name: String,
     val originalPrice: Double,
     val currentPrice: Double,
-    val quantity: Int
+    val quantity: Int,
+
+    // --- NEW FIELDS REQUIRED FOR API CALCULATION ---
+    val weightInGrams: Double,
+    val premiumPercent: Double
 ) {
-    // Math automatically works (Int * Double = Double)
     val totalCurrentValue: Double
         get() = currentPrice * quantity
 

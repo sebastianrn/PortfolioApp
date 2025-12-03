@@ -82,6 +82,10 @@ dependencies {
     implementation(libs.vico.compose.m3)
     implementation(libs.vico.core)
 
+    // Networking (Retrofit + Gson)
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
