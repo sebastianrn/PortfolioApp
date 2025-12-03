@@ -1,5 +1,5 @@
 [versions]
-agp = "8.2.2"
+agp = "8.13.1"
 # The Kotlin and KSP versions MUST match the first part
 datastorePreferences = "1.2.0"
 kotlin = "1.9.22"
