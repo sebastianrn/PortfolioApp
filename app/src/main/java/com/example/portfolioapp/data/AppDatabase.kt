@@ -8,12 +8,12 @@ import androidx.room.TypeConverters
 
 @Database(
     entities = [GoldAsset::class, PriceHistory::class],
-    version = 3, // Version Bump
+    version = 4, // Version Bump
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun goldAssetDao(): GoldAssetDao // Renamed
+    abstract fun goldAssetDao(): GoldAssetDao
 
     companion object {
         @Volatile

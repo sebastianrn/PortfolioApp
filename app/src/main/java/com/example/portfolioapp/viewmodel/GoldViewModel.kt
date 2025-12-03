@@ -50,7 +50,7 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
     fun getAssetById(id: Int): Flow<GoldAsset> = dao.getAssetById(id)
     fun getHistoryForAsset(assetId: Int): Flow<List<PriceHistory>> = dao.getHistoryForAsset(assetId)
 
-    // UPDATED: Now takes AssetType
+    // 1. INSERT (Manual)
     fun insert(name: String, type: AssetType, price: Double, qty: Int, weight: Double, premium: Double) {
         viewModelScope.launch(Dispatchers.IO) {
             val asset = GoldAsset(
@@ -63,7 +63,13 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
                 premiumPercent = premium
             )
             val id = dao.insert(asset)
-            dao.insertHistory(PriceHistory(assetId = id.toInt(), dateTimestamp = System.currentTimeMillis(), price = price))
+            // Initial record is Manual
+            dao.insertHistory(PriceHistory(
+                assetId = id.toInt(),
+                dateTimestamp = System.currentTimeMillis(),
+                price = price,
+                isManual = true
+            ))
         }
     }
 
@@ -73,6 +79,7 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
         }
     }
 
+    // 2. API UPDATE (Automatic)
     fun updateAllPricesFromApi() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -80,7 +87,6 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
                     Toast.makeText(application, "Fetching Spot Price...", Toast.LENGTH_SHORT).show()
                 }
 
-                // TODO: Replace with your API Key
                 val apiKey = "***REMOVED***"
                 val response = NetworkModule.api.getGoldPrice("CHF", apiKey)
                 val spotPricePerGram24k = response.price_gram_24k
@@ -95,7 +101,12 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
                     val premiumMultiplier = 1 + (asset.premiumPercent / 100.0)
                     val finalPrice = intrinsicValue * premiumMultiplier
 
-                    dao.insertHistory(PriceHistory(assetId = asset.id, dateTimestamp = timestamp, price = finalPrice))
+                    dao.insertHistory(PriceHistory(
+                        assetId = asset.id,
+                        dateTimestamp = timestamp,
+                        price = finalPrice,
+                        isManual = false // <--- AUTOMATIC
+                    ))
                     dao.updateCurrentPrice(asset.id, finalPrice)
                     updatedCount++
                 }
@@ -113,6 +124,7 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
         }
     }
 
+    // 3. ADD DAILY RATE (Manual)
     fun addDailyRate(assetId: Int, newPrice: Double, selectedDate: Long) {
         val currentTimestamp = System.currentTimeMillis()
         if (selectedDate > currentTimestamp + 60_000) return
@@ -120,7 +132,12 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
         val finalTimestamp = mergeTimeIntoDate(selectedDate)
 
         viewModelScope.launch(Dispatchers.IO) {
-            dao.insertHistory(PriceHistory(assetId = assetId, dateTimestamp = finalTimestamp, price = newPrice))
+            dao.insertHistory(PriceHistory(
+                assetId = assetId,
+                dateTimestamp = finalTimestamp,
+                price = newPrice,
+                isManual = true // <--- MANUAL
+            ))
             dao.updateCurrentPrice(assetId, newPrice)
         }
     }
@@ -136,7 +153,7 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
 
     private fun calculatePortfolioCurve(assets: List<GoldAsset>, history: List<PriceHistory>): List<Pair<Long, Double>> {
         if (assets.isEmpty()) return emptyList()
-        val uniqueDates = (history.map { it.dateTimestamp } + System.currentTimeMillis()).toSortedSet()
+        val uniqueDates = history.map { it.dateTimestamp }.toSortedSet()
         val points = mutableListOf<Pair<Long, Double>>()
         val priceMap = assets.associate { it.id to it.originalPrice }.toMutableMap()
         val qtyMap = assets.associate { it.id to it.quantity }
