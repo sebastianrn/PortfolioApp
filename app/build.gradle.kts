@@ -67,8 +67,8 @@ dependencies {
 
     // Room Database (Kotlin + KSP)
     implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx) // Important for Flow support
-    ksp(libs.androidx.room.compiler)      // Replaces annotationProcessor/kapt
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
     // Navigation (Compose)
     implementation(libs.androidx.navigation.compose)
