@@ -1,5 +1,6 @@
 package com.example.portfolioapp.ui.screens
 
+// Vico 1.14.0 Imports (Stable)
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -54,7 +55,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.portfolioapp.data.GoldCoin
+import com.example.portfolioapp.data.GoldAsset
 import com.example.portfolioapp.data.PriceHistory
 import com.example.portfolioapp.ui.components.ModernTextField
 import com.example.portfolioapp.ui.components.rememberMarker
@@ -68,10 +69,8 @@ import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
 import com.patrykandpatrick.vico.compose.chart.line.lineChart
 import com.patrykandpatrick.vico.compose.component.shape.shader.verticalGradient
-import com.patrykandpatrick.vico.core.axis.AxisItemPlacer
 import com.patrykandpatrick.vico.core.axis.AxisPosition
 import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
-import com.patrykandpatrick.vico.core.chart.line.LineChart
 import com.patrykandpatrick.vico.core.component.text.textComponent
 import com.patrykandpatrick.vico.core.entry.entryModelOf
 import java.text.SimpleDateFormat
@@ -83,12 +82,13 @@ import kotlin.math.abs
 @Composable
 fun DetailScreen(
     viewModel: GoldViewModel,
-    coinId: Int,
+    coinId: Int, // This is actually assetId now
     coinName: String,
     onBackClick: () -> Unit
 ) {
-    val coin by viewModel.getCoinById(coinId).collectAsState(initial = null)
-    val history by viewModel.getHistoryForCoin(coinId).collectAsState(initial = emptyList<PriceHistory>())
+    // Use the new ViewModel methods for Assets
+    val asset by viewModel.getAssetById(coinId).collectAsState(initial = null)
+    val history by viewModel.getHistoryForAsset(coinId).collectAsState(initial = emptyList<PriceHistory>())
 
     var showSheet by remember { mutableStateOf(false) }
 
@@ -112,7 +112,7 @@ fun DetailScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
@@ -131,10 +131,12 @@ fun DetailScreen(
             modifier = Modifier.padding(padding),
             contentPadding = PaddingValues(bottom = 80.dp)
         ) {
-            // 1. Stats Header
-            item { coin?.let { c -> CoinStatsHeader(c) } }
+            // 1. Stats Header (Using GoldAsset)
+            item {
+                asset?.let { a -> AssetStatsHeader(a) }
+            }
 
-            // 2. Chart
+            // 2. Performance Chart
             item {
                 if (history.isNotEmpty()) {
                     val chartPoints = history.reversed().map { it.dateTimestamp to it.price }
@@ -142,7 +144,7 @@ fun DetailScreen(
                 }
             }
 
-            // 3. History List
+            // 3. History Title
             item {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -164,6 +166,7 @@ fun DetailScreen(
                 }
             }
 
+            // 4. History Items
             items(history) { record ->
                 HistoryItemCard(date = record.dateTimestamp, price = record.price)
             }
@@ -182,7 +185,7 @@ fun DetailScreen(
 }
 
 @Composable
-fun CoinStatsHeader(coin: GoldCoin) {
+fun AssetStatsHeader(asset: GoldAsset) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(24.dp),
@@ -191,49 +194,82 @@ fun CoinStatsHeader(coin: GoldCoin) {
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
 
-            // Badges Row (Weight & Premium)
+            // --- Badges: Type, Weight, Premium ---
             Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Type Badge (Coin/Bar)
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        text = "${coin.weightInGrams}g",
+                        text = asset.type.name, // "COIN" or "BAR"
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Weight Badge
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "${asset.weightInGrams}g",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
+
                 Spacer(modifier = Modifier.width(8.dp))
+
+                // Premium Badge
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        text = "+${coin.premiumPercent}% Premium",
+                        text = "+${asset.premiumPercent}% Prem.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
             }
+            // -----------------------------------------
 
-            // Quantity & Current Value
+            // Row 1: Quantity & Value
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
                     Text("Quantity", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                    Text("${coin.quantity} coins", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(
+                        "${asset.quantity} units",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text("Current Value", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                    Text(coin.totalCurrentValue.toCurrencyString, color = GoldStart, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp)
+                    Text(
+                        asset.totalCurrentValue.toCurrencyString,
+                        color = GoldStart,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 24.sp
+                    )
                 }
             }
 
@@ -241,24 +277,29 @@ fun CoinStatsHeader(coin: GoldCoin) {
             HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Bought At & Return
+            // Row 2: Bought & Profit
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
                     Text("Bought At", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                    Text(coin.originalPrice.toCurrencyString, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                    Text(
+                        asset.originalPrice.toCurrencyString,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text("Total Return", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
 
-                    val isProfit = coin.totalProfitOrLoss >= 0
+                    val isProfit = asset.totalProfitOrLoss >= 0
                     val sign = if (isProfit) "+" else "-"
                     val color = if (isProfit) ProfitGreen else LossRed
 
                     Text(
-                        text = "$sign${abs(coin.totalProfitOrLoss).toCurrencyString}",
+                        text = "$sign${abs(asset.totalProfitOrLoss).toCurrencyString}",
                         color = color,
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
@@ -295,21 +336,20 @@ fun PerformanceCard(points: List<Pair<Long, Double>>) {
 
 @Composable
 fun SingleCoinChart(points: List<Pair<Long, Double>>) {
+    // Handle single point case by duplicating it to allow drawing a line
     val chartPoints = if (points.size == 1) {
         listOf(points[0], points[0].copy(first = points[0].first + 1))
     } else {
         points
     }
 
-    val chartModel = entryModelOf(*chartPoints.map { it.second.toFloat() }.toTypedArray())
+    val chartEntryModel = entryModelOf(*chartPoints.map { it.second.toFloat() }.toTypedArray())
 
     val horizontalFormatter = AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
         val index = value.toInt()
         if (index in chartPoints.indices) {
-            val dateMs = chartPoints[index].first
-            val sdf = SimpleDateFormat("MMM dd", Locale.getDefault())
-            sdf.format(Date(dateMs))
-        } else { "" }
+            SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date(chartPoints[index].first))
+        } else ""
     }
 
     val verticalFormatter = AxisValueFormatter<AxisPosition.Vertical.Start> { value, _ ->
@@ -318,27 +358,25 @@ fun SingleCoinChart(points: List<Pair<Long, Double>>) {
 
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
     val axisLabelStyle = textComponent {
-        color = labelColor
+        color = labelColor // Correct Vico 1.x Color wrapper
         textSizeSp = 10f
     }
 
-    val lineSpec = LineChart.LineSpec(
-        lineColor = GoldStart.toArgb(),
-        lineThicknessDp = 3f,
+    val lineSpec = com.patrykandpatrick.vico.compose.chart.line.lineSpec(
+        lineColor = GoldStart,
         lineBackgroundShader = verticalGradient(
-            colors = arrayOf(GoldStart.copy(alpha = 0.4f), Color.Transparent)
+            colors = arrayOf(GoldStart.copy(alpha = 0.5f), Color.Transparent)
         )
     )
 
     Chart(
         chart = lineChart(lines = listOf(lineSpec)),
-        model = chartModel,
+        model = chartEntryModel,
         startAxis = rememberStartAxis(
             label = axisLabelStyle,
             valueFormatter = verticalFormatter,
             guideline = null,
-            tickLength = 0.dp,
-            itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 5)
+            tickLength = 0.dp
         ),
         bottomAxis = rememberBottomAxis(
             label = axisLabelStyle,
@@ -347,7 +385,10 @@ fun SingleCoinChart(points: List<Pair<Long, Double>>) {
             tickLength = 0.dp
         ),
         marker = rememberMarker(),
-        modifier = Modifier.fillMaxWidth().height(200.dp).padding(horizontal = 16.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp)
+            .padding(horizontal = 16.dp)
     )
 }
 
@@ -355,7 +396,6 @@ fun SingleCoinChart(points: List<Pair<Long, Double>>) {
 fun HistoryItemCard(date: Long, price: Double) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp),
@@ -430,7 +470,12 @@ fun UpdatePriceSheet(onDismiss: () -> Unit, onSave: (Double, Long) -> Unit) {
         contentColor = MaterialTheme.colorScheme.onSurface
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
-            Text("Update Value", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                text = "Update Value",
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
             Spacer(modifier = Modifier.height(24.dp))
 
             OutlinedButton(

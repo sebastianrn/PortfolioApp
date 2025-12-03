@@ -81,6 +81,7 @@ dependencies {
     // Networking (Retrofit + Gson)
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
+    implementation(libs.logging.interceptor)
 
     // Testing
     testImplementation(libs.junit)

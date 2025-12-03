@@ -4,14 +4,16 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 
 @Database(
-    entities = [GoldCoin::class, PriceHistory::class],
-    version = 2,
+    entities = [GoldAsset::class, PriceHistory::class],
+    version = 3, // Version Bump
     exportSchema = false
 )
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun goldCoinDao(): GoldCoinDao
+    abstract fun goldAssetDao(): GoldAssetDao // Renamed
 
     companion object {
         @Volatile
@@ -24,7 +26,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "gold_portfolio_db"
                 )
-                    .fallbackToDestructiveMigration(true)
+                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance

@@ -1,16 +1,22 @@
 package com.example.portfolioapp.viewmodel
 
 import android.app.Application
-import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.portfolioapp.data.AppDatabase
-import com.example.portfolioapp.data.GoldCoin
+import com.example.portfolioapp.data.AssetType
+import com.example.portfolioapp.data.GoldAsset
 import com.example.portfolioapp.data.NetworkModule
 import com.example.portfolioapp.data.PriceHistory
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Calendar
@@ -22,54 +28,51 @@ data class PortfolioSummary(
 )
 
 class GoldViewModel(private val application: Application) : AndroidViewModel(application) {
-    private val dao = AppDatabase.getDatabase(application).goldCoinDao()
+    private val dao = AppDatabase.getDatabase(application).goldAssetDao()
 
-    // UI State Flows
-    val allCoins: StateFlow<List<GoldCoin>> = dao.getAllCoins()
+    val allAssets: StateFlow<List<GoldAsset>> = dao.getAllAssets()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    val portfolioStats: StateFlow<PortfolioSummary> = allCoins.map { coins ->
-        val value = coins.sumOf { it.totalCurrentValue }
-        val profit = coins.sumOf { it.totalProfitOrLoss }
-        val invested = coins.sumOf { it.originalPrice * it.quantity }
+    val portfolioStats: StateFlow<PortfolioSummary> = allAssets.map { assets ->
+        val value = assets.sumOf { it.totalCurrentValue }
+        val profit = assets.sumOf { it.totalProfitOrLoss }
+        val invested = assets.sumOf { it.originalPrice * it.quantity }
         PortfolioSummary(value, profit, invested)
     }.stateIn(viewModelScope, SharingStarted.Lazily, PortfolioSummary())
 
     val portfolioCurve: StateFlow<List<Pair<Long, Double>>> = combine(
         dao.getAllHistory(),
-        allCoins
-    ) { history, coins ->
-        calculatePortfolioCurve(coins, history)
+        allAssets
+    ) { history, assets ->
+        calculatePortfolioCurve(assets, history)
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    // --- DB Operations ---
+    fun getAssetById(id: Int): Flow<GoldAsset> = dao.getAssetById(id)
+    fun getHistoryForAsset(assetId: Int): Flow<List<PriceHistory>> = dao.getHistoryForAsset(assetId)
 
-    fun getCoinById(id: Int): Flow<GoldCoin> = dao.getCoinById(id)
-    fun getHistoryForCoin(coinId: Int): Flow<List<PriceHistory>> = dao.getHistoryForCoin(coinId)
-
-    fun insert(name: String, price: Double, qty: Int, weight: Double, premium: Double) {
+    // UPDATED: Now takes AssetType
+    fun insert(name: String, type: AssetType, price: Double, qty: Int, weight: Double, premium: Double) {
         viewModelScope.launch(Dispatchers.IO) {
-            val coin = GoldCoin(
+            val asset = GoldAsset(
                 name = name,
+                type = type,
                 originalPrice = price,
                 currentPrice = price,
                 quantity = qty,
                 weightInGrams = weight,
                 premiumPercent = premium
             )
-            val id = dao.insert(coin)
-            dao.insertHistory(PriceHistory(coinId = id.toInt(), dateTimestamp = System.currentTimeMillis(), price = price))
+            val id = dao.insert(asset)
+            dao.insertHistory(PriceHistory(assetId = id.toInt(), dateTimestamp = System.currentTimeMillis(), price = price))
         }
     }
 
-    // --- NEW: Delete Coin ---
-    fun deleteCoin(coin: GoldCoin) {
+    fun deleteAsset(asset: GoldAsset) {
         viewModelScope.launch(Dispatchers.IO) {
-            dao.deleteCoin(coin)
+            dao.deleteAsset(asset)
         }
     }
 
-    // --- API UPDATE LOGIC ---
     fun updateAllPricesFromApi() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -77,29 +80,28 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
                     Toast.makeText(application, "Fetching Spot Price...", Toast.LENGTH_SHORT).show()
                 }
 
-                val apiKey = "***REMOVED***" // Replace if needed
+                // TODO: Replace with your API Key
+                val apiKey = "***REMOVED***"
                 val response = NetworkModule.api.getGoldPrice("CHF", apiKey)
                 val spotPricePerGram24k = response.price_gram_24k
 
-                Log.d("GoldApp", "Spot Price (100% Pure): $spotPricePerGram24k CHF/g")
-
-                val coins = dao.getAllCoins().first()
+                val assets = dao.getAllAssets().first()
                 val timestamp = System.currentTimeMillis()
                 var updatedCount = 0
                 val coinFineness = 0.9999
 
-                for (coin in coins) {
-                    val intrinsicValue = spotPricePerGram24k * coin.weightInGrams * coinFineness
-                    val premiumMultiplier = 1 + (coin.premiumPercent / 100.0)
+                for (asset in assets) {
+                    val intrinsicValue = spotPricePerGram24k * asset.weightInGrams * coinFineness
+                    val premiumMultiplier = 1 + (asset.premiumPercent / 100.0)
                     val finalPrice = intrinsicValue * premiumMultiplier
 
-                    dao.insertHistory(PriceHistory(coinId = coin.id, dateTimestamp = timestamp, price = finalPrice))
-                    dao.updateCurrentPrice(coin.id, finalPrice)
+                    dao.insertHistory(PriceHistory(assetId = asset.id, dateTimestamp = timestamp, price = finalPrice))
+                    dao.updateCurrentPrice(asset.id, finalPrice)
                     updatedCount++
                 }
 
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(application, "Updated $updatedCount coins.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(application, "Updated $updatedCount assets.", Toast.LENGTH_LONG).show()
                 }
 
             } catch (e: Exception) {
@@ -111,15 +113,15 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
         }
     }
 
-    fun addDailyRate(coinId: Int, newPrice: Double, selectedDate: Long) {
+    fun addDailyRate(assetId: Int, newPrice: Double, selectedDate: Long) {
         val currentTimestamp = System.currentTimeMillis()
         if (selectedDate > currentTimestamp + 60_000) return
 
         val finalTimestamp = mergeTimeIntoDate(selectedDate)
 
         viewModelScope.launch(Dispatchers.IO) {
-            dao.insertHistory(PriceHistory(coinId = coinId, dateTimestamp = finalTimestamp, price = newPrice))
-            dao.updateCurrentPrice(coinId, newPrice)
+            dao.insertHistory(PriceHistory(assetId = assetId, dateTimestamp = finalTimestamp, price = newPrice))
+            dao.updateCurrentPrice(assetId, newPrice)
         }
     }
 
@@ -132,16 +134,16 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
         return calendarDate.timeInMillis
     }
 
-    private fun calculatePortfolioCurve(coins: List<GoldCoin>, history: List<PriceHistory>): List<Pair<Long, Double>> {
-        if (coins.isEmpty()) return emptyList()
+    private fun calculatePortfolioCurve(assets: List<GoldAsset>, history: List<PriceHistory>): List<Pair<Long, Double>> {
+        if (assets.isEmpty()) return emptyList()
         val uniqueDates = (history.map { it.dateTimestamp } + System.currentTimeMillis()).toSortedSet()
         val points = mutableListOf<Pair<Long, Double>>()
-        val priceMap = coins.associate { it.id to it.originalPrice }.toMutableMap()
-        val qtyMap = coins.associate { it.id to it.quantity }
+        val priceMap = assets.associate { it.id to it.originalPrice }.toMutableMap()
+        val qtyMap = assets.associate { it.id to it.quantity }
         val historyByDate = history.groupBy { it.dateTimestamp }
 
         for (date in uniqueDates) {
-            historyByDate[date]?.forEach { record -> priceMap[record.coinId] = record.price }
+            historyByDate[date]?.forEach { record -> priceMap[record.assetId] = record.price }
             var totalValue = 0.0
             qtyMap.forEach { (id, qty) ->
                 if (qtyMap.containsKey(id)) {

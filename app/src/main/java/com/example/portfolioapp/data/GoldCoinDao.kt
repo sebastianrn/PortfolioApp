@@ -8,19 +8,18 @@ import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface GoldCoinDao {
+interface GoldAssetDao {
     @Insert
-    suspend fun insert(coin: GoldCoin): Long
+    suspend fun insert(asset: GoldAsset): Long
 
     @Update
-    suspend fun update(coin: GoldCoin)
+    suspend fun update(asset: GoldAsset)
 
-    // --- NEW: Delete Coin ---
     @Delete
-    suspend fun deleteCoin(coin: GoldCoin)
+    suspend fun deleteAsset(asset: GoldAsset)
 
-    @Query("UPDATE gold_coins SET currentPrice = :newPrice WHERE id = :coinId")
-    suspend fun updateCurrentPrice(coinId: Int, newPrice: Double)
+    @Query("UPDATE gold_assets SET currentPrice = :newPrice WHERE id = :assetId")
+    suspend fun updateCurrentPrice(assetId: Int, newPrice: Double)
 
     @Insert
     suspend fun insertHistory(history: PriceHistory)
@@ -28,16 +27,16 @@ interface GoldCoinDao {
     @Delete
     suspend fun deleteHistory(history: PriceHistory)
 
-    @Query("SELECT * FROM gold_coins WHERE id = :id")
-    fun getCoinById(id: Int): Flow<GoldCoin>
+    @Query("SELECT * FROM gold_assets WHERE id = :id")
+    fun getAssetById(id: Int): Flow<GoldAsset>
 
-    @Query("SELECT * FROM gold_coins ORDER BY id DESC")
-    fun getAllCoins(): Flow<List<GoldCoin>>
+    @Query("SELECT * FROM gold_assets ORDER BY id DESC")
+    fun getAllAssets(): Flow<List<GoldAsset>>
 
-    @Query("SELECT * FROM price_history WHERE coinId = :coinId ORDER BY dateTimestamp DESC")
-    fun getHistoryForCoin(coinId: Int): Flow<List<PriceHistory>>
+    @Query("SELECT * FROM price_history WHERE assetId = :assetId ORDER BY dateTimestamp DESC")
+    fun getHistoryForAsset(assetId: Int): Flow<List<PriceHistory>>
 
-    @Query("SELECT SUM(originalPrice * quantity) FROM gold_coins")
+    @Query("SELECT SUM(originalPrice * quantity) FROM gold_assets")
     fun getTotalInvestment(): Flow<Double?>
 
     @Query("SELECT * FROM price_history ORDER BY dateTimestamp ASC")

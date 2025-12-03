@@ -8,17 +8,16 @@ import androidx.room.PrimaryKey
 @Entity(
     tableName = "price_history",
     foreignKeys = [ForeignKey(
-        entity = GoldCoin::class,
+        entity = GoldAsset::class, // Updated reference
         parentColumns = ["id"],
-        childColumns = ["coinId"],
+        childColumns = ["assetId"], // Renamed for clarity
         onDelete = ForeignKey.CASCADE
     )],
-    // --- FIX: Add Index for the Foreign Key ---
-    indices = [Index(value = ["coinId"])]
+    indices = [Index(value = ["assetId"])]
 )
 data class PriceHistory(
     @PrimaryKey(autoGenerate = true) val historyId: Int = 0,
-    val coinId: Int,
+    val assetId: Int, // Renamed from coinId
     val dateTimestamp: Long,
     val price: Double
 )

@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
@@ -33,6 +34,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -59,7 +61,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.portfolioapp.data.GoldCoin
+import com.example.portfolioapp.data.AssetType
+import com.example.portfolioapp.data.GoldAsset
 import com.example.portfolioapp.ui.components.ModernTextField
 import com.example.portfolioapp.ui.components.rememberMarker
 import com.example.portfolioapp.ui.theme.GoldStart
@@ -75,11 +78,8 @@ import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
 import com.patrykandpatrick.vico.compose.chart.line.lineChart
 import com.patrykandpatrick.vico.compose.component.shape.shader.verticalGradient
-import com.patrykandpatrick.vico.core.axis.AxisItemPlacer
 import com.patrykandpatrick.vico.core.axis.AxisPosition
 import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
-import com.patrykandpatrick.vico.core.chart.line.LineChart
-import com.patrykandpatrick.vico.core.component.text.textComponent
 import com.patrykandpatrick.vico.core.entry.entryModelOf
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -91,18 +91,16 @@ import kotlin.math.abs
 fun MainScreen(
     viewModel: GoldViewModel,
     themeViewModel: ThemeViewModel,
-    onCoinClick: (GoldCoin) -> Unit
+    onCoinClick: (GoldAsset) -> Unit
 ) {
-    val coins by viewModel.allCoins.collectAsState()
+    val assets by viewModel.allAssets.collectAsState()
     val stats by viewModel.portfolioStats.collectAsState()
     val portfolioPoints by viewModel.portfolioCurve.collectAsState()
     val isDark by themeViewModel.isDarkTheme.collectAsState()
 
     var showDialog by remember { mutableStateOf(false) }
-
-    // Delete confirmation state
     var showDeleteDialog by remember { mutableStateOf(false) }
-    var coinToDelete by remember { mutableStateOf<GoldCoin?>(null) }
+    var assetToDelete by remember { mutableStateOf<GoldAsset?>(null) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -132,22 +130,17 @@ fun MainScreen(
                 containerColor = GoldStart,
                 contentColor = Color.Black
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Coin")
+                Icon(Icons.Default.Add, contentDescription = "Add Asset")
             }
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-            // All content now inside LazyColumn to scroll as one unit
             LazyColumn(
                 contentPadding = PaddingValues(bottom = 80.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                // 1. Summary Header
-                item {
-                    PortfolioSummaryCard(stats)
-                }
+                item { PortfolioSummaryCard(stats) }
 
-                // 2. Chart
                 item {
                     if (portfolioPoints.isNotEmpty()) {
                         PortfolioPerformanceCard(portfolioPoints)
@@ -158,7 +151,6 @@ fun MainScreen(
                     }
                 }
 
-                // 3. Section Title
                 item {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -170,19 +162,14 @@ fun MainScreen(
                     }
                 }
 
-                // 4. Coin List
-                items(
-                    items = coins,
-                    key = { it.id }
-                ) { coin ->
-                    // Swipe Logic
-                    @Suppress("DEPRECATION") // Suppress to use confirmValueChange for veto logic
+                items(items = assets, key = { it.id }) { asset ->
+                    @Suppress("DEPRECATION")
                     val dismissState = rememberSwipeToDismissBoxState(
                         confirmValueChange = {
                             if (it == SwipeToDismissBoxValue.EndToStart) {
-                                coinToDelete = coin
+                                assetToDelete = asset
                                 showDeleteDialog = true
-                                false // Return false to snap back. We delete only after dialog confirm.
+                                false
                             } else {
                                 false
                             }
@@ -192,12 +179,7 @@ fun MainScreen(
                     SwipeToDismissBox(
                         state = dismissState,
                         backgroundContent = {
-                            val color = if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
-                                LossRed
-                            } else {
-                                Color.Transparent
-                            }
-
+                            val color = if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) LossRed else Color.Transparent
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -207,17 +189,11 @@ fun MainScreen(
                                     .padding(end = 24.dp),
                                 contentAlignment = Alignment.CenterEnd
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete",
-                                    tint = Color.White
-                                )
+                                Icon(Icons.Default.Delete, "Delete", tint = Color.White)
                             }
                         },
-                        enableDismissFromStartToEnd = false, // Disable Right Swipe
-                        content = {
-                            CoinItem(coin, onClick = { onCoinClick(coin) })
-                        }
+                        enableDismissFromStartToEnd = false,
+                        content = { AssetItem(asset, onClick = { onCoinClick(asset) }) }
                     )
                 }
             }
@@ -225,63 +201,83 @@ fun MainScreen(
     }
 
     if (showDialog) {
-        AddCoinDialog(
+        AddAssetDialog(
             onDismiss = { showDialog = false },
-            onAdd = { name, price, qty, weight, premium ->
-                viewModel.insert(name, price, qty, weight, premium)
+            onAdd = { name, type, price, qty, weight, premium ->
+                viewModel.insert(name, type, price, qty, weight, premium)
                 showDialog = false
             }
         )
     }
 
-    if (showDeleteDialog && coinToDelete != null) {
+    if (showDeleteDialog && assetToDelete != null) {
         DeleteConfirmationDialog(
-            coin = coinToDelete!!,
+            asset = assetToDelete!!,
             onConfirm = {
-                viewModel.deleteCoin(coinToDelete!!)
+                viewModel.deleteAsset(assetToDelete!!)
                 showDeleteDialog = false
-                coinToDelete = null
+                assetToDelete = null
             },
             onDismiss = {
                 showDeleteDialog = false
-                coinToDelete = null
+                assetToDelete = null
             }
         )
     }
 }
 
 @Composable
-fun DeleteConfirmationDialog(
-    coin: GoldCoin,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        containerColor = MaterialTheme.colorScheme.surface,
-        titleContentColor = MaterialTheme.colorScheme.onSurface,
-        textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        onDismissRequest = onDismiss,
-        title = { Text("Delete Coin") },
-        text = {
-            Text("Are you sure you want to delete '${coin.name}'? This action cannot be undone.")
-        },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(containerColor = LossRed, contentColor = Color.White)
-            ) { Text("Delete") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss, colors = ButtonDefaults.textButtonColors(contentColor = TextGray)) {
-                Text("Cancel")
+fun AssetItem(asset: GoldAsset, onClick: () -> Unit) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clickable { onClick() },
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // ICON LOGIC: Round for Coin, Rect for Bar
+            val shape = if (asset.type == AssetType.COIN) CircleShape else RoundedCornerShape(4.dp)
+            val iconText = if (asset.type == AssetType.COIN) asset.name.take(1).uppercase() else "B"
+
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(shape)
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = iconText, color = GoldStart, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(asset.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                // Show Type + Qty
+                Text("${asset.type.name} • ${asset.quantity} units", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
+            Column(horizontalAlignment = Alignment.End) {
+                Text(asset.totalCurrentValue.toCurrencyString, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+                val isProfit = asset.totalProfitOrLoss >= 0
+                val color = if (isProfit) ProfitGreen else LossRed
+                val sign = if (isProfit) "+" else "-"
+                Text(text = "$sign${abs(asset.totalProfitOrLoss).toCurrencyString}", style = MaterialTheme.typography.bodySmall, color = color, fontWeight = FontWeight.Bold)
             }
         }
-    )
+    }
 }
 
 @Composable
-fun AddCoinDialog(onDismiss: () -> Unit, onAdd: (String, Double, Int, Double, Double) -> Unit) {
+fun AddAssetDialog(onDismiss: () -> Unit, onAdd: (String, AssetType, Double, Int, Double, Double) -> Unit) {
     var name by remember { mutableStateOf("") }
+    var type by remember { mutableStateOf(AssetType.COIN) } // Default Coin
     var qty by remember { mutableStateOf("") }
     var weight by remember { mutableStateOf("") }
     var premium by remember { mutableStateOf("5.0") }
@@ -295,15 +291,35 @@ fun AddCoinDialog(onDismiss: () -> Unit, onAdd: (String, Double, Int, Double, Do
         title = { Text("Add Investment") },
         text = {
             Column {
-                ModernTextField(value = name, onValueChange = { name = it }, label = "Coin Name")
+                // TYPE SELECTOR
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    FilterChip(
+                        selected = type == AssetType.COIN,
+                        onClick = { type = AssetType.COIN },
+                        label = { Text("Coin") },
+                        leadingIcon = { if (type == AssetType.COIN) Icon(Icons.Default.Check, null) }
+                    )
+                    FilterChip(
+                        selected = type == AssetType.BAR,
+                        onClick = { type = AssetType.BAR },
+                        label = { Text("Bar") },
+                        leadingIcon = { if (type == AssetType.BAR) Icon(Icons.Default.Check, null) }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+                ModernTextField(value = name, onValueChange = { name = it }, label = "Name (e.g. Vreneli / 100g Valcambi)")
                 Spacer(modifier = Modifier.height(12.dp))
                 ModernTextField(value = qty, onValueChange = { if (it.all { char -> char.isDigit() }) qty = it }, label = "Quantity", isNumber = true)
                 Spacer(modifier = Modifier.height(12.dp))
-                ModernTextField(value = weight, onValueChange = { weight = it }, label = "Weight (g) [31.1 = 1oz]", isNumber = true)
+                ModernTextField(value = weight, onValueChange = { weight = it }, label = "Weight (g)", isNumber = true)
                 Spacer(modifier = Modifier.height(12.dp))
                 ModernTextField(value = premium, onValueChange = { premium = it }, label = "Premium (%)", isNumber = true)
                 Spacer(modifier = Modifier.height(12.dp))
-                ModernTextField(value = price, onValueChange = { price = it }, label = "Paid Price (CHF)", isNumber = true)
+                ModernTextField(value = price, onValueChange = { price = it }, label = "Paid Price (Total or Per Unit?)", isNumber = true) // Clarify label as per logic
             }
         },
         confirmButton = {
@@ -312,6 +328,7 @@ fun AddCoinDialog(onDismiss: () -> Unit, onAdd: (String, Double, Int, Double, Do
                     if(name.isNotEmpty() && qty.isNotEmpty() && weight.isNotEmpty()) {
                         onAdd(
                             name,
+                            type,
                             price.toDoubleOrNull() ?: 0.0,
                             qty.toIntOrNull() ?: 1,
                             weight.toDoubleOrNull() ?: 31.1,
@@ -320,13 +337,27 @@ fun AddCoinDialog(onDismiss: () -> Unit, onAdd: (String, Double, Int, Double, Do
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = GoldStart, contentColor = Color.Black)
-            ) { Text("Add Asset") }
+            ) { Text("Add") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = TextGray) } }
     )
 }
 
-// ... PortfolioSummaryCard, PortfolioPerformanceCard, CoinItem, PortfolioChart (Unchanged) ...
+@Composable
+fun DeleteConfirmationDialog(asset: GoldAsset, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        containerColor = MaterialTheme.colorScheme.surface,
+        titleContentColor = MaterialTheme.colorScheme.onSurface,
+        textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        onDismissRequest = onDismiss,
+        title = { Text("Delete Asset") },
+        text = { Text("Delete '${asset.name}'? This action cannot be undone.") },
+        confirmButton = { Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = LossRed, contentColor = Color.White)) { Text("Delete") } },
+        dismissButton = { TextButton(onClick = onDismiss, colors = ButtonDefaults.textButtonColors(contentColor = TextGray)) { Text("Cancel") } }
+    )
+}
+
+// ... PortfolioSummaryCard, PortfolioPerformanceCard, PortfolioChart (UNCHANGED from previous valid Vico 1.x version) ...
 @Composable
 fun PortfolioSummaryCard(stats: PortfolioSummary) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth().padding(16.dp), elevation = CardDefaults.cardElevation(2.dp)) {
@@ -349,23 +380,11 @@ fun PortfolioPerformanceCard(points: List<Pair<Long, Double>>) {
 }
 
 @Composable
-fun CoinItem(coin: GoldCoin, onClick: () -> Unit) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp).clickable { onClick() }, elevation = CardDefaults.cardElevation(2.dp)) {
-        Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f)), contentAlignment = Alignment.Center) { Text(text = coin.name.take(1).uppercase(), color = GoldStart, fontWeight = FontWeight.Bold, fontSize = 20.sp) }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) { Text(coin.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold); Text("${coin.quantity} coins", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-            Column(horizontalAlignment = Alignment.End) { Text(coin.totalCurrentValue.toCurrencyString, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold); val isProfit = coin.totalProfitOrLoss >= 0; val color = if (isProfit) ProfitGreen else LossRed; val sign = if (isProfit) "+" else "-" ; Text(text = "$sign${abs(coin.totalProfitOrLoss).toCurrencyString}", style = MaterialTheme.typography.bodySmall, color = color, fontWeight = FontWeight.Bold) }
-        }
-    }
-}
-
-@Composable
 fun PortfolioChart(points: List<Pair<Long, Double>>) {
     val chartModel = entryModelOf(*points.map { it.second.toFloat() }.toTypedArray())
     val horizontalFormatter = AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ -> val index = value.toInt(); if (index in points.indices) SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date(points[index].first)) else "" }
     val verticalFormatter = AxisValueFormatter<AxisPosition.Vertical.Start> { value, _ -> if (value >= 1000) "${String.format("%.1f", value / 1000f)}k" else "${value.toInt()}" }
-    val labelColor = MaterialTheme.colorScheme.onSurfaceVariant.toArgb(); val axisLabelStyle = textComponent { color = labelColor; textSizeSp = 10f }
-    val lineSpec = LineChart.LineSpec(lineColor = GoldStart.toArgb(), lineBackgroundShader = verticalGradient(colors = arrayOf(GoldStart.copy(alpha = 0.5f), Color.Transparent)))
-    Chart(chart = lineChart(lines = listOf(lineSpec)), model = chartModel, startAxis = rememberStartAxis(label = axisLabelStyle, valueFormatter = verticalFormatter, guideline = null, tickLength = 0.dp, itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 5)), bottomAxis = rememberBottomAxis(label = axisLabelStyle, valueFormatter = horizontalFormatter, guideline = null, tickLength = 0.dp), marker = rememberMarker(), modifier = Modifier.fillMaxWidth().height(220.dp).padding(horizontal = 16.dp, vertical = 8.dp))
+    val labelColor = MaterialTheme.colorScheme.onSurfaceVariant.toArgb(); val axisLabelStyle = com.patrykandpatrick.vico.compose.component.textComponent(color = Color(labelColor), textSize = 10.sp)
+    val lineSpec = com.patrykandpatrick.vico.compose.chart.line.lineSpec(lineColor = GoldStart, lineBackgroundShader = verticalGradient(colors = arrayOf(GoldStart.copy(alpha = 0.5f), Color.Transparent)))
+    Chart(chart = lineChart(lines = listOf(lineSpec)), model = chartModel, startAxis = rememberStartAxis(label = axisLabelStyle, valueFormatter = verticalFormatter, guideline = null, tickLength = 0.dp), bottomAxis = rememberBottomAxis(label = axisLabelStyle, valueFormatter = horizontalFormatter, guideline = null, tickLength = 0.dp), marker = rememberMarker(), modifier = Modifier.fillMaxWidth().height(220.dp).padding(horizontal = 16.dp, vertical = 8.dp))
 }
