@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
-    // The KSP plugin alias must match what is in libs.versions.toml
+    alias(libs.plugins.compose.compiler)
     alias(libs.plugins.google.devtools.ksp)
 }
 
@@ -40,10 +40,6 @@ android {
     }
     buildFeatures {
         compose = true
-    }
-    composeOptions {
-        // This MUST match the Kotlin version you are using (1.9.22)
-        kotlinCompilerExtensionVersion = "1.5.8"
     }
     packaging {
         resources {
