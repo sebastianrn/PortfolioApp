@@ -72,4 +72,13 @@ interface GoldAssetDao {
 
     @Query("UPDATE price_history SET price = price * :factor WHERE assetId = :assetId")
     suspend fun adjustHistoryForAsset(assetId: Int, factor: Double)
+
+    @Update
+    suspend fun updateHistory(history: PriceHistory)
+
+    @Query("SELECT * FROM gold_assets WHERE id = :id")
+    suspend fun getAsset(id: Int): GoldAsset?
+
+    @Query("SELECT * FROM price_history WHERE assetId = :assetId ORDER BY dateTimestamp ASC LIMIT 1")
+    suspend fun getEarliestHistory(assetId: Int): PriceHistory?
 }

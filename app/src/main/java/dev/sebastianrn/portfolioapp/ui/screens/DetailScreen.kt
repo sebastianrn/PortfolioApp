@@ -1,5 +1,6 @@
 package dev.sebastianrn.portfolioapp.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -61,15 +62,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.sebastianrn.portfolioapp.data.GoldAsset
-import dev.sebastianrn.portfolioapp.data.PriceHistory
-import dev.sebastianrn.portfolioapp.ui.components.ModernTextField
-import dev.sebastianrn.portfolioapp.ui.components.rememberMarker
-import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
-import dev.sebastianrn.portfolioapp.ui.theme.LossRed
-import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen
-import dev.sebastianrn.portfolioapp.util.toCurrencyString
-import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
@@ -82,6 +74,15 @@ import com.patrykandpatrick.vico.core.component.text.textComponent
 import com.patrykandpatrick.vico.core.entry.entryModelOf
 import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.AssetType
+import dev.sebastianrn.portfolioapp.data.GoldAsset
+import dev.sebastianrn.portfolioapp.data.PriceHistory
+import dev.sebastianrn.portfolioapp.ui.components.ModernTextField
+import dev.sebastianrn.portfolioapp.ui.components.rememberMarker
+import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
+import dev.sebastianrn.portfolioapp.ui.theme.LossRed
+import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen
+import dev.sebastianrn.portfolioapp.util.toCurrencyString
+import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -96,11 +97,14 @@ fun DetailScreen(
     onBackClick: () -> Unit
 ) {
     val asset by viewModel.getAssetById(coinId).collectAsState(initial = null)
-    val history by viewModel.getHistoryForAsset(coinId).collectAsState(initial = emptyList<PriceHistory>())
+    val history by viewModel.getHistoryForAsset(coinId)
+        .collectAsState(initial = emptyList<PriceHistory>())
     val currency by viewModel.currentCurrency.collectAsState()
 
     var showSheet by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
+
+    var historyRecordToEdit by remember { mutableStateOf<PriceHistory?>(null) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -188,7 +192,16 @@ fun DetailScreen(
 
             // 4. History Items
             items(history) { record ->
-                HistoryItemCard(date = record.dateTimestamp, price = record.price, currency = currency)
+                HistoryItemCard(
+                    record = record, // Pass the whole object
+                    currency = currency,
+                    onEditClick = {
+                        // Only allow edit if it is manual
+                        if (record.isManual) {
+                            historyRecordToEdit = record
+                        }
+                    }
+                )
             }
         }
     }
@@ -213,6 +226,25 @@ fun DetailScreen(
             }
         )
     }
+
+    if (historyRecordToEdit != null) {
+        UpdatePriceSheet(
+            onDismiss = { historyRecordToEdit = null },
+            initialPrice = historyRecordToEdit!!.price,
+            initialDate = historyRecordToEdit!!.dateTimestamp,
+            isEditMode = true, // Change title to "Edit Record"
+            onSave = { price, date ->
+                viewModel.updateHistoryRecord(
+                    historyId = historyRecordToEdit!!.historyId,
+                    assetId = historyRecordToEdit!!.assetId,
+                    newPrice = price,
+                    newDate = date,
+                    isManual = true
+                )
+                historyRecordToEdit = null
+            }
+        )
+    }
 }
 
 @Composable
@@ -220,7 +252,9 @@ fun AssetStatsHeader(asset: GoldAsset, currency: String) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
@@ -277,7 +311,11 @@ fun AssetStatsHeader(asset: GoldAsset, currency: String) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text(stringResource(R.string.quantity_label), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        stringResource(R.string.quantity_label),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                     Text(
                         "${asset.quantity}",
                         color = MaterialTheme.colorScheme.onSurface,
@@ -286,7 +324,11 @@ fun AssetStatsHeader(asset: GoldAsset, currency: String) {
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text(stringResource(R.string.current_value_label), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        stringResource(R.string.current_value_label),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                     Text(
                         asset.totalCurrentValue.toCurrencyString(currency),
                         color = GoldStart,
@@ -306,7 +348,11 @@ fun AssetStatsHeader(asset: GoldAsset, currency: String) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text(stringResource(R.string.bought_at_label), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        stringResource(R.string.bought_at_label),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                     Text(
                         asset.originalPrice.toCurrencyString(currency),
                         color = MaterialTheme.colorScheme.onSurface,
@@ -317,14 +363,19 @@ fun AssetStatsHeader(asset: GoldAsset, currency: String) {
 
                 // UPDATED PROFIT/LOSS SECTION
                 Column(horizontalAlignment = Alignment.End) {
-                    Text(stringResource(R.string.total_return), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        stringResource(R.string.total_return),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
 
                     val isProfit = asset.totalProfitOrLoss >= 0
                     val color = if (isProfit) ProfitGreen else LossRed
 
                     // Calculate Percentage
                     val totalInvested = asset.originalPrice * asset.quantity
-                    val percentage = if (totalInvested > 0) (asset.totalProfitOrLoss / totalInvested) * 100 else 0.0
+                    val percentage =
+                        if (totalInvested > 0) (asset.totalProfitOrLoss / totalInvested) * 100 else 0.0
 
                     // 1. Percentage with Arrow
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -360,11 +411,17 @@ fun PerformanceCard(points: List<Pair<Long, Double>>) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth().padding(16.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = null, tint = GoldStart)
+                Icon(
+                    Icons.AutoMirrored.Filled.ShowChart,
+                    contentDescription = null,
+                    tint = GoldStart
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = stringResource(R.string.performance_title),
@@ -438,12 +495,18 @@ fun SingleCoinChart(points: List<Pair<Long, Double>>) {
 }
 
 @Composable
-fun HistoryItemCard(date: Long, price: Double, currency: String) {
+fun HistoryItemCard(
+    record: PriceHistory,
+    currency: String,
+    onEditClick: () -> Unit
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            // Add click listener only if Manual
+            .clickable(enabled = record.isManual) { onEditClick() },
         elevation = CardDefaults.cardElevation(1.dp)
     ) {
         Row(
@@ -456,20 +519,33 @@ fun HistoryItemCard(date: Long, price: Double, currency: String) {
                 val sdfTime = SimpleDateFormat("HH:mm", Locale.getDefault())
 
                 Text(
-                    text = sdfDate.format(Date(date)),
+                    text = sdfDate.format(Date(record.dateTimestamp)),
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
-                Text(
-                    text = sdfTime.format(Date(date)),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 14.sp
-                )
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = sdfTime.format(Date(record.dateTimestamp)),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 14.sp
+                    )
+                    // Visual indicator that this is editable
+                    if (record.isManual) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Editable",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
+                }
             }
 
             Text(
-                text = price.toCurrencyString(currency),
+                text = record.price.toCurrencyString(currency),
                 color = GoldStart,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 18.sp
@@ -480,9 +556,17 @@ fun HistoryItemCard(date: Long, price: Double, currency: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UpdatePriceSheet(onDismiss: () -> Unit, onSave: (Double, Long) -> Unit) {
-    var price by remember { mutableStateOf("") }
-    var selectedDate by remember { mutableLongStateOf(System.currentTimeMillis()) }
+fun UpdatePriceSheet(
+    onDismiss: () -> Unit,
+    initialPrice: Double? = null,
+    initialDate: Long? = null,
+    isEditMode: Boolean = false,
+    onSave: (Double, Long) -> Unit
+) {
+    // Initialize with passed values or defaults
+    var price by remember { mutableStateOf(initialPrice?.toString() ?: "") }
+    var selectedDate by remember { mutableLongStateOf(initialDate ?: System.currentTimeMillis()) }
+
     var showDatePicker by remember { mutableStateOf(false) }
     val sdf = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
 
@@ -516,7 +600,8 @@ fun UpdatePriceSheet(onDismiss: () -> Unit, onSave: (Double, Long) -> Unit) {
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Text(
-                text = stringResource(R.string.update_value_title),
+                // Dynamic Title
+                text = if (isEditMode) "Edit Record" else stringResource(R.string.update_value_title),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
@@ -539,7 +624,7 @@ fun UpdatePriceSheet(onDismiss: () -> Unit, onSave: (Double, Long) -> Unit) {
             ModernTextField(
                 value = price,
                 onValueChange = { price = it },
-                label = "New Price",
+                label = "Price",
                 isNumber = true
             )
 
@@ -549,12 +634,13 @@ fun UpdatePriceSheet(onDismiss: () -> Unit, onSave: (Double, Long) -> Unit) {
                 onClick = { if (price.isNotEmpty()) onSave(price.toDouble(), selectedDate) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = GoldStart, contentColor = Color.Black)
-            ) { Text(stringResource(R.string.save_action)) }
+            ) { Text(if (isEditMode) "Update" else stringResource(R.string.save_action)) }
 
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
+
 @Composable
 fun EditAssetDialog(
     asset: GoldAsset,
@@ -576,12 +662,20 @@ fun EditAssetDialog(
         title = { Text("Edit Asset") },
         text = {
             Column {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
                     FilterChip(
                         selected = type == AssetType.COIN,
                         onClick = { type = AssetType.COIN },
                         label = { Text(stringResource(R.string.type_coin)) },
-                        leadingIcon = { if (type == AssetType.COIN) Icon(Icons.Default.Check, null) }
+                        leadingIcon = {
+                            if (type == AssetType.COIN) Icon(
+                                Icons.Default.Check,
+                                null
+                            )
+                        }
                     )
                     FilterChip(
                         selected = type == AssetType.BAR,
@@ -593,13 +687,33 @@ fun EditAssetDialog(
                 Spacer(modifier = Modifier.height(12.dp))
                 ModernTextField(value = name, onValueChange = { name = it }, label = "Name")
                 Spacer(modifier = Modifier.height(12.dp))
-                ModernTextField(value = qty, onValueChange = { if (it.all { c -> c.isDigit() }) qty = it }, label = "Quantity", isNumber = true)
+                ModernTextField(
+                    value = qty,
+                    onValueChange = { if (it.all { c -> c.isDigit() }) qty = it },
+                    label = "Quantity",
+                    isNumber = true
+                )
                 Spacer(modifier = Modifier.height(12.dp))
-                ModernTextField(value = weight, onValueChange = { weight = it }, label = "Weight (g)", isNumber = true)
+                ModernTextField(
+                    value = weight,
+                    onValueChange = { weight = it },
+                    label = "Weight (g)",
+                    isNumber = true
+                )
                 Spacer(modifier = Modifier.height(12.dp))
-                ModernTextField(value = premium, onValueChange = { premium = it }, label = "Premium (%)", isNumber = true)
+                ModernTextField(
+                    value = premium,
+                    onValueChange = { premium = it },
+                    label = "Premium (%)",
+                    isNumber = true
+                )
                 Spacer(modifier = Modifier.height(12.dp))
-                ModernTextField(value = price, onValueChange = { price = it }, label = "Bought At (Total)", isNumber = true)
+                ModernTextField(
+                    value = price,
+                    onValueChange = { price = it },
+                    label = "Bought At (Total)",
+                    isNumber = true
+                )
             }
         },
         confirmButton = {
@@ -616,11 +730,17 @@ fun EditAssetDialog(
                         )
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = GoldStart, contentColor = Color.Black)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = GoldStart,
+                    contentColor = Color.Black
+                )
             ) { Text("Update") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, colors = ButtonDefaults.textButtonColors(contentColor = dev.sebastianrn.portfolioapp.ui.theme.TextGray)) {
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(contentColor = dev.sebastianrn.portfolioapp.ui.theme.TextGray)
+            ) {
                 Text(stringResource(R.string.cancel_action))
             }
         }
