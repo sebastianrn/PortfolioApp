@@ -28,6 +28,12 @@
     <string name="delete_title">Delete Asset</string>
     <string name="delete_message">Are you sure you want to delete \'%1$s\'? This action cannot be undone.</string>
 
+    <!-- Update price from api -->
+    <string name="fetching_price_from_api">Fetching Spot Price...</string>
+    <string name="fetching_price_from_api_failed">Update Failed:</string>
+    <string name="fetching_price_from_api_updated">Updated %1$s assets.</string>
+    <string name="api_key_missing">API Key missing in local.properties</string>
+
     <!-- Detail Screen -->
     <string name="back_desc">Back</string>
     <string name="update_value_fab">Update Value</string>

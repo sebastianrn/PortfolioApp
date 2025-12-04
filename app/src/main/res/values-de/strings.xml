@@ -28,6 +28,12 @@
     <string name="delete_title">Löschen bestätigen</string>
     <string name="delete_message">Möchten Sie \'%1$s\' wirklich löschen? Dies kann nicht rückgängig gemacht werden.</string>
 
+    <!-- Update price from api -->
+    <string name="fetching_price_from_api">Fetching Spot Price...</string>
+    <string name="fetching_price_from_api_failed">Update Failed:</string>
+    <string name="fetching_price_from_api_updated">Updated %1$s assets.</string>
+    <string name="api_key_missing">API Key missing in local.properties</string>
+
     <!-- Detail Screen -->
     <string name="back_desc">Zurück</string>
     <string name="update_value_fab">Wert aktualisieren</string>
