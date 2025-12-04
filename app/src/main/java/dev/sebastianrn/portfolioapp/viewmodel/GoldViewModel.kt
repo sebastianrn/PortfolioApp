@@ -4,6 +4,7 @@ import android.app.Application
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import dev.sebastianrn.portfolioapp.BuildConfig
 import dev.sebastianrn.portfolioapp.data.AppDatabase
 import dev.sebastianrn.portfolioapp.data.AssetType
 import dev.sebastianrn.portfolioapp.data.GoldAsset
@@ -87,7 +88,16 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
                     Toast.makeText(application, "Fetching Spot Price...", Toast.LENGTH_SHORT).show()
                 }
 
-                val apiKey = "***REMOVED***"
+                val apiKey = BuildConfig.GOLD_API_KEY
+
+                // Check if key is missing (optional safety)
+                if (apiKey.isEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(application, "API Key missing in local.properties", Toast.LENGTH_LONG).show()
+                    }
+                    return@launch
+                }
+
                 val response = NetworkModule.api.getGoldPrice("CHF", apiKey)
                 val spotPricePerGram24k = response.price_gram_24k
 
