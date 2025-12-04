@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.portfolioapp"
+    namespace = "dev.sebastianrn.portfolioapp"
     compileSdk = 36 // Targeting Android 14/15 (Safe stable version)
 
     defaultConfig {
-        applicationId = "com.example.portfolioapp"
+        applicationId = "dev.sebastianrn.portfolioapp"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
