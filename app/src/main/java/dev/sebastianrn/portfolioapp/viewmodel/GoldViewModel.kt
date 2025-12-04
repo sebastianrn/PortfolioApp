@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Calendar
+import kotlin.math.abs
 
 data class PortfolioSummary(
     val totalValue: Double = 0.0,
@@ -260,5 +261,48 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
             points.add(date to totalValue)
         }
         return points
+    }
+
+    fun updateAsset(
+        id: Int,
+        name: String,
+        type: AssetType,
+        originalPrice: Double,
+        quantity: Int,
+        weight: Double,
+        premium: Double
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            // 1. Get current state to calculate ratios
+            val oldAsset = dao.getAssetById(id).first()
+
+            // 2. Calculate Adjustment Factor
+            // Logic: New Value / Old Value
+            // Value is proportional to Weight * (1 + Premium%)
+            val oldValueFactor = oldAsset.weightInGrams * (1 + oldAsset.premiumPercent / 100.0)
+            val newValueFactor = weight * (1 + premium / 100.0)
+
+            val adjustmentFactor = if (oldValueFactor > 0) newValueFactor / oldValueFactor else 1.0
+
+            // 3. Calculate new Current Price (Manual adjustment to avoid waiting for API)
+            val newCurrentPrice = oldAsset.currentPrice * adjustmentFactor
+
+            // 4. Update the Asset Entity
+            val updatedAsset = oldAsset.copy(
+                name = name,
+                type = type,
+                originalPrice = originalPrice,
+                currentPrice = newCurrentPrice,
+                quantity = quantity,
+                weightInGrams = weight,
+                premiumPercent = premium
+            )
+            dao.update(updatedAsset)
+
+            // 5. Update History if the intrinsic value factors changed
+            if (abs(adjustmentFactor - 1.0) > 0.0001) {
+                dao.adjustHistoryForAsset(id, adjustmentFactor)
+            }
+        }
     }
 }

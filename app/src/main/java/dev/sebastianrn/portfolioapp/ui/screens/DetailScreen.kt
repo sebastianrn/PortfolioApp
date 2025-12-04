@@ -19,7 +19,10 @@ import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -28,6 +31,7 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -77,6 +81,7 @@ import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
 import com.patrykandpatrick.vico.core.component.text.textComponent
 import com.patrykandpatrick.vico.core.entry.entryModelOf
 import dev.sebastianrn.portfolioapp.R
+import dev.sebastianrn.portfolioapp.data.AssetType
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -95,6 +100,7 @@ fun DetailScreen(
     val currency by viewModel.currentCurrency.collectAsState()
 
     var showSheet by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -112,6 +118,16 @@ fun DetailScreen(
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                },
+                actions = {
+                    // NEW: Edit Button
+                    IconButton(onClick = { showEditDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit Asset",
                             tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
@@ -183,6 +199,17 @@ fun DetailScreen(
             onSave = { price, date ->
                 viewModel.addDailyRate(coinId, price, date)
                 showSheet = false
+            }
+        )
+    }
+
+    if (showEditDialog && asset != null) {
+        EditAssetDialog(
+            asset = asset!!,
+            onDismiss = { showEditDialog = false },
+            onUpdate = { name, type, price, qty, weight, premium ->
+                viewModel.updateAsset(asset!!.id, name, type, price, qty, weight, premium)
+                showEditDialog = false
             }
         )
     }
@@ -527,4 +554,75 @@ fun UpdatePriceSheet(onDismiss: () -> Unit, onSave: (Double, Long) -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
+}
+@Composable
+fun EditAssetDialog(
+    asset: GoldAsset,
+    onDismiss: () -> Unit,
+    onUpdate: (String, AssetType, Double, Int, Double, Double) -> Unit
+) {
+    var name by remember { mutableStateOf(asset.name) }
+    var type by remember { mutableStateOf(asset.type) }
+    var qty by remember { mutableStateOf(asset.quantity.toString()) }
+    var weight by remember { mutableStateOf(asset.weightInGrams.toString()) }
+    var premium by remember { mutableStateOf(asset.premiumPercent.toString()) }
+    var price by remember { mutableStateOf(asset.originalPrice.toString()) }
+
+    AlertDialog(
+        containerColor = MaterialTheme.colorScheme.surface,
+        titleContentColor = MaterialTheme.colorScheme.onSurface,
+        textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Asset") },
+        text = {
+            Column {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    FilterChip(
+                        selected = type == AssetType.COIN,
+                        onClick = { type = AssetType.COIN },
+                        label = { Text(stringResource(R.string.type_coin)) },
+                        leadingIcon = { if (type == AssetType.COIN) Icon(Icons.Default.Check, null) }
+                    )
+                    FilterChip(
+                        selected = type == AssetType.BAR,
+                        onClick = { type = AssetType.BAR },
+                        label = { Text(stringResource(R.string.type_bar)) },
+                        leadingIcon = { if (type == AssetType.BAR) Icon(Icons.Default.Check, null) }
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                ModernTextField(value = name, onValueChange = { name = it }, label = "Name")
+                Spacer(modifier = Modifier.height(12.dp))
+                ModernTextField(value = qty, onValueChange = { if (it.all { c -> c.isDigit() }) qty = it }, label = "Quantity", isNumber = true)
+                Spacer(modifier = Modifier.height(12.dp))
+                ModernTextField(value = weight, onValueChange = { weight = it }, label = "Weight (g)", isNumber = true)
+                Spacer(modifier = Modifier.height(12.dp))
+                ModernTextField(value = premium, onValueChange = { premium = it }, label = "Premium (%)", isNumber = true)
+                Spacer(modifier = Modifier.height(12.dp))
+                ModernTextField(value = price, onValueChange = { price = it }, label = "Bought At (Total)", isNumber = true)
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (name.isNotEmpty()) {
+                        onUpdate(
+                            name,
+                            type,
+                            price.toDoubleOrNull() ?: 0.0,
+                            qty.toIntOrNull() ?: 1,
+                            weight.toDoubleOrNull() ?: 0.0,
+                            premium.toDoubleOrNull() ?: 0.0
+                        )
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = GoldStart, contentColor = Color.Black)
+            ) { Text("Update") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, colors = ButtonDefaults.textButtonColors(contentColor = dev.sebastianrn.portfolioapp.ui.theme.TextGray)) {
+                Text(stringResource(R.string.cancel_action))
+            }
+        }
+    )
 }

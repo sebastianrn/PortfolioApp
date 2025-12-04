@@ -44,21 +44,18 @@ interface GoldAssetDao {
     @Query("SELECT * FROM price_history ORDER BY dateTimestamp ASC")
     fun getAllHistory(): Flow<List<PriceHistory>>
 
-    // NEW: Bulk inserts for restoring backup
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAllAssets(assets: List<GoldAsset>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAllHistory(history: List<PriceHistory>)
 
-    // NEW: Nuke tables before restore
     @Query("DELETE FROM gold_assets")
     suspend fun clearAssets()
 
     @Query("DELETE FROM price_history")
     suspend fun clearHistory()
 
-    // NEW: Transaction to do it all atomically
     @Transaction
     suspend fun restoreDatabase(assets: List<GoldAsset>, history: List<PriceHistory>) {
         clearHistory() // History depends on Assets, delete first (or Cascade handles it)
@@ -67,10 +64,12 @@ interface GoldAssetDao {
         insertAllHistory(history)
     }
 
-    // NEW: Bulk update for Currency Conversion
     @Query("UPDATE gold_assets SET originalPrice = originalPrice * :factor, currentPrice = currentPrice * :factor")
     suspend fun applyCurrencyFactorToAssets(factor: Double)
 
     @Query("UPDATE price_history SET price = price * :factor")
     suspend fun applyCurrencyFactorToHistory(factor: Double)
+
+    @Query("UPDATE price_history SET price = price * :factor WHERE assetId = :assetId")
+    suspend fun adjustHistoryForAsset(assetId: Int, factor: Double)
 }
