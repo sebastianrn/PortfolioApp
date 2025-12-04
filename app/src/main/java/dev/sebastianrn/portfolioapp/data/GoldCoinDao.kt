@@ -3,7 +3,9 @@ package dev.sebastianrn.portfolioapp.data
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
@@ -41,4 +43,27 @@ interface GoldAssetDao {
 
     @Query("SELECT * FROM price_history ORDER BY dateTimestamp ASC")
     fun getAllHistory(): Flow<List<PriceHistory>>
+
+    // NEW: Bulk inserts for restoring backup
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllAssets(assets: List<GoldAsset>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllHistory(history: List<PriceHistory>)
+
+    // NEW: Nuke tables before restore
+    @Query("DELETE FROM gold_assets")
+    suspend fun clearAssets()
+
+    @Query("DELETE FROM price_history")
+    suspend fun clearHistory()
+
+    // NEW: Transaction to do it all atomically
+    @Transaction
+    suspend fun restoreDatabase(assets: List<GoldAsset>, history: List<PriceHistory>) {
+        clearHistory() // History depends on Assets, delete first (or Cascade handles it)
+        clearAssets()
+        insertAllAssets(assets)
+        insertAllHistory(history)
+    }
 }

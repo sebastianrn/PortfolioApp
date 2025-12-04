@@ -4,9 +4,11 @@ import android.app.Application
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
 import dev.sebastianrn.portfolioapp.BuildConfig
 import dev.sebastianrn.portfolioapp.data.AppDatabase
 import dev.sebastianrn.portfolioapp.data.AssetType
+import dev.sebastianrn.portfolioapp.data.BackupData
 import dev.sebastianrn.portfolioapp.data.GoldAsset
 import dev.sebastianrn.portfolioapp.data.NetworkModule
 import dev.sebastianrn.portfolioapp.data.PriceHistory
@@ -180,5 +182,30 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
             points.add(date to totalValue)
         }
         return points
+    }
+
+    // 4. EXPORT / IMPORT
+    suspend fun createBackupJson(): String {
+        // Get current snapshot of data
+        val assets = dao.getAllAssets().first()
+        val history = dao.getAllHistory().first()
+
+        val backup = BackupData(assets = assets, history = history)
+        return Gson().toJson(backup)
+    }
+
+    suspend fun restoreFromBackupJson(jsonString: String): Boolean {
+        return try {
+            val backup = Gson().fromJson(jsonString, BackupData::class.java)
+            if (backup.assets.isNotEmpty()) {
+                dao.restoreDatabase(backup.assets, backup.history)
+                true // Success
+            } else {
+                false // Empty backup
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false // Failed
+        }
     }
 }
