@@ -66,4 +66,11 @@ interface GoldAssetDao {
         insertAllAssets(assets)
         insertAllHistory(history)
     }
+
+    // NEW: Bulk update for Currency Conversion
+    @Query("UPDATE gold_assets SET originalPrice = originalPrice * :factor, currentPrice = currentPrice * :factor")
+    suspend fun applyCurrencyFactorToAssets(factor: Double)
+
+    @Query("UPDATE price_history SET price = price * :factor")
+    suspend fun applyCurrencyFactorToHistory(factor: Double)
 }

@@ -1,6 +1,5 @@
 package dev.sebastianrn.portfolioapp.ui.screens
 
-// Vico 1.14.0 Imports
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -93,6 +92,7 @@ fun DetailScreen(
 ) {
     val asset by viewModel.getAssetById(coinId).collectAsState(initial = null)
     val history by viewModel.getHistoryForAsset(coinId).collectAsState(initial = emptyList<PriceHistory>())
+    val currency by viewModel.currentCurrency.collectAsState()
 
     var showSheet by remember { mutableStateOf(false) }
 
@@ -137,7 +137,7 @@ fun DetailScreen(
         ) {
             // 1. Stats Header
             item {
-                asset?.let { a -> AssetStatsHeader(a) }
+                asset?.let { a -> AssetStatsHeader(a, currency) }
             }
 
             // 2. Performance Chart
@@ -172,7 +172,7 @@ fun DetailScreen(
 
             // 4. History Items
             items(history) { record ->
-                HistoryItemCard(date = record.dateTimestamp, price = record.price)
+                HistoryItemCard(date = record.dateTimestamp, price = record.price, currency = currency)
             }
         }
     }
@@ -189,7 +189,7 @@ fun DetailScreen(
 }
 
 @Composable
-fun AssetStatsHeader(asset: GoldAsset) {
+fun AssetStatsHeader(asset: GoldAsset, currency: String) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(24.dp),
@@ -261,7 +261,7 @@ fun AssetStatsHeader(asset: GoldAsset) {
                 Column(horizontalAlignment = Alignment.End) {
                     Text(stringResource(R.string.current_value_label), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     Text(
-                        asset.totalCurrentValue.toCurrencyString,
+                        asset.totalCurrentValue.toCurrencyString(currency),
                         color = GoldStart,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 24.sp
@@ -281,7 +281,7 @@ fun AssetStatsHeader(asset: GoldAsset) {
                 Column {
                     Text(stringResource(R.string.bought_at_label), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     Text(
-                        asset.originalPrice.toCurrencyString,
+                        asset.originalPrice.toCurrencyString(currency),
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp
@@ -299,7 +299,7 @@ fun AssetStatsHeader(asset: GoldAsset) {
                     val totalInvested = asset.originalPrice * asset.quantity
                     val percentage = if (totalInvested > 0) (asset.totalProfitOrLoss / totalInvested) * 100 else 0.0
 
-                    // 1. Percentage with Arrow (No brackets, No +/- char)
+                    // 1. Percentage with Arrow
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = if (isProfit) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
@@ -315,9 +315,9 @@ fun AssetStatsHeader(asset: GoldAsset) {
                         )
                     }
 
-                    // 2. Money Value (Below, absolute value only)
+                    // 2. Money Value
                     Text(
-                        text = abs(asset.totalProfitOrLoss).toCurrencyString,
+                        text = abs(asset.totalProfitOrLoss).toCurrencyString(currency),
                         color = color,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
@@ -328,7 +328,6 @@ fun AssetStatsHeader(asset: GoldAsset) {
     }
 }
 
-// ... PerformanceCard, SingleCoinChart, HistoryItemCard, UpdatePriceSheet (Unchanged) ...
 @Composable
 fun PerformanceCard(points: List<Pair<Long, Double>>) {
     Card(
@@ -355,7 +354,6 @@ fun PerformanceCard(points: List<Pair<Long, Double>>) {
 
 @Composable
 fun SingleCoinChart(points: List<Pair<Long, Double>>) {
-    // Handle single point case by duplicating it to allow drawing a line
     val chartPoints = if (points.size == 1) {
         listOf(points[0], points[0].copy(first = points[0].first + 1))
     } else {
@@ -413,7 +411,7 @@ fun SingleCoinChart(points: List<Pair<Long, Double>>) {
 }
 
 @Composable
-fun HistoryItemCard(date: Long, price: Double) {
+fun HistoryItemCard(date: Long, price: Double, currency: String) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
@@ -444,7 +442,7 @@ fun HistoryItemCard(date: Long, price: Double) {
             }
 
             Text(
-                text = price.toCurrencyString,
+                text = price.toCurrencyString(currency),
                 color = GoldStart,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 18.sp
@@ -514,7 +512,7 @@ fun UpdatePriceSheet(onDismiss: () -> Unit, onSave: (Double, Long) -> Unit) {
             ModernTextField(
                 value = price,
                 onValueChange = { price = it },
-                label = "New Price (CHF)",
+                label = "New Price",
                 isNumber = true
             )
 

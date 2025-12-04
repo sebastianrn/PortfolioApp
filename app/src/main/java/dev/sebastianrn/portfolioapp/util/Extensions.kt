@@ -2,6 +2,15 @@ package dev.sebastianrn.portfolioapp.util
 
 import java.util.Locale
 
-// Extension property to convert any Double to a CHF string
-val Double.toCurrencyString: String
-    get() = "CHF %.2f".format(Locale.US, this)
+// Extension function to convert any Double to a localized currency string
+fun Double.toCurrencyString(currencyCode: String): String {
+    val symbol = when (currencyCode) {
+        "USD" -> "$"
+        "EUR" -> "€"
+        "GBP" -> "£"
+        "JPY" -> "¥"
+        "CHF" -> "CHF "
+        else -> "$currencyCode "
+    }
+    return "$symbol%.2f".format(Locale.US, this)
+}

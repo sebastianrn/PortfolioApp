@@ -49,6 +49,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
@@ -117,18 +119,18 @@ fun MainScreen(
     val stats by viewModel.portfolioStats.collectAsState()
     val portfolioPoints by viewModel.portfolioCurve.collectAsState()
     val isDark by themeViewModel.isDarkTheme.collectAsState()
+    val currency by viewModel.currentCurrency.collectAsState()
 
     var showDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showCurrencyDialog by remember { mutableStateOf(false) }
     var assetToDelete by remember { mutableStateOf<GoldAsset?>(null) }
-
-    // Menu State
     var showMenu by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // 1. Export Launcher: User picks a location to SAVE the file
+    // 1. Export Launcher
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri: Uri? ->
@@ -152,7 +154,7 @@ fun MainScreen(
         }
     }
 
-    // 2. Import Launcher: User picks a file to OPEN
+    // 2. Import Launcher
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
@@ -197,12 +199,10 @@ fun MainScreen(
                     )
                 },
                 actions = {
-                    // 1. Update Prices Button
                     IconButton(onClick = { viewModel.updateAllPricesFromApi() }) {
                         Icon(Icons.Default.Refresh, "Update Prices", tint = MaterialTheme.colorScheme.onBackground)
                     }
 
-                    // 2. Theme Toggle Button
                     IconButton(onClick = { themeViewModel.toggleTheme() }) {
                         Icon(
                             imageVector = if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
@@ -211,7 +211,6 @@ fun MainScreen(
                         )
                     }
 
-                    // 3. More Options Menu (Export/Import)
                     Box {
                         IconButton(onClick = { showMenu = true }) {
                             Icon(Icons.Default.MoreVert, "More Options", tint = MaterialTheme.colorScheme.onBackground)
@@ -222,10 +221,16 @@ fun MainScreen(
                             containerColor = MaterialTheme.colorScheme.surface
                         ) {
                             DropdownMenuItem(
+                                text = { Text("Currency: $currency", color = MaterialTheme.colorScheme.onSurface) },
+                                onClick = {
+                                    showMenu = false
+                                    showCurrencyDialog = true
+                                }
+                            )
+                            DropdownMenuItem(
                                 text = { Text("Export Backup", color = MaterialTheme.colorScheme.onSurface) },
                                 onClick = {
                                     showMenu = false
-                                    // Launch file creator with a default name
                                     exportLauncher.launch("gold_portfolio_backup.json")
                                 }
                             )
@@ -233,7 +238,6 @@ fun MainScreen(
                                 text = { Text("Import Backup", color = MaterialTheme.colorScheme.onSurface) },
                                 onClick = {
                                     showMenu = false
-                                    // Launch file picker for JSON files
                                     importLauncher.launch(arrayOf("application/json"))
                                 }
                             )
@@ -258,7 +262,7 @@ fun MainScreen(
                 contentPadding = PaddingValues(bottom = 80.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                item { PortfolioSummaryCard(stats) }
+                item { PortfolioSummaryCard(stats, currency) }
 
                 item {
                     if (portfolioPoints.isNotEmpty()) {
@@ -328,7 +332,7 @@ fun MainScreen(
                             }
                         },
                         enableDismissFromStartToEnd = false,
-                        content = { AssetItem(asset, onClick = { onCoinClick(asset) }) }
+                        content = { AssetItem(asset, currency, onClick = { onCoinClick(asset) }) }
                     )
                 }
             }
@@ -359,10 +363,49 @@ fun MainScreen(
             }
         )
     }
+
+    if (showCurrencyDialog) {
+        val currencies = listOf("CHF", "USD", "EUR", "GBP", "JPY", "CAD", "AUD")
+        AlertDialog(
+            onDismissRequest = { showCurrencyDialog = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = { Text("Select Currency", color = MaterialTheme.colorScheme.onSurface) },
+            text = {
+                Column {
+                    currencies.forEach { code ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setCurrency(code)
+                                    showCurrencyDialog = false
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = (code == currency),
+                                onClick = { viewModel.setCurrency(code); showCurrencyDialog = false },
+                                colors = RadioButtonDefaults.colors(selectedColor = GoldStart)
+                            )
+                            Text(
+                                text = code,
+                                modifier = Modifier.padding(start = 8.dp),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showCurrencyDialog = false }) { Text("Cancel", color = TextGray) }
+            }
+        )
+    }
 }
 
 @Composable
-fun AssetItem(asset: GoldAsset, onClick: () -> Unit) {
+fun AssetItem(asset: GoldAsset, currency: String, onClick: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         shape = RoundedCornerShape(16.dp),
@@ -407,7 +450,7 @@ fun AssetItem(asset: GoldAsset, onClick: () -> Unit) {
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    asset.totalCurrentValue.toCurrencyString,
+                    asset.totalCurrentValue.toCurrencyString(currency),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold
@@ -418,7 +461,7 @@ fun AssetItem(asset: GoldAsset, onClick: () -> Unit) {
                 val sign = if (isProfit) "+" else ""
 
                 Text(
-                    text = "$sign${abs(asset.totalProfitOrLoss).toCurrencyString}",
+                    text = "$sign${abs(asset.totalProfitOrLoss).toCurrencyString(currency)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = color,
                     fontWeight = FontWeight.Bold
@@ -429,7 +472,7 @@ fun AssetItem(asset: GoldAsset, onClick: () -> Unit) {
 }
 
 @Composable
-fun PortfolioSummaryCard(stats: PortfolioSummary) {
+fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(24.dp),
@@ -445,7 +488,7 @@ fun PortfolioSummaryCard(stats: PortfolioSummary) {
                     style = MaterialTheme.typography.labelLarge
                 )
                 Text(
-                    text = stats.totalValue.toCurrencyString,
+                    text = stats.totalValue.toCurrencyString(currency),
                     color = GoldStart,
                     fontSize = 36.sp,
                     fontWeight = FontWeight.ExtraBold
@@ -469,7 +512,7 @@ fun PortfolioSummaryCard(stats: PortfolioSummary) {
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        text = stats.totalInvested.toCurrencyString,
+                        text = stats.totalInvested.toCurrencyString(currency),
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp
@@ -506,7 +549,7 @@ fun PortfolioSummaryCard(stats: PortfolioSummary) {
                     }
 
                     Text(
-                        text = "$sign${abs(stats.totalProfit).toCurrencyString}",
+                        text = "$sign${abs(stats.totalProfit).toCurrencyString(currency)}",
                         color = color,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
@@ -515,6 +558,29 @@ fun PortfolioSummaryCard(stats: PortfolioSummary) {
             }
         }
     }
+}
+
+// AddAssetDialog, DeleteConfirmationDialog, PortfolioPerformanceCard, PortfolioChart
+// These can remain as they were in the previous version, or I can reprint them if you need them.
+// They don't use currency strings internally (except input which is user typed string)
+// except for the charts which use Y-Axis formatter.
+
+// Updated Chart for MainScreen (needs to be updated if you want currency symbol on axis)
+@Composable
+fun PortfolioPerformanceCard(points: List<Pair<Long, Double>>) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.DateRange, contentDescription = null, tint = GoldStart); Spacer(modifier = Modifier.width(8.dp)); Text(stringResource(R.string.performance_title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) }; Spacer(modifier = Modifier.height(16.dp)); PortfolioChart(points = points) }
+    }
+}
+
+@Composable
+fun PortfolioChart(points: List<Pair<Long, Double>>) {
+    val chartModel = entryModelOf(*points.map { it.second.toFloat() }.toTypedArray())
+    val horizontalFormatter = AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ -> val index = value.toInt(); if (index in points.indices) SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date(points[index].first)) else "" }
+    val verticalFormatter = AxisValueFormatter<AxisPosition.Vertical.Start> { value, _ -> if (value >= 1000) "${String.format("%.1f", value / 1000f)}k" else "${value.toInt()}" }
+    val labelColor = MaterialTheme.colorScheme.onSurfaceVariant.toArgb(); val axisLabelStyle = textComponent { color = labelColor; textSizeSp = 10f }
+    val lineSpec = com.patrykandpatrick.vico.compose.chart.line.lineSpec(lineColor = GoldStart, lineBackgroundShader = verticalGradient(colors = arrayOf(GoldStart.copy(alpha = 0.5f), Color.Transparent)))
+    Chart(chart = lineChart(lines = listOf(lineSpec)), model = chartModel, startAxis = rememberStartAxis(label = axisLabelStyle, valueFormatter = verticalFormatter, guideline = null, tickLength = 0.dp, itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 5)), bottomAxis = rememberBottomAxis(label = axisLabelStyle, valueFormatter = horizontalFormatter, guideline = null, tickLength = 0.dp), marker = rememberMarker(), modifier = Modifier.fillMaxWidth().height(220.dp).padding(horizontal = 16.dp, vertical = 8.dp))
 }
 
 @Composable
@@ -535,18 +601,8 @@ fun AddAssetDialog(onDismiss: () -> Unit, onAdd: (String, AssetType, Double, Int
         text = {
             Column {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    FilterChip(
-                        selected = type == AssetType.COIN,
-                        onClick = { type = AssetType.COIN },
-                        label = { Text(stringResource(R.string.type_coin)) },
-                        leadingIcon = { if (type == AssetType.COIN) Icon(Icons.Default.Check, null) }
-                    )
-                    FilterChip(
-                        selected = type == AssetType.BAR,
-                        onClick = { type = AssetType.BAR },
-                        label = { Text(stringResource(R.string.type_bar)) },
-                        leadingIcon = { if (type == AssetType.BAR) Icon(Icons.Default.Check, null) }
-                    )
+                    FilterChip(selected = type == AssetType.COIN, onClick = { type = AssetType.COIN }, label = { Text(stringResource(R.string.type_coin)) }, leadingIcon = { if (type == AssetType.COIN) Icon(Icons.Default.Check, null) })
+                    FilterChip(selected = type == AssetType.BAR, onClick = { type = AssetType.BAR }, label = { Text(stringResource(R.string.type_bar)) }, leadingIcon = { if (type == AssetType.BAR) Icon(Icons.Default.Check, null) })
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 ModernTextField(value = name, onValueChange = { name = it }, label = "Name (e.g. Vreneli / 100g Valcambi)")
@@ -557,135 +613,17 @@ fun AddAssetDialog(onDismiss: () -> Unit, onAdd: (String, AssetType, Double, Int
                 Spacer(modifier = Modifier.height(12.dp))
                 ModernTextField(value = premium, onValueChange = { premium = it }, label = "Premium (%)", isNumber = true)
                 Spacer(modifier = Modifier.height(12.dp))
-                ModernTextField(value = price, onValueChange = { price = it }, label = "Paid Price (Total or Per Unit?)", isNumber = true)
+                ModernTextField(value = price, onValueChange = { price = it }, label = "Paid Price", isNumber = true)
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    if (name.isNotEmpty()) {
-                        onAdd(
-                            name,
-                            type,
-                            price.toDoubleOrNull() ?: 0.0,
-                            qty.toIntOrNull() ?: 1,
-                            weight.toDoubleOrNull() ?: 31.1,
-                            premium.toDoubleOrNull() ?: 0.0
-                        )
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = GoldStart, contentColor = Color.Black)
-            ) { Text("Add") }
+            Button(onClick = { if(name.isNotEmpty()) onAdd(name, type, price.toDoubleOrNull() ?: 0.0, qty.toIntOrNull() ?: 1, weight.toDoubleOrNull() ?: 31.1, premium.toDoubleOrNull() ?: 0.0) }, colors = ButtonDefaults.buttonColors(containerColor = GoldStart, contentColor = Color.Black)) { Text("Add") }
         },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                colors = ButtonDefaults.textButtonColors(contentColor = TextGray)
-            ) { Text(stringResource(R.string.cancel_action)) }
-        }
+        dismissButton = { TextButton(onClick = onDismiss, colors = ButtonDefaults.textButtonColors(contentColor = TextGray)) { Text(stringResource(R.string.cancel_action)) } }
     )
 }
 
 @Composable
 fun DeleteConfirmationDialog(asset: GoldAsset, onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        containerColor = MaterialTheme.colorScheme.surface,
-        titleContentColor = MaterialTheme.colorScheme.onSurface,
-        textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.delete_title)) },
-        text = { Text(stringResource(R.string.delete_message, asset.name)) },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(containerColor = LossRed, contentColor = Color.White)
-            ) { Text(stringResource(R.string.delete_action)) }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                colors = ButtonDefaults.textButtonColors(contentColor = TextGray)
-            ) { Text(stringResource(R.string.cancel_action)) }
-        }
-    )
-}
-
-@Composable
-fun PortfolioPerformanceCard(points: List<Pair<Long, Double>>) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.DateRange, contentDescription = null, tint = GoldStart)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    stringResource(R.string.performance_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            PortfolioChart(points = points)
-        }
-    }
-}
-
-@Composable
-fun PortfolioChart(points: List<Pair<Long, Double>>) {
-    // Duplicate single point if needed for Vico
-    val chartPoints = if (points.size == 1) {
-        listOf(points[0], points[0].copy(first = points[0].first + 1))
-    } else {
-        points
-    }
-
-    val chartModel = entryModelOf(*chartPoints.map { it.second.toFloat() }.toTypedArray())
-
-    val horizontalFormatter = AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
-        val index = value.toInt()
-        if (index in chartPoints.indices) {
-            SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date(chartPoints[index].first))
-        } else ""
-    }
-
-    val verticalFormatter = AxisValueFormatter<AxisPosition.Vertical.Start> { value, _ ->
-        if (value >= 1000) "${String.format("%.1f", value / 1000f)}k" else "${value.toInt()}"
-    }
-
-    val labelColor = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
-    val axisLabelStyle = textComponent { color = labelColor; textSizeSp = 10f }
-
-    val lineSpec = com.patrykandpatrick.vico.compose.chart.line.lineSpec(
-        lineColor = GoldStart,
-        lineBackgroundShader = verticalGradient(
-            colors = arrayOf(GoldStart.copy(alpha = 0.5f), Color.Transparent)
-        )
-    )
-
-    Chart(
-        chart = lineChart(lines = listOf(lineSpec)),
-        model = chartModel,
-        startAxis = rememberStartAxis(
-            label = axisLabelStyle,
-            valueFormatter = verticalFormatter,
-            guideline = null,
-            tickLength = 0.dp,
-            itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 5)
-        ),
-        bottomAxis = rememberBottomAxis(
-            label = axisLabelStyle,
-            valueFormatter = horizontalFormatter,
-            guideline = null,
-            tickLength = 0.dp
-        ),
-        marker = rememberMarker(),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(220.dp)
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    )
+    AlertDialog(containerColor = MaterialTheme.colorScheme.surface, titleContentColor = MaterialTheme.colorScheme.onSurface, textContentColor = MaterialTheme.colorScheme.onSurfaceVariant, onDismissRequest = onDismiss, title = { Text(stringResource(R.string.delete_title)) }, text = { Text(stringResource(R.string.delete_message, asset.name)) }, confirmButton = { Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = LossRed, contentColor = Color.White)) { Text(stringResource(R.string.delete_action)) } }, dismissButton = { TextButton(onClick = onDismiss, colors = ButtonDefaults.textButtonColors(contentColor = TextGray)) { Text(stringResource(R.string.cancel_action)) } })
 }

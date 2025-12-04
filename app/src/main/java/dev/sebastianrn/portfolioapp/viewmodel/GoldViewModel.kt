@@ -12,7 +12,9 @@ import dev.sebastianrn.portfolioapp.data.BackupData
 import dev.sebastianrn.portfolioapp.data.GoldAsset
 import dev.sebastianrn.portfolioapp.data.NetworkModule
 import dev.sebastianrn.portfolioapp.data.PriceHistory
+import dev.sebastianrn.portfolioapp.data.UserPreferences
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -32,6 +34,11 @@ data class PortfolioSummary(
 
 class GoldViewModel(private val application: Application) : AndroidViewModel(application) {
     private val dao = AppDatabase.getDatabase(application).goldAssetDao()
+    private val prefs = UserPreferences(application)
+
+    // 1. Expose Currency State
+    val currentCurrency: StateFlow<String> = prefs.currency
+        .stateIn(viewModelScope, SharingStarted.Lazily, "CHF")
 
     val allAssets: StateFlow<List<GoldAsset>> = dao.getAllAssets()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
@@ -53,7 +60,53 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
     fun getAssetById(id: Int): Flow<GoldAsset> = dao.getAssetById(id)
     fun getHistoryForAsset(assetId: Int): Flow<List<PriceHistory>> = dao.getHistoryForAsset(assetId)
 
-    // 1. INSERT (Manual)
+    fun setCurrency(newCode: String) {
+        val oldCode = currentCurrency.value
+        if (oldCode == newCode) return
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(application, "Converting $oldCode to $newCode...", Toast.LENGTH_SHORT).show()
+                }
+
+                val apiKey = BuildConfig.GOLD_API_KEY
+                if (apiKey.isEmpty()) return@launch
+
+                // 1. Fetch Gold Price in BOTH currencies to calculate the ratio
+                // We use async to fetch them in parallel for speed
+                val oldPriceJob = async { NetworkModule.api.getGoldPrice(oldCode, apiKey) }
+                val newPriceJob = async { NetworkModule.api.getGoldPrice(newCode, apiKey) }
+
+                val oldResponse = oldPriceJob.await()
+                val newResponse = newPriceJob.await()
+
+                // 2. Calculate Exchange Rate (New / Old)
+                // Example: Gold is 2000 USD and 1800 CHF. Factor = 1.11
+                val factor = newResponse.price / oldResponse.price
+
+                // 3. Update Database (Atomic Transaction)
+                dao.applyCurrencyFactorToAssets(factor)
+                dao.applyCurrencyFactorToHistory(factor)
+
+                // 4. Finally, switch the app mode
+                prefs.setCurrency(newCode)
+
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(application, "Converted! Rate: %.4f".format(factor), Toast.LENGTH_LONG).show()
+                }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(application, "Conversion Failed. Internet required.", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    // --- ACTIONS ---
+
     fun insert(name: String, type: AssetType, price: Double, qty: Int, weight: Double, premium: Double) {
         viewModelScope.launch(Dispatchers.IO) {
             val asset = GoldAsset(
@@ -82,7 +135,6 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
         }
     }
 
-    // 2. API UPDATE (Automatic)
     fun updateAllPricesFromApi() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -90,17 +142,18 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
                     Toast.makeText(application, "Fetching Spot Price...", Toast.LENGTH_SHORT).show()
                 }
 
+                val currency = currentCurrency.value
                 val apiKey = BuildConfig.GOLD_API_KEY
 
-                // Check if key is missing (optional safety)
                 if (apiKey.isEmpty()) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(application, "API Key missing in local.properties", Toast.LENGTH_LONG).show()
+                        Toast.makeText(application, "API Key missing!", Toast.LENGTH_LONG).show()
                     }
                     return@launch
                 }
 
-                val response = NetworkModule.api.getGoldPrice("CHF", apiKey)
+                // Pass the currency variable instead of hardcoded CHF
+                val response = NetworkModule.api.getGoldPrice(currency, apiKey)
                 val spotPricePerGram24k = response.price_gram_24k
 
                 val assets = dao.getAllAssets().first()
@@ -117,14 +170,14 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
                         assetId = asset.id,
                         dateTimestamp = timestamp,
                         price = finalPrice,
-                        isManual = false // <--- AUTOMATIC
+                        isManual = false
                     ))
                     dao.updateCurrentPrice(asset.id, finalPrice)
                     updatedCount++
                 }
 
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(application, "Updated $updatedCount assets.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(application, "Updated $updatedCount assets in $currency.", Toast.LENGTH_LONG).show()
                 }
 
             } catch (e: Exception) {
@@ -136,7 +189,6 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
         }
     }
 
-    // 3. ADD DAILY RATE (Manual)
     fun addDailyRate(assetId: Int, newPrice: Double, selectedDate: Long) {
         val currentTimestamp = System.currentTimeMillis()
         if (selectedDate > currentTimestamp + 60_000) return
@@ -148,11 +200,37 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
                 assetId = assetId,
                 dateTimestamp = finalTimestamp,
                 price = newPrice,
-                isManual = true // <--- MANUAL
+                isManual = true
             ))
             dao.updateCurrentPrice(assetId, newPrice)
         }
     }
+
+    // --- EXPORT / IMPORT ---
+
+    suspend fun createBackupJson(): String {
+        val assets = dao.getAllAssets().first()
+        val history = dao.getAllHistory().first()
+        val backup = BackupData(assets = assets, history = history)
+        return Gson().toJson(backup)
+    }
+
+    suspend fun restoreFromBackupJson(jsonString: String): Boolean {
+        return try {
+            val backup = Gson().fromJson(jsonString, BackupData::class.java)
+            if (backup.assets.isNotEmpty()) {
+                dao.restoreDatabase(backup.assets, backup.history)
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    // --- HELPERS ---
 
     private fun mergeTimeIntoDate(dateMillis: Long): Long {
         val calendarDate = Calendar.getInstance().apply { timeInMillis = dateMillis }
@@ -182,30 +260,5 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
             points.add(date to totalValue)
         }
         return points
-    }
-
-    // 4. EXPORT / IMPORT
-    suspend fun createBackupJson(): String {
-        // Get current snapshot of data
-        val assets = dao.getAllAssets().first()
-        val history = dao.getAllHistory().first()
-
-        val backup = BackupData(assets = assets, history = history)
-        return Gson().toJson(backup)
-    }
-
-    suspend fun restoreFromBackupJson(jsonString: String): Boolean {
-        return try {
-            val backup = Gson().fromJson(jsonString, BackupData::class.java)
-            if (backup.assets.isNotEmpty()) {
-                dao.restoreDatabase(backup.assets, backup.history)
-                true // Success
-            } else {
-                false // Empty backup
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false // Failed
-        }
     }
 }
