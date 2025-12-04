@@ -1,3 +1,49 @@
 <resources>
-    <string name="app_name">PortfolioApp</string>
+    <string name="app_name">Gold Portfolio</string>
+    <string name="app_title">Gold Portfolio</string>
+
+    <!-- Main Screen -->
+    <string name="total_portfolio_value">Total Portfolio Value</string>
+    <string name="invested_capital">Invested Capital</string>
+    <string name="total_return">Total Return</string>
+    <string name="empty_assets_list">Add assets to see performance</string>
+    <string name="your_assets">Your Assets</string>
+    <string name="add_coin_fab">Add Coin</string>
+    <string name="update_prices_desc">Update Prices</string>
+    <string name="toggle_theme_desc">Toggle Theme</string>
+    <string name="delete_action">Delete</string>
+
+    <!-- Dialogs -->
+    <string name="add_asset">Add Investment</string>
+    <string name="coin_name_label">Coin Name</string>
+    <string name="quantity_label">Quantity</string>
+    <string name="weight_label">Weight (g) [31.1 = 1oz]</string>
+    <string name="premium_label">Premium (%)</string>
+    <string name="price_paid_label">Paid Price (CHF)</string>
+    <string name="add_action">Add Asset</string>
+    <string name="cancel_action">Cancel</string>
+    <string name="save_action">Save Record</string>
+
+    <!-- Delete Dialog -->
+    <string name="delete_title">Delete Asset</string>
+    <string name="delete_message">Are you sure you want to delete \'%1$s\'? This action cannot be undone.</string>
+
+    <!-- Detail Screen -->
+    <string name="back_desc">Back</string>
+    <string name="update_value_fab">Update Value</string>
+    <string name="performance_title">Performance</string>
+    <string name="price_history_title">Price History</string>
+    <string name="current_value_label">Current Value</string>
+    <string name="bought_at_label">Bought At</string>
+    <string name="update_value_title">Update Value</string>
+    <string name="new_price_label">New Price (CHF)</string>
+    <string name="date_label">Date: %1$s</string>
+    <string name="ok_action">OK</string>
+
+    <!-- Asset Types -->
+    <string name="type_coin">Coin</string>
+    <string name="type_bar">Bar</string>
+    <string name="unit_coins">coins</string>
+    <string name="unit_units">units</string>
+    <string name="premium_suffix">% Prem.</string>
 </resources>

@@ -54,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -76,6 +77,7 @@ import com.patrykandpatrick.vico.core.axis.AxisPosition
 import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
 import com.patrykandpatrick.vico.core.component.text.textComponent
 import com.patrykandpatrick.vico.core.entry.entryModelOf
+import dev.sebastianrn.portfolioapp.R
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -160,7 +162,7 @@ fun DetailScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Price History",
+                        text = stringResource(R.string.price_history_title),
                         color = MaterialTheme.colorScheme.onBackground,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
@@ -248,16 +250,16 @@ fun AssetStatsHeader(asset: GoldAsset) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text("Quantity", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.quantity_label), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     Text(
-                        "${asset.quantity} units",
+                        "${asset.quantity}",
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Current Value", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.current_value_label), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     Text(
                         asset.totalCurrentValue.toCurrencyString,
                         color = GoldStart,
@@ -277,7 +279,7 @@ fun AssetStatsHeader(asset: GoldAsset) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text("Bought At", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.bought_at_label), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     Text(
                         asset.originalPrice.toCurrencyString,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -288,7 +290,7 @@ fun AssetStatsHeader(asset: GoldAsset) {
 
                 // UPDATED PROFIT/LOSS SECTION
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Total Return", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.total_return), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
 
                     val isProfit = asset.totalProfitOrLoss >= 0
                     val color = if (isProfit) ProfitGreen else LossRed
@@ -339,7 +341,7 @@ fun PerformanceCard(points: List<Pair<Long, Double>>) {
                 Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = null, tint = GoldStart)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Performance",
+                    text = stringResource(R.string.performance_title),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
@@ -474,10 +476,10 @@ fun UpdatePriceSheet(onDismiss: () -> Unit, onSave: (Double, Long) -> Unit) {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { selectedDate = it }
                     showDatePicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.ok_action)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel_action)) }
             }
         ) { DatePicker(state = datePickerState) }
     }
@@ -489,7 +491,7 @@ fun UpdatePriceSheet(onDismiss: () -> Unit, onSave: (Double, Long) -> Unit) {
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Text(
-                text = "Update Value",
+                text = stringResource(R.string.update_value_title),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
@@ -504,7 +506,7 @@ fun UpdatePriceSheet(onDismiss: () -> Unit, onSave: (Double, Long) -> Unit) {
             ) {
                 Icon(Icons.Default.DateRange, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Date: ${sdf.format(Date(selectedDate))}")
+                Text(text = stringResource(R.string.date_label, sdf.format(Date(selectedDate))))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -522,7 +524,7 @@ fun UpdatePriceSheet(onDismiss: () -> Unit, onSave: (Double, Long) -> Unit) {
                 onClick = { if (price.isNotEmpty()) onSave(price.toDouble(), selectedDate) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = GoldStart, contentColor = Color.Black)
-            ) { Text("Save Record") }
+            ) { Text(stringResource(R.string.save_action)) }
 
             Spacer(modifier = Modifier.height(24.dp))
         }

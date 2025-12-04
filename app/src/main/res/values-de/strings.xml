@@ -1,0 +1,49 @@
+<resources>
+    <string name="app_name">Gold Portfolio</string>
+    <string name="app_title">Gold Portfolio</string>
+
+    <!-- Main Screen -->
+    <string name="total_portfolio_value">Gesamtwert Portfolio</string>
+    <string name="invested_capital">Investiertes Kapital</string>
+    <string name="total_return">Gesamtrendite</string>
+    <string name="empty_assets_list">Fügen Sie Anlagen hinzu, um die Leistung zu sehen</string>
+    <string name="your_assets">Ihre Anlagen</string>
+    <string name="add_coin_fab">Münze hinzufügen</string>
+    <string name="update_prices_desc">Preise aktualisieren</string>
+    <string name="toggle_theme_desc">Design wechseln</string>
+    <string name="delete_action">Löschen</string>
+
+    <!-- Dialogs -->
+    <string name="add_asset">Investition hinzufügen</string>
+    <string name="coin_name_label">Name (z.B. Vreneli)</string>
+    <string name="quantity_label">Menge</string>
+    <string name="weight_label">Gewicht (g) [31.1 = 1oz]</string>
+    <string name="premium_label">Aufschlag (%)</string>
+    <string name="price_paid_label">Kaufpreis (CHF)</string>
+    <string name="add_action">Hinzufügen</string>
+    <string name="cancel_action">Abbrechen</string>
+    <string name="save_action">Speichern</string>
+
+    <!-- Delete Dialog -->
+    <string name="delete_title">Löschen bestätigen</string>
+    <string name="delete_message">Möchten Sie \'%1$s\' wirklich löschen? Dies kann nicht rückgängig gemacht werden.</string>
+
+    <!-- Detail Screen -->
+    <string name="back_desc">Zurück</string>
+    <string name="update_value_fab">Wert aktualisieren</string>
+    <string name="performance_title">Performance</string>
+    <string name="price_history_title">Preishistorie</string>
+    <string name="current_value_label">Aktueller Wert</string>
+    <string name="bought_at_label">Gekauft für</string>
+    <string name="update_value_title">Wert aktualisieren</string>
+    <string name="new_price_label">Neuer Preis (CHF)</string>
+    <string name="date_label">Datum: %1$s</string>
+    <string name="ok_action">OK</string>
+
+    <!-- Asset Types -->
+    <string name="type_coin">Münze</string>
+    <string name="type_bar">Barren</string>
+    <string name="unit_coins">Münzen</string>
+    <string name="unit_units">Einheiten</string>
+    <string name="premium_suffix">% Aufschl.</string>
+</resources>

@@ -16,11 +16,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.sebastianrn.portfolioapp.data.AssetType
 import dev.sebastianrn.portfolioapp.data.GoldAsset
+import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.ui.components.ModernTextField
 import dev.sebastianrn.portfolioapp.ui.components.rememberMarker
 import dev.sebastianrn.portfolioapp.ui.theme.*
@@ -64,7 +66,7 @@ fun MainScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text("Gold Portfolio", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+                    Text(stringResource(R.string.app_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
                 },
                 actions = {
                     IconButton(onClick = { viewModel.updateAllPricesFromApi() }) {
@@ -103,7 +105,7 @@ fun MainScreen(
                         PortfolioPerformanceCard(portfolioPoints)
                     } else {
                         Box(modifier = Modifier.fillMaxWidth().height(150.dp), contentAlignment = Alignment.Center) {
-                            Text("Add assets to see performance", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(R.string.empty_assets_list), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -115,7 +117,7 @@ fun MainScreen(
                     ) {
                         Icon(Icons.Default.Star, contentDescription = null, tint = GoldStart, modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Your Assets", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.your_assets), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
@@ -248,7 +250,7 @@ fun PortfolioSummaryCard(stats: PortfolioSummary) {
         Column(modifier = Modifier.padding(24.dp)) {
             // Total Value
             Column {
-                Text(text = "Total Portfolio Value", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
+                Text(text = stringResource(R.string.total_portfolio_value), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
                 Text(text = stats.totalValue.toCurrencyString, color = GoldStart, fontSize = 36.sp, fontWeight = FontWeight.ExtraBold)
             }
 
@@ -263,7 +265,7 @@ fun PortfolioSummaryCard(stats: PortfolioSummary) {
             ) {
                 // Invested Capital
                 Column {
-                    Text("Invested Capital", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.invested_capital), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     Text(
                         text = stats.totalInvested.toCurrencyString,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -274,7 +276,7 @@ fun PortfolioSummaryCard(stats: PortfolioSummary) {
 
                 // Total Return
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Total Return", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.total_return), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
 
                     val isProfit = stats.totalProfit >= 0
                     val color = if (isProfit) ProfitGreen else LossRed
@@ -327,12 +329,12 @@ fun AddAssetDialog(onDismiss: () -> Unit, onAdd: (String, AssetType, Double, Int
         titleContentColor = MaterialTheme.colorScheme.onSurface,
         textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         onDismissRequest = onDismiss,
-        title = { Text("Add Investment") },
+        title = { Text(stringResource(R.string.add_asset)) },
         text = {
             Column {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    FilterChip(selected = type == AssetType.COIN, onClick = { type = AssetType.COIN }, label = { Text("Coin") }, leadingIcon = { if (type == AssetType.COIN) Icon(Icons.Default.Check, null) })
-                    FilterChip(selected = type == AssetType.BAR, onClick = { type = AssetType.BAR }, label = { Text("Bar") }, leadingIcon = { if (type == AssetType.BAR) Icon(Icons.Default.Check, null) })
+                    FilterChip(selected = type == AssetType.COIN, onClick = { type = AssetType.COIN }, label = { Text(stringResource(R.string.type_coin)) }, leadingIcon = { if (type == AssetType.COIN) Icon(Icons.Default.Check, null) })
+                    FilterChip(selected = type == AssetType.BAR, onClick = { type = AssetType.BAR }, label = { Text(stringResource(R.string.type_bar)) }, leadingIcon = { if (type == AssetType.BAR) Icon(Icons.Default.Check, null) })
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 ModernTextField(value = name, onValueChange = { name = it }, label = "Name (e.g. Vreneli / 100g Valcambi)")
@@ -349,19 +351,19 @@ fun AddAssetDialog(onDismiss: () -> Unit, onAdd: (String, AssetType, Double, Int
         confirmButton = {
             Button(onClick = { if(name.isNotEmpty()) onAdd(name, type, price.toDoubleOrNull() ?: 0.0, qty.toIntOrNull() ?: 1, weight.toDoubleOrNull() ?: 31.1, premium.toDoubleOrNull() ?: 0.0) }, colors = ButtonDefaults.buttonColors(containerColor = GoldStart, contentColor = Color.Black)) { Text("Add") }
         },
-        dismissButton = { TextButton(onClick = onDismiss, colors = ButtonDefaults.textButtonColors(contentColor = TextGray)) { Text("Cancel") } }
+        dismissButton = { TextButton(onClick = onDismiss, colors = ButtonDefaults.textButtonColors(contentColor = TextGray)) { Text(stringResource(R.string.cancel_action)) } }
     )
 }
 
 @Composable
 fun DeleteConfirmationDialog(asset: GoldAsset, onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(containerColor = MaterialTheme.colorScheme.surface, titleContentColor = MaterialTheme.colorScheme.onSurface, textContentColor = MaterialTheme.colorScheme.onSurfaceVariant, onDismissRequest = onDismiss, title = { Text("Delete Asset") }, text = { Text("Delete '${asset.name}'? This action cannot be undone.") }, confirmButton = { Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = LossRed, contentColor = Color.White)) { Text("Delete") } }, dismissButton = { TextButton(onClick = onDismiss, colors = ButtonDefaults.textButtonColors(contentColor = TextGray)) { Text("Cancel") } })
+    AlertDialog(containerColor = MaterialTheme.colorScheme.surface, titleContentColor = MaterialTheme.colorScheme.onSurface, textContentColor = MaterialTheme.colorScheme.onSurfaceVariant, onDismissRequest = onDismiss, title = { Text(stringResource(R.string.delete_title)) }, text = { Text(stringResource(R.string.delete_message, asset.name)) }, confirmButton = { Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = LossRed, contentColor = Color.White)) { Text(stringResource(R.string.delete_action)) } }, dismissButton = { TextButton(onClick = onDismiss, colors = ButtonDefaults.textButtonColors(contentColor = TextGray)) { Text(stringResource(R.string.cancel_action)) } })
 }
 
 @Composable
 fun PortfolioPerformanceCard(points: List<Pair<Long, Double>>) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        Column(modifier = Modifier.padding(16.dp)) { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.DateRange, contentDescription = null, tint = GoldStart); Spacer(modifier = Modifier.width(8.dp)); Text("Performance", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) }; Spacer(modifier = Modifier.height(16.dp)); PortfolioChart(points = points) }
+        Column(modifier = Modifier.padding(16.dp)) { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.DateRange, contentDescription = null, tint = GoldStart); Spacer(modifier = Modifier.width(8.dp)); Text(stringResource(R.string.performance_title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) }; Spacer(modifier = Modifier.height(16.dp)); PortfolioChart(points = points) }
     }
 }
 
