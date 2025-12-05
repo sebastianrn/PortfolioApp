@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,7 +27,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
@@ -43,12 +43,15 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
@@ -75,6 +78,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
@@ -583,44 +587,170 @@ fun PortfolioChart(points: List<Pair<Long, Double>>) {
     Chart(chart = lineChart(lines = listOf(lineSpec)), model = chartModel, startAxis = rememberStartAxis(label = axisLabelStyle, valueFormatter = verticalFormatter, guideline = null, tickLength = 0.dp, itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 5)), bottomAxis = rememberBottomAxis(label = axisLabelStyle, valueFormatter = horizontalFormatter, guideline = null, tickLength = 0.dp), marker = rememberMarker(), modifier = Modifier.fillMaxWidth().height(220.dp).padding(horizontal = 16.dp, vertical = 8.dp))
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddAssetDialog(onDismiss: () -> Unit, onAdd: (String, AssetType, Double, Int, Double, Double) -> Unit) {
+fun AddAssetDialog(
+    onDismiss: () -> Unit,
+    onAdd: (String, AssetType, Double, Int, Double, Double) -> Unit
+) {
+    // 1. Define the Options
+    data class WeightOption(val label: String, val grams: Double, val type: AssetType)
+    val options = listOf(
+        WeightOption("1 oz Coin", 31.1035, AssetType.COIN),
+        WeightOption("1/2 oz Coin", 15.5517, AssetType.COIN),
+        WeightOption("1/4 oz Coin", 7.7758, AssetType.COIN),
+        WeightOption("500g Bar", 500.0, AssetType.BAR),
+        WeightOption("250g Bar", 250.0, AssetType.BAR)
+    )
+
     var name by remember { mutableStateOf("") }
-    var type by remember { mutableStateOf(AssetType.COIN) }
-    var qty by remember { mutableStateOf("") }
-    var weight by remember { mutableStateOf("") }
+    var quantity by remember { mutableStateOf("1") }
     var premium by remember { mutableStateOf("5.0") }
     var price by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+    var selectedOption by remember { mutableStateOf(options[0]) }
 
-    AlertDialog(
-        containerColor = MaterialTheme.colorScheme.surface,
-        titleContentColor = MaterialTheme.colorScheme.onSurface,
-        textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.add_asset)) },
-        text = {
-            Column {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    FilterChip(selected = type == AssetType.COIN, onClick = { type = AssetType.COIN }, label = { Text(stringResource(R.string.type_coin)) }, leadingIcon = { if (type == AssetType.COIN) Icon(Icons.Default.Check, null) })
-                    FilterChip(selected = type == AssetType.BAR, onClick = { type = AssetType.BAR }, label = { Text(stringResource(R.string.type_bar)) }, leadingIcon = { if (type == AssetType.BAR) Icon(Icons.Default.Check, null) })
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(24.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, GoldStart.copy(alpha = 0.3f), RoundedCornerShape(24.dp)),
+            elevation = CardDefaults.cardElevation(8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(24.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Header
+                Text(
+                    text = stringResource(R.string.add_asset),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = GoldStart,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Name Input
+                ModernTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = "Asset Name (e.g. Vreneli)"
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Custom Dropdown for Weight
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = selectedOption.label,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Weight / Type", color = TextGray) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = GoldStart,
+                            unfocusedBorderColor = TextGray.copy(alpha = 0.5f),
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            cursorColor = GoldStart,
+                            focusedLabelColor = GoldStart,
+                            unfocusedLabelColor = TextGray
+                        ),
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ) {
+                        options.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option.label, color = MaterialTheme.colorScheme.onSurface) },
+                                onClick = {
+                                    selectedOption = option
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
                 }
-                Spacer(modifier = Modifier.height(12.dp))
-                ModernTextField(value = name, onValueChange = { name = it }, label = "Name (e.g. Vreneli / 100g Valcambi)")
-                Spacer(modifier = Modifier.height(12.dp))
-                ModernTextField(value = qty, onValueChange = { if (it.all { char -> char.isDigit() }) qty = it }, label = "Quantity", isNumber = true)
-                Spacer(modifier = Modifier.height(12.dp))
-                ModernTextField(value = weight, onValueChange = { weight = it }, label = "Weight (g)", isNumber = true)
-                Spacer(modifier = Modifier.height(12.dp))
-                ModernTextField(value = premium, onValueChange = { premium = it }, label = "Premium (%)", isNumber = true)
-                Spacer(modifier = Modifier.height(12.dp))
-                ModernTextField(value = price, onValueChange = { price = it }, label = "Paid Price", isNumber = true)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Quantity & Premium Row
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        ModernTextField(
+                            value = quantity,
+                            onValueChange = { if (it.all { c -> c.isDigit() }) quantity = it },
+                            label = "Qty",
+                            isNumber = true
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        ModernTextField(
+                            value = premium,
+                            onValueChange = { premium = it },
+                            label = "Prem %",
+                            isNumber = true
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Price Input
+                ModernTextField(
+                    value = price,
+                    onValueChange = { price = it },
+                    label = "Paid Price (Total)",
+                    isNumber = true
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Actions
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.textButtonColors(contentColor = TextGray)
+                    ) {
+                        Text(stringResource(R.string.cancel_action))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            if (name.isNotEmpty()) {
+                                onAdd(
+                                    name,
+                                    selectedOption.type, // Auto-set Type
+                                    price.toDoubleOrNull() ?: 0.0,
+                                    quantity.toIntOrNull() ?: 1,
+                                    selectedOption.grams, // Auto-set Grams
+                                    premium.toDoubleOrNull() ?: 0.0
+                                )
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = GoldStart,
+                            contentColor = Color.Black
+                        )
+                    ) {
+                        Text("Add to Portfolio", fontWeight = FontWeight.Bold)
+                    }
+                }
             }
-        },
-        confirmButton = {
-            Button(onClick = { if(name.isNotEmpty()) onAdd(name, type, price.toDoubleOrNull() ?: 0.0, qty.toIntOrNull() ?: 1, weight.toDoubleOrNull() ?: 31.1, premium.toDoubleOrNull() ?: 0.0) }, colors = ButtonDefaults.buttonColors(containerColor = GoldStart, contentColor = Color.Black)) { Text("Add") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss, colors = ButtonDefaults.textButtonColors(contentColor = TextGray)) { Text(stringResource(R.string.cancel_action)) } }
-    )
+        }
+    }
 }
 
 @Composable
