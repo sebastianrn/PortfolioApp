@@ -61,6 +61,7 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
     fun getAssetById(id: Int): Flow<GoldAsset> = dao.getAssetById(id)
     fun getHistoryForAsset(assetId: Int): Flow<List<PriceHistory>> = dao.getHistoryForAsset(assetId)
 
+    // --- CURRENCY ---
     fun setCurrency(newCode: String) {
         val oldCode = currentCurrency.value
         if (oldCode == newCode) return
@@ -68,51 +69,33 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        application,
-                        "Converting $oldCode to $newCode...",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(application, "Converting $oldCode to $newCode...", Toast.LENGTH_SHORT).show()
                 }
 
                 val apiKey = BuildConfig.GOLD_API_KEY
                 if (apiKey.isEmpty()) return@launch
 
-                // 1. Fetch Gold Price in BOTH currencies to calculate the ratio
-                // We use async to fetch them in parallel for speed
                 val oldPriceJob = async { NetworkModule.api.getGoldPrice(oldCode, apiKey) }
                 val newPriceJob = async { NetworkModule.api.getGoldPrice(newCode, apiKey) }
 
                 val oldResponse = oldPriceJob.await()
                 val newResponse = newPriceJob.await()
 
-                // 2. Calculate Exchange Rate (New / Old)
-                // Example: Gold is 2000 USD and 1800 CHF. Factor = 1.11
                 val factor = newResponse.price / oldResponse.price
 
-                // 3. Update Database (Atomic Transaction)
                 dao.applyCurrencyFactorToAssets(factor)
                 dao.applyCurrencyFactorToHistory(factor)
 
-                // 4. Finally, switch the app mode
                 prefs.setCurrency(newCode)
 
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        application,
-                        "Converted! Rate: %.4f".format(factor),
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Toast.makeText(application, "Converted! Rate: %.4f".format(factor), Toast.LENGTH_LONG).show()
                 }
 
             } catch (e: Exception) {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        application,
-                        "Conversion Failed. Internet required.",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Toast.makeText(application, "Conversion Failed. Internet required.", Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -120,14 +103,7 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
 
     // --- ACTIONS ---
 
-    fun insert(
-        name: String,
-        type: AssetType,
-        price: Double,
-        qty: Int,
-        weight: Double,
-        premium: Double
-    ) {
+    fun insert(name: String, type: AssetType, price: Double, qty: Int, weight: Double, premium: Double) {
         viewModelScope.launch(Dispatchers.IO) {
             val asset = GoldAsset(
                 name = name,
@@ -139,15 +115,52 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
                 premiumPercent = premium
             )
             val id = dao.insert(asset)
-            // Initial record is Manual
-            dao.insertHistory(
-                PriceHistory(
-                    assetId = id.toInt(),
-                    dateTimestamp = System.currentTimeMillis(),
-                    price = price,
-                    isManual = true
-                )
+            dao.insertHistory(PriceHistory(
+                assetId = id.toInt(),
+                dateTimestamp = System.currentTimeMillis(),
+                price = price,
+                isManual = true
+            ))
+        }
+    }
+
+    fun updateAsset(
+        id: Int,
+        name: String,
+        type: AssetType,
+        originalPrice: Double,
+        quantity: Int,
+        weight: Double,
+        premium: Double
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val oldAsset = dao.getAsset(id) ?: return@launch
+
+            val oldValueFactor = oldAsset.weightInGrams * (1 + oldAsset.premiumPercent / 100.0)
+            val newValueFactor = weight * (1 + premium / 100.0)
+            val adjustmentFactor = if (oldValueFactor > 0) newValueFactor / oldValueFactor else 1.0
+
+            val newCurrentPrice = oldAsset.currentPrice * adjustmentFactor
+
+            val updatedAsset = oldAsset.copy(
+                name = name,
+                type = type,
+                originalPrice = originalPrice,
+                currentPrice = newCurrentPrice,
+                quantity = quantity,
+                weightInGrams = weight,
+                premiumPercent = premium
             )
+            dao.update(updatedAsset)
+
+            if (abs(adjustmentFactor - 1.0) > 0.0001) {
+                dao.adjustHistoryForAsset(id, adjustmentFactor)
+            }
+
+            val firstHistory = dao.getEarliestHistory(id)
+            if (firstHistory != null) {
+                dao.updateHistory(firstHistory.copy(price = originalPrice))
+            }
         }
     }
 
@@ -174,7 +187,6 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
                     return@launch
                 }
 
-                // Pass the currency variable instead of hardcoded CHF
                 val response = NetworkModule.api.getGoldPrice(currency, apiKey)
                 val spotPricePerGram24k = response.price_gram_24k
 
@@ -188,31 +200,24 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
                     val premiumMultiplier = 1 + (asset.premiumPercent / 100.0)
                     val finalPrice = intrinsicValue * premiumMultiplier
 
-                    dao.insertHistory(
-                        PriceHistory(
-                            assetId = asset.id,
-                            dateTimestamp = timestamp,
-                            price = finalPrice,
-                            isManual = false
-                        )
-                    )
+                    dao.insertHistory(PriceHistory(
+                        assetId = asset.id,
+                        dateTimestamp = timestamp,
+                        price = finalPrice,
+                        isManual = false
+                    ))
                     dao.updateCurrentPrice(asset.id, finalPrice)
                     updatedCount++
                 }
 
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        application,
-                        "Updated $updatedCount assets in $currency.",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Toast.makeText(application, "Updated $updatedCount assets in $currency.", Toast.LENGTH_LONG).show()
                 }
 
             } catch (e: Exception) {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(application, "Update Failed: ${e.message}", Toast.LENGTH_LONG)
-                        .show()
+                    Toast.makeText(application, "Update Failed: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -225,15 +230,34 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
         val finalTimestamp = mergeTimeIntoDate(selectedDate)
 
         viewModelScope.launch(Dispatchers.IO) {
-            dao.insertHistory(
-                PriceHistory(
-                    assetId = assetId,
-                    dateTimestamp = finalTimestamp,
-                    price = newPrice,
-                    isManual = true
-                )
-            )
+            dao.insertHistory(PriceHistory(
+                assetId = assetId,
+                dateTimestamp = finalTimestamp,
+                price = newPrice,
+                isManual = true
+            ))
             dao.updateCurrentPrice(assetId, newPrice)
+        }
+    }
+
+    fun updateHistoryRecord(historyId: Int, assetId: Int, newPrice: Double, newDate: Long, isManual: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val updatedRecord = PriceHistory(
+                historyId = historyId,
+                assetId = assetId,
+                dateTimestamp = newDate,
+                price = newPrice,
+                isManual = isManual
+            )
+            dao.updateHistory(updatedRecord)
+
+            val firstHistory = dao.getEarliestHistory(assetId)
+            if (firstHistory != null && firstHistory.historyId == historyId) {
+                val asset = dao.getAsset(assetId)
+                if (asset != null) {
+                    dao.update(asset.copy(originalPrice = newPrice))
+                }
+            }
         }
     }
 
@@ -272,10 +296,7 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
         return calendarDate.timeInMillis
     }
 
-    private fun calculatePortfolioCurve(
-        assets: List<GoldAsset>,
-        history: List<PriceHistory>
-    ): List<Pair<Long, Double>> {
+    private fun calculatePortfolioCurve(assets: List<GoldAsset>, history: List<PriceHistory>): List<Pair<Long, Double>> {
         if (assets.isEmpty()) return emptyList()
         val uniqueDates = history.map { it.dateTimestamp }.toSortedSet()
         val points = mutableListOf<Pair<Long, Double>>()
@@ -293,82 +314,17 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
             }
             points.add(date to totalValue)
         }
+
+        // --- NEW: Downsampling Logic ---
+        val maxPoints = 60 // Max points to display on the graph
+        if (points.size > maxPoints) {
+            val step = points.size / maxPoints
+            // Filter to keep every 'step' point + the very last point (to show current status)
+            return points.filterIndexed { index, _ ->
+                index % step == 0 || index == points.lastIndex
+            }
+        }
+
         return points
-    }
-
-    fun updateAsset(
-        id: Int,
-        name: String,
-        type: AssetType,
-        originalPrice: Double,
-        quantity: Int,
-        weight: Double,
-        premium: Double
-    ) {
-        viewModelScope.launch(Dispatchers.IO) {
-            // 1. Get current state to calculate ratios
-            val oldAsset = dao.getAsset(id) ?: return@launch
-
-            // 2. Calculate Adjustment Factor
-            // Logic: New Value / Old Value
-            // Value is proportional to Weight * (1 + Premium%)
-            val oldValueFactor = oldAsset.weightInGrams * (1 + oldAsset.premiumPercent / 100.0)
-            val newValueFactor = weight * (1 + premium / 100.0)
-
-            val adjustmentFactor = if (oldValueFactor > 0) newValueFactor / oldValueFactor else 1.0
-
-            // 3. Calculate new Current Price (Manual adjustment to avoid waiting for API)
-            val newCurrentPrice = oldAsset.currentPrice * adjustmentFactor
-
-            // 4. Update the Asset Entity
-            val updatedAsset = oldAsset.copy(
-                name = name,
-                type = type,
-                originalPrice = originalPrice,
-                currentPrice = newCurrentPrice,
-                quantity = quantity,
-                weightInGrams = weight,
-                premiumPercent = premium
-            )
-            dao.update(updatedAsset)
-
-            // 5. Update History if the intrinsic value factors changed
-            if (abs(adjustmentFactor - 1.0) > 0.0001) {
-                dao.adjustHistoryForAsset(id, adjustmentFactor)
-            }
-
-            // If the user changed the "Bought At" price, the first history entry must match it.
-            val firstHistory = dao.getEarliestHistory(id)
-            if (firstHistory != null) {
-                // Force the first record to match the new Original Price
-                // (We ignore the adjustment factor here because this is an explicit override)
-                dao.updateHistory(firstHistory.copy(price = originalPrice))
-            }
-        }
-    }
-
-    fun updateHistoryRecord(historyId: Int, assetId: Int, newPrice: Double, newDate: Long, isManual: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val updatedRecord = PriceHistory(
-                historyId = historyId,
-                assetId = assetId,
-                dateTimestamp = newDate,
-                price = newPrice,
-                isManual = isManual
-            )
-            dao.updateHistory(updatedRecord)
-
-            // Check if the record we just updated is the "First" one
-            val firstHistory = dao.getEarliestHistory(assetId)
-
-            // If the IDs match, it means we edited the earliest record
-            if (firstHistory != null && firstHistory.historyId == historyId) {
-                val asset = dao.getAsset(assetId)
-                if (asset != null) {
-                    // Update the asset's "Bought At" to match this new price
-                    dao.update(asset.copy(originalPrice = newPrice))
-                }
-            }
-        }
     }
 }
