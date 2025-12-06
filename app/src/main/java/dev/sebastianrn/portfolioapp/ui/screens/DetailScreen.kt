@@ -2,18 +2,25 @@ package dev.sebastianrn.portfolioapp.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ShowChart
@@ -37,7 +44,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
@@ -45,6 +53,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -79,6 +88,7 @@ import dev.sebastianrn.portfolioapp.ui.components.rememberMarker
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import dev.sebastianrn.portfolioapp.ui.theme.LossRed
 import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen
+import dev.sebastianrn.portfolioapp.ui.theme.TextGray
 import dev.sebastianrn.portfolioapp.util.toCurrencyString
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 import java.text.SimpleDateFormat
@@ -538,6 +548,9 @@ fun UpdatePriceSheet(
     var showDatePicker by remember { mutableStateOf(false) }
     val sdf = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
 
+    // Use the same sheet state strategy as AssetSheet
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = selectedDate,
@@ -563,41 +576,68 @@ fun UpdatePriceSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
+        sheetState = sheetState,
+        // Match AssetSheet colors
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
         contentColor = MaterialTheme.colorScheme.onSurface
     ) {
-        Column(modifier = Modifier.padding(24.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                // Handle navigation bars and keyboard like AssetSheet
+                .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp)
+                .imePadding()
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Text(
                 text = if (isEditMode) "Edit Record" else stringResource(R.string.update_value_title),
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(24.dp))
-            OutlinedButton(
-                onClick = { showDatePicker = true },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = GoldStart),
-                border = androidx.compose.foundation.BorderStroke(1.dp, GoldStart)
-            ) {
-                Icon(
-                    Icons.Default.DateRange,
-                    contentDescription = null
-                ); Spacer(modifier = Modifier.width(8.dp)); Text(
-                text = stringResource(
-                    R.string.date_label,
-                    sdf.format(Date(selectedDate))
+
+            // Date Picker Field (Styled to match TextFields)
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = sdf.format(Date(selectedDate)),
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.date_label, "").replace(": ", ""), color = TextGray) },
+                    trailingIcon = {
+                        Icon(Icons.Default.DateRange, contentDescription = null, tint = GoldStart)
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = GoldStart,
+                        unfocusedBorderColor = TextGray.copy(alpha = 0.5f),
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        cursorColor = GoldStart,
+                        focusedLabelColor = GoldStart,
+                        unfocusedLabelColor = TextGray
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 )
-            )
+                // Invisible box to capture clicks for the Date Picker
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { showDatePicker = true }
+                )
             }
+
             Spacer(modifier = Modifier.height(16.dp))
+
             ModernTextField(
                 value = price,
                 onValueChange = { price = it },
-                label = "Price",
+                label = if (isEditMode) "Price" else stringResource(R.string.new_price_label),
                 isNumber = true
             )
+
             Spacer(modifier = Modifier.height(24.dp))
+
             Button(
                 onClick = { if (price.isNotEmpty()) onSave(price.toDouble(), selectedDate) },
                 modifier = Modifier.fillMaxWidth(),
@@ -605,8 +645,12 @@ fun UpdatePriceSheet(
                     containerColor = GoldStart,
                     contentColor = Color.Black
                 )
-            ) { Text(if (isEditMode) "Update" else stringResource(R.string.save_action)) }
-            Spacer(modifier = Modifier.height(24.dp))
+            ) {
+                Text(
+                    text = if (isEditMode) "Update" else stringResource(R.string.save_action),
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
