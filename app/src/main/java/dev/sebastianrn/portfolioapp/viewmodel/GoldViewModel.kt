@@ -28,6 +28,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.Instant
+import java.time.ZoneId
 import java.util.Calendar
 import kotlin.math.abs
 
@@ -241,7 +243,9 @@ class GoldViewModel(
                 price = newPrice,
                 isManual = true
             ))
-            dao.updateCurrentPrice(assetId, newPrice)
+
+            // FIX: Recalculate current price based on the LATEST history record
+            refreshAssetCurrentPrice(assetId)
         }
     }
 
@@ -256,6 +260,7 @@ class GoldViewModel(
             )
             dao.updateHistory(updatedRecord)
 
+            // Update original price if we edited the earliest record
             val firstHistory = dao.getEarliestHistory(assetId)
             if (firstHistory != null && firstHistory.historyId == historyId) {
                 val asset = dao.getAsset(assetId)
@@ -263,6 +268,17 @@ class GoldViewModel(
                     dao.update(asset.copy(originalPrice = newPrice))
                 }
             }
+
+            // FIX: Recalculate current price (in case we edited the latest record or changed dates)
+            refreshAssetCurrentPrice(assetId)
+        }
+    }
+
+    // Helper function to ensure consistency
+    private suspend fun refreshAssetCurrentPrice(assetId: Int) {
+        val latest = dao.getLatestHistory(assetId)
+        if (latest != null) {
+            dao.updateCurrentPrice(assetId, latest.price)
         }
     }
 
@@ -303,28 +319,57 @@ class GoldViewModel(
 
     private fun calculatePortfolioCurve(assets: List<GoldAsset>, history: List<PriceHistory>): List<Pair<Long, Double>> {
         if (assets.isEmpty()) return emptyList()
-        val uniqueDates = history.map { it.dateTimestamp }.toSortedSet()
-        val points = mutableListOf<Pair<Long, Double>>()
+
+        // 1. Initial State: Current quantities and Original Prices
         val priceMap = assets.associate { it.id to it.originalPrice }.toMutableMap()
         val qtyMap = assets.associate { it.id to it.quantity }
-        val historyByDate = history.groupBy { it.dateTimestamp }
 
-        for (date in uniqueDates) {
-            historyByDate[date]?.forEach { record -> priceMap[record.assetId] = record.price }
-            var totalValue = 0.0
-            qtyMap.forEach { (id, qty) ->
-                if (qtyMap.containsKey(id)) {
-                    totalValue += (qty * (priceMap[id] ?: 0.0))
-                }
-            }
-            points.add(date to totalValue)
+        // 2. Group history records by "Calendar Day" (Midnight)
+        val zoneId = ZoneId.systemDefault()
+
+        val historyByDay = history.groupBy { record ->
+            Instant.ofEpochMilli(record.dateTimestamp)
+                .atZone(zoneId)
+                .toLocalDate()
+                .atStartOfDay(zoneId)
+                .toInstant()
+                .toEpochMilli()
         }
 
-        // --- NEW: Downsampling Logic ---
-        val maxPoints = 60 // Max points to display on the graph
+        // 3. Sort days chronologically
+        val sortedDays = historyByDay.keys.sorted()
+        val points = mutableListOf<Pair<Long, Double>>()
+
+        // 4. Iterate through each unique calendar day
+        for (dayMillis in sortedDays) {
+            val dayRecords = historyByDay[dayMillis] ?: emptyList()
+
+            // Group by Asset ID to handle multiple updates per asset per day
+            val updatesForDay = dayRecords.groupBy { it.assetId }
+                .mapValues { (_, records) ->
+                    // CHANGED: Calculate the AVERAGE price for this asset on this day
+                    records.map { it.price }.average()
+                }
+
+            // Update our running price map with the new average prices
+            updatesForDay.forEach { (assetId, avgPrice) ->
+                priceMap[assetId] = avgPrice
+            }
+
+            // Calculate total portfolio value for this day using the updated prices
+            var dailyTotal = 0.0
+            qtyMap.forEach { (id, qty) ->
+                val price = priceMap[id] ?: 0.0
+                dailyTotal += (qty * price)
+            }
+
+            points.add(dayMillis to dailyTotal)
+        }
+
+        // 5. Downsampling
+        val maxPoints = 60
         if (points.size > maxPoints) {
             val step = points.size / maxPoints
-            // Filter to keep every 'step' point + the very last point (to show current status)
             return points.filterIndexed { index, _ ->
                 index % step == 0 || index == points.lastIndex
             }

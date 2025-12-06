@@ -58,7 +58,7 @@ interface GoldAssetDao {
 
     @Transaction
     suspend fun restoreDatabase(assets: List<GoldAsset>, history: List<PriceHistory>) {
-        clearHistory() // History depends on Assets, delete first (or Cascade handles it)
+        clearHistory()
         clearAssets()
         insertAllAssets(assets)
         insertAllHistory(history)
@@ -81,4 +81,8 @@ interface GoldAssetDao {
 
     @Query("SELECT * FROM price_history WHERE assetId = :assetId ORDER BY dateTimestamp ASC LIMIT 1")
     suspend fun getEarliestHistory(assetId: Int): PriceHistory?
+
+    // --- NEW METHOD ---
+    @Query("SELECT * FROM price_history WHERE assetId = :assetId ORDER BY dateTimestamp DESC LIMIT 1")
+    suspend fun getLatestHistory(assetId: Int): PriceHistory?
 }
