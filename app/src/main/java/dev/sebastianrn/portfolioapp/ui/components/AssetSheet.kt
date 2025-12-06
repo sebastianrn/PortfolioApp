@@ -51,7 +51,6 @@ fun AssetSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // 1. Define Options
     data class WeightOption(val label: String, val grams: Double, val type: AssetType)
     val options = listOf(
         WeightOption("1 oz Coin", 31.1035, AssetType.COIN),
@@ -63,8 +62,6 @@ fun AssetSheet(
         WeightOption("50g Bar", 50.0, AssetType.BAR)
     )
 
-    // 2. Initialize State
-    // If asset exists (Edit Mode), try to match its weight to an option, otherwise default to first
     val initialOption = if (asset != null) {
         options.find { abs(it.grams - asset.weightInGrams) < 0.1 && it.type == asset.type } ?: options[0]
     } else {
@@ -85,37 +82,25 @@ fun AssetSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
+        // CHANGED: Use surfaceVariant to stand out from background
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
         contentColor = MaterialTheme.colorScheme.onSurface
-        // REMOVED: windowInsets parameter causing the error
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                // Add padding for navigation bar + extra spacing
                 .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp)
-                .imePadding() // ADDED: Handles keyboard overlap manually
+                .imePadding()
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold
-            )
+            Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Name Input
-            ModernTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = "Asset Name (e.g. Vreneli)"
-            )
+            ModernTextField(value = name, onValueChange = { name = it }, label = "Asset Name (e.g. Vreneli)")
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Weight/Type Dropdown
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded },
@@ -141,70 +126,32 @@ fun AssetSheet(
                 ExposedDropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
+                    // Match the sheet container color for consistency
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
                 ) {
                     options.forEach { option ->
                         DropdownMenuItem(
                             text = { Text(option.label, color = MaterialTheme.colorScheme.onSurface) },
-                            onClick = {
-                                selectedOption = option
-                                expanded = false
-                            }
+                            onClick = { selectedOption = option; expanded = false }
                         )
                     }
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Quantity & Premium Row
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(modifier = Modifier.weight(1f)) {
-                    ModernTextField(
-                        value = quantity,
-                        onValueChange = { if (it.all { c -> c.isDigit() }) quantity = it },
-                        label = "Qty",
-                        isNumber = true
-                    )
-                }
-                Box(modifier = Modifier.weight(1f)) {
-                    ModernTextField(
-                        value = premium,
-                        onValueChange = { premium = it },
-                        label = "Prem %",
-                        isNumber = true
-                    )
-                }
+                Box(modifier = Modifier.weight(1f)) { ModernTextField(value = quantity, onValueChange = { if (it.all { c -> c.isDigit() }) quantity = it }, label = "Qty", isNumber = true) }
+                Box(modifier = Modifier.weight(1f)) { ModernTextField(value = premium, onValueChange = { premium = it }, label = "Prem %", isNumber = true) }
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Price Input
-            ModernTextField(
-                value = price,
-                onValueChange = { price = it },
-                label = if (isEditMode) "Bought At (Total)" else "Paid Price (Total)",
-                isNumber = true
-            )
+            ModernTextField(value = price, onValueChange = { price = it }, label = if (isEditMode) "Bought At (Total)" else "Paid Price (Total)", isNumber = true)
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Action Button
             Button(
-                onClick = {
-                    if (name.isNotEmpty()) {
-                        onSave(
-                            name,
-                            selectedOption.type,
-                            price.toDoubleOrNull() ?: 0.0,
-                            quantity.toIntOrNull() ?: 1,
-                            selectedOption.grams,
-                            premium.toDoubleOrNull() ?: 0.0
-                        )
-                    }
-                },
+                onClick = { if (name.isNotEmpty()) onSave(name, selectedOption.type, price.toDoubleOrNull() ?: 0.0, quantity.toIntOrNull() ?: 1, selectedOption.grams, premium.toDoubleOrNull() ?: 0.0) },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = GoldStart,
-                    contentColor = Color.Black
-                )
+                colors = ButtonDefaults.buttonColors(containerColor = GoldStart, contentColor = Color.Black)
             ) {
                 Text(buttonText, fontWeight = FontWeight.Bold)
             }

@@ -1,7 +1,9 @@
 package dev.sebastianrn.portfolioapp.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -13,15 +15,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -39,7 +41,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -56,17 +57,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
 import com.patrykandpatrick.vico.compose.chart.line.lineChart
 import com.patrykandpatrick.vico.compose.component.shape.shader.verticalGradient
-import com.patrykandpatrick.vico.core.axis.AxisItemPlacer
-import com.patrykandpatrick.vico.core.axis.AxisPosition
-import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
 import com.patrykandpatrick.vico.core.component.text.textComponent
 import com.patrykandpatrick.vico.core.entry.entryModelOf
 import dev.sebastianrn.portfolioapp.R
@@ -87,227 +83,63 @@ import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailScreen(
-    viewModel: GoldViewModel,
-    coinId: Int,
-    coinName: String,
-    onBackClick: () -> Unit
-) {
+fun DetailScreen(viewModel: GoldViewModel, coinId: Int, coinName: String, onBackClick: () -> Unit) {
     val asset by viewModel.getAssetById(coinId).collectAsState(initial = null)
     val history by viewModel.getHistoryForAsset(coinId).collectAsState(initial = emptyList())
     val currency by viewModel.currentCurrency.collectAsState()
-
     var showSheet by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
-
-    // State to track which history record is being edited
     var historyRecordToEdit by remember { mutableStateOf<PriceHistory?>(null) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        coinName,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                },
-                actions = {
-                    // Edit Asset Button
-                    IconButton(onClick = { showEditDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit Asset",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                title = { Text(coinName, style = MaterialTheme.typography.headlineSmall) },
+                navigationIcon = { IconButton(onClick = onBackClick) { Icon(Icons.Default.ArrowBack, "Back") } },
+                actions = { IconButton(onClick = { showEditDialog = true }) { Icon(Icons.Default.Edit, "Edit") } },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent)
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showSheet = true },
-                containerColor = GoldStart,
-                contentColor = Color.Black
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Update Value")
+            FloatingActionButton(onClick = { showSheet = true }, containerColor = GoldStart, contentColor = Color.Black, shape = MaterialTheme.shapes.large) {
+                Icon(Icons.Default.Add, "Update Value")
             }
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.padding(padding),
-            contentPadding = PaddingValues(bottom = 80.dp)
-        ) {
-            // 1. Stats Header
-            item {
-                asset?.let { a -> AssetStatsHeader(a, currency) }
-            }
-
-            // 2. Performance Chart
-            item {
-                if (history.isNotEmpty()) {
-                    val chartPoints = history.reversed().map { it.dateTimestamp to it.price }
-                    PerformanceCard(chartPoints)
-                }
-            }
-
-            // 3. History Title
-            item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp)
-                ) {
-                    Icon(
-                        Icons.Default.DateRange,
-                        contentDescription = null,
-                        tint = GoldStart,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(R.string.price_history_title),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            // 4. History Items
-            items(history) { record ->
-                HistoryItemCard(
-                    record = record,
-                    currency = currency,
-                    onEditClick = {
-                        if (record.isManual) {
-                            historyRecordToEdit = record
-                        }
-                    }
-                )
-            }
+        LazyColumn(modifier = Modifier.padding(padding), contentPadding = PaddingValues(bottom = 80.dp)) {
+            item { asset?.let { AssetStatsHeader(it, currency) } }
+            item { if (history.isNotEmpty()) { val chartPoints = history.reversed().map { it.dateTimestamp to it.price }; PerformanceCard(chartPoints) } }
+            item { Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(24.dp)) { Icon(Icons.Default.DateRange, null, tint = GoldStart, modifier = Modifier.size(20.dp)); Spacer(modifier = Modifier.width(12.dp)); Text(stringResource(R.string.price_history_title), style = MaterialTheme.typography.headlineSmall) } }
+            items(history) { record -> HistoryItemCard(record, currency, onEditClick = { if (record.isManual) historyRecordToEdit = record }) }
         }
     }
 
-    if (showSheet) {
-        UpdatePriceSheet(
-            onDismiss = { showSheet = false },
-            onSave = { price, date ->
-                viewModel.addDailyRate(coinId, price, date)
-                showSheet = false
-            }
-        )
-    }
-
-    // Edit History Dialog
-    if (historyRecordToEdit != null) {
-        UpdatePriceSheet(
-            onDismiss = { historyRecordToEdit = null },
-            initialPrice = historyRecordToEdit!!.price,
-            initialDate = historyRecordToEdit!!.dateTimestamp,
-            isEditMode = true,
-            onSave = { price, date ->
-                viewModel.updateHistoryRecord(
-                    historyId = historyRecordToEdit!!.historyId,
-                    assetId = historyRecordToEdit!!.assetId,
-                    newPrice = price,
-                    newDate = date,
-                    isManual = true
-                )
-                historyRecordToEdit = null
-            }
-        )
-    }
-
-    if (showEditDialog && asset != null) {
-        AssetSheet(
-            asset = asset,
-            onDismiss = { showEditDialog = false },
-            onSave = { name, type, price, qty, weight, premium ->
-                // Pass all parameters to the update function
-                viewModel.updateAsset(asset!!.id, name, type, price, qty, weight, premium)
-                showEditDialog = false
-            }
-        )
-    }
+    if (showSheet) UpdatePriceSheet(onDismiss = { showSheet = false }, onSave = { price, date -> viewModel.addDailyRate(coinId, price, date); showSheet = false })
+    if (historyRecordToEdit != null) UpdatePriceSheet(onDismiss = { historyRecordToEdit = null }, initialPrice = historyRecordToEdit!!.price, initialDate = historyRecordToEdit!!.dateTimestamp, isEditMode = true, onSave = { price, date -> viewModel.updateHistoryRecord(historyRecordToEdit!!.historyId, historyRecordToEdit!!.assetId, price, date, true); historyRecordToEdit = null })
+    if (showEditDialog && asset != null) AssetSheet(asset = asset, onDismiss = { showEditDialog = false }, onSave = { name, type, price, qty, weight, premium -> viewModel.updateAsset(asset!!.id, name, type, price, qty, weight, premium); showEditDialog = false })
 }
-
-// ... [AssetStatsHeader, PerformanceCard, SingleCoinChart, HistoryItemCard, UpdatePriceSheet remain unchanged] ...
-// (If you need the full code for these again, let me know, otherwise I will just paste the new Dialog below)
 
 @Composable
 fun AssetStatsHeader(asset: GoldAsset, currency: String) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
         Column(modifier = Modifier.padding(24.dp)) {
-
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(8.dp)) {
-                    Text(asset.type.name, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(8.dp, 4.dp))
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(8.dp)) {
-                    Text("${asset.weightInGrams}g", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(8.dp, 4.dp))
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(8.dp)) {
-                    Text("+${asset.premiumPercent}% Prem.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(8.dp, 4.dp))
+            Row(modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp), horizontalArrangement = Arrangement.Center) {
+                listOf(asset.type.name, "${asset.weightInGrams}g", "+${asset.premiumPercent}% Prem.").forEach { label ->
+                    Box(modifier = Modifier.padding(horizontal = 4.dp).background(MaterialTheme.colorScheme.surface, MaterialTheme.shapes.small).padding(horizontal = 12.dp, vertical = 6.dp)) { Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
             }
-
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
-                    Text(stringResource(R.string.quantity_label), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                    Text("${asset.quantity}", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(stringResource(R.string.current_value_label), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                    Text(asset.totalCurrentValue.toCurrencyString(currency), color = GoldStart, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp)
-                }
+                Column { Text(stringResource(R.string.quantity_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant); Text("${asset.quantity}", style = MaterialTheme.typography.headlineMedium) }
+                Column(horizontalAlignment = Alignment.End) { Text(stringResource(R.string.current_value_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant); Text(asset.totalCurrentValue.toCurrencyString(currency), style = MaterialTheme.typography.headlineMedium, color = GoldStart) }
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
-            Spacer(modifier = Modifier.height(24.dp))
-
+            Spacer(modifier = Modifier.height(24.dp)); HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(0.1f)); Spacer(modifier = Modifier.height(24.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
-                    Text(stringResource(R.string.bought_at_label), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                    Text(asset.originalPrice.toCurrencyString(currency), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                }
+                Column { Text(stringResource(R.string.bought_at_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant); Text(asset.originalPrice.toCurrencyString(currency), style = MaterialTheme.typography.titleMedium) }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text(stringResource(R.string.total_return), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     val isProfit = asset.totalProfitOrLoss >= 0
                     val color = if (isProfit) ProfitGreen else LossRed
-                    val totalInvested = asset.originalPrice * asset.quantity
-                    val percentage = if (totalInvested > 0) (asset.totalProfitOrLoss / totalInvested) * 100 else 0.0
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(imageVector = if (isProfit) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown, contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
-                        Text(text = "${String.format(Locale.US, "%.2f", abs(percentage))}%", color = color, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    }
-                    Text(text = abs(asset.totalProfitOrLoss).toCurrencyString(currency), color = color, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                    Row(verticalAlignment = Alignment.CenterVertically) { Icon(if (isProfit) Icons.Default.TrendingUp else Icons.Default.TrendingDown, null, tint = color, modifier = Modifier.size(16.dp)); Spacer(modifier = Modifier.width(4.dp)); Text(abs(asset.totalProfitOrLoss).toCurrencyString(currency), color = color, style = MaterialTheme.typography.titleMedium) }
                 }
             }
         }
@@ -316,34 +148,42 @@ fun AssetStatsHeader(asset: GoldAsset, currency: String) {
 
 @Composable
 fun PerformanceCard(points: List<Pair<Long, Double>>) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-        Column(modifier = Modifier.padding(16.dp)) { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = null, tint = GoldStart); Spacer(modifier = Modifier.width(8.dp)); Text(stringResource(R.string.performance_title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) }; Spacer(modifier = Modifier.height(16.dp)); SingleCoinChart(points) }
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.ShowChart, null, tint = GoldStart); Spacer(modifier = Modifier.width(8.dp)); Text(stringResource(R.string.performance_title), style = MaterialTheme.typography.headlineSmall) }
+            Spacer(modifier = Modifier.height(16.dp))
+            val chartModel = entryModelOf(*points.map { it.second.toFloat() }.toTypedArray())
+            val lineSpec = com.patrykandpatrick.vico.compose.chart.line.lineSpec(lineColor = GoldStart, lineBackgroundShader = verticalGradient(colors = arrayOf(GoldStart.copy(0.5f), Color.Transparent)))
+            Chart(chart = lineChart(lines = listOf(lineSpec)), model = chartModel, startAxis = rememberStartAxis(label = textComponent { color = MaterialTheme.colorScheme.onSurfaceVariant.toArgb(); textSizeSp = 10f }, valueFormatter = { value, _ -> if (value >= 1000) "${String.format("%.1f", value / 1000f)}k" else "${value.toInt()}" }, tickLength = 0.dp), bottomAxis = rememberBottomAxis(label = textComponent { color = MaterialTheme.colorScheme.onSurfaceVariant.toArgb(); textSizeSp = 10f }, valueFormatter = { value, _ -> val index = value.toInt(); if (index in points.indices) SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date(points[index].first)) else "" }, tickLength = 0.dp), marker = rememberMarker(), modifier = Modifier.fillMaxWidth().height(200.dp).padding(horizontal = 16.dp))
+        }
     }
 }
 
 @Composable
-fun SingleCoinChart(points: List<Pair<Long, Double>>) {
-    val chartPoints = if (points.size == 1) listOf(points[0], points[0].copy(first = points[0].first + 1)) else points
-    val chartEntryModel = entryModelOf(*chartPoints.map { it.second.toFloat() }.toTypedArray())
-    val horizontalFormatter = AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ -> val index = value.toInt(); if (index in chartPoints.indices) SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date(chartPoints[index].first)) else "" }
-    val verticalFormatter = AxisValueFormatter<AxisPosition.Vertical.Start> { value, _ -> if (value >= 1000) "${String.format("%.1f", value / 1000f)}k" else "${value.toInt()}" }
-    val axisLabelStyle = textComponent { color = MaterialTheme.colorScheme.onSurfaceVariant.toArgb(); textSizeSp = 10f }
-    val lineSpec = com.patrykandpatrick.vico.compose.chart.line.lineSpec(lineColor = GoldStart, lineBackgroundShader = verticalGradient(colors = arrayOf(GoldStart.copy(alpha = 0.5f), Color.Transparent)))
-    Chart(chart = lineChart(lines = listOf(lineSpec)), model = chartEntryModel, startAxis = rememberStartAxis(label = axisLabelStyle, valueFormatter = verticalFormatter, guideline = null, tickLength = 0.dp, itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 5)), bottomAxis = rememberBottomAxis(label = axisLabelStyle, valueFormatter = horizontalFormatter, guideline = null, tickLength = 0.dp), marker = rememberMarker(), modifier = Modifier.fillMaxWidth().height(200.dp).padding(horizontal = 16.dp))
-}
-
-@Composable
 fun HistoryItemCard(record: PriceHistory, currency: String, onEditClick: () -> Unit) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp).clickable(enabled = record.isManual) { onEditClick() }, elevation = CardDefaults.cardElevation(1.dp)) {
-        Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp).clickable(enabled = record.isManual) { onEditClick() }, elevation = CardDefaults.cardElevation(0.dp)) {
+        Row(modifier = Modifier.padding(20.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column {
-                Text(SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(record.dateTimestamp)), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(record.dateTimestamp)), style = MaterialTheme.typography.titleMedium)
+
+                // NEW: Icon Only (Edit vs Cloud)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(record.dateTimestamp)), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
-                    if (record.isManual) { Spacer(modifier = Modifier.width(8.dp)); Icon(imageVector = Icons.Default.Edit, contentDescription = "Editable", tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(12.dp)) }
+                    Text(
+                        SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(record.dateTimestamp)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // Icon logic: Manual -> Edit, API -> Cloud
+                    val icon = if (record.isManual) Icons.Default.Edit else Icons.Default.Cloud
+                    val description = if (record.isManual) "Manual" else "API"
+                    val tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+
+                    Icon(imageVector = icon, contentDescription = description, modifier = Modifier.size(14.dp), tint = tint)
                 }
             }
-            Text(text = record.price.toCurrencyString(currency), color = GoldStart, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+            Text(record.price.toCurrencyString(currency), color = GoldStart, style = MaterialTheme.typography.headlineSmall)
         }
     }
 }
@@ -361,16 +201,19 @@ fun UpdatePriceSheet(onDismiss: () -> Unit, initialPrice: Double? = null, initia
         DatePickerDialog(onDismissRequest = { showDatePicker = false }, confirmButton = { TextButton(onClick = { datePickerState.selectedDateMillis?.let { selectedDate = it }; showDatePicker = false }) { Text(stringResource(R.string.ok_action)) } }, dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel_action)) } }) { DatePicker(state = datePickerState) }
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surface, contentColor = MaterialTheme.colorScheme.onSurface) {
-        Column(modifier = Modifier.padding(24.dp)) {
-            Text(text = if (isEditMode) "Edit Record" else stringResource(R.string.update_value_title), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surfaceVariant, // Visible color
+        contentColor = MaterialTheme.colorScheme.onSurface
+    ) {
+        Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
+            Text(if (isEditMode) "Edit Record" else stringResource(R.string.update_value_title), style = MaterialTheme.typography.headlineSmall)
             Spacer(modifier = Modifier.height(24.dp))
-            OutlinedButton(onClick = { showDatePicker = true }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.outlinedButtonColors(contentColor = GoldStart), border = androidx.compose.foundation.BorderStroke(1.dp, GoldStart)) { Icon(Icons.Default.DateRange, contentDescription = null); Spacer(modifier = Modifier.width(8.dp)); Text(text = stringResource(R.string.date_label, sdf.format(Date(selectedDate)))) }
+            OutlinedButton(onClick = { showDatePicker = true }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.outlinedButtonColors(contentColor = GoldStart), border = androidx.compose.foundation.BorderStroke(1.dp, GoldStart)) { Icon(Icons.Default.DateRange, null); Spacer(modifier = Modifier.width(8.dp)); Text(stringResource(R.string.date_label, sdf.format(Date(selectedDate)))) }
             Spacer(modifier = Modifier.height(16.dp))
             ModernTextField(value = price, onValueChange = { price = it }, label = "Price", isNumber = true)
             Spacer(modifier = Modifier.height(24.dp))
-            Button(onClick = { if (price.isNotEmpty()) onSave(price.toDouble(), selectedDate) }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = GoldStart, contentColor = Color.Black)) { Text(if (isEditMode) "Update" else stringResource(R.string.save_action)) }
-            Spacer(modifier = Modifier.height(24.dp))
+            Button(onClick = { if (price.isNotEmpty()) onSave(price.toDouble(), selectedDate) }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = GoldStart, contentColor = Color.Black)) { Text(if (isEditMode) "Update" else stringResource(R.string.save_action), fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) }
         }
     }
 }
