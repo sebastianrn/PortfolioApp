@@ -7,4 +7,9 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="icon_luxury_bg">#121212</color>
+    <color name="icon_luxury_gold_1">#FFF176</color>
+    <color name="icon_luxury_gold_2">#FFB300</color>
+    <color name="icon_luxury_gold_3">#F57F17</color>
 </resources>
