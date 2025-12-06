@@ -104,4 +104,14 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // Unit Testing (Local)
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk) // For mocking classes
+    testImplementation(libs.kotlinx.coroutines.test) // For testing Coroutines
+    testImplementation(libs.turbine) // For testing Flows
+    testImplementation(libs.androidx.core.testing)
+
+    // Instrumented Testing (Device/Emulator)
+    androidTestImplementation(libs.androidx.room.testing) // Specific Room tester
 }

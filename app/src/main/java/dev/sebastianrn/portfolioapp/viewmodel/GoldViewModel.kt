@@ -3,13 +3,17 @@ package dev.sebastianrn.portfolioapp.viewmodel
 import android.app.Application
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.CreationExtras
 import com.google.gson.Gson
 import dev.sebastianrn.portfolioapp.BuildConfig
 import dev.sebastianrn.portfolioapp.data.AppDatabase
 import dev.sebastianrn.portfolioapp.data.AssetType
 import dev.sebastianrn.portfolioapp.data.BackupData
 import dev.sebastianrn.portfolioapp.data.GoldAsset
+import dev.sebastianrn.portfolioapp.data.GoldAssetDao
 import dev.sebastianrn.portfolioapp.data.NetworkModule
 import dev.sebastianrn.portfolioapp.data.PriceHistory
 import dev.sebastianrn.portfolioapp.data.UserPreferences
@@ -33,10 +37,11 @@ data class PortfolioSummary(
     val totalInvested: Double = 0.0
 )
 
-class GoldViewModel(private val application: Application) : AndroidViewModel(application) {
-    private val dao = AppDatabase.getDatabase(application).goldAssetDao()
-    private val prefs = UserPreferences(application)
-
+class GoldViewModel(
+    private val application: Application,
+    private val dao: GoldAssetDao,
+    private val prefs: UserPreferences
+) : AndroidViewModel(application) {
     // 1. Expose Currency State
     val currentCurrency: StateFlow<String> = prefs.currency
         .stateIn(viewModelScope, SharingStarted.Lazily, "CHF")
@@ -326,5 +331,24 @@ class GoldViewModel(private val application: Application) : AndroidViewModel(app
         }
 
         return points
+    }
+    // 2. Add Factory for Android to use
+    companion object {
+        val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(
+                modelClass: Class<T>,
+                extras: CreationExtras
+            ): T {
+                val application = checkNotNull(extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY])
+
+                // Manual Dependency Injection
+                val database = AppDatabase.getDatabase(application)
+                val dao = database.goldAssetDao()
+                val prefs = UserPreferences(application)
+
+                return GoldViewModel(application, dao, prefs) as T
+            }
+        }
     }
 }

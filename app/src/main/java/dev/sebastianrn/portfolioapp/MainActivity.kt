@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation(themeViewModel: ThemeViewModel) {
     val navController = rememberNavController()
     // Shared instance of GoldViewModel for the scope of this graph
-    val goldViewModel: GoldViewModel = viewModel()
+    val goldViewModel: GoldViewModel = viewModel(factory = GoldViewModel.Factory)
 
     NavHost(navController = navController, startDestination = "main") {
 
