@@ -71,23 +71,13 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
-import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
-import com.patrykandpatrick.vico.compose.chart.Chart
-import com.patrykandpatrick.vico.compose.chart.line.lineChart
-import com.patrykandpatrick.vico.compose.component.shape.shader.verticalGradient
-import com.patrykandpatrick.vico.core.axis.AxisItemPlacer
-import com.patrykandpatrick.vico.core.axis.AxisPosition
-import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
-import com.patrykandpatrick.vico.core.component.text.textComponent
-import com.patrykandpatrick.vico.core.entry.entryModelOf
 import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.AssetType
 import dev.sebastianrn.portfolioapp.data.GoldAsset
 import dev.sebastianrn.portfolioapp.ui.components.AssetSheet
-import dev.sebastianrn.portfolioapp.ui.components.rememberMarker
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import dev.sebastianrn.portfolioapp.ui.theme.LossRed
 import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen
@@ -140,12 +130,14 @@ fun MainScreen(
                         stream.write(jsonString.toByteArray())
                     }
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "Backup saved successfully", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Backup saved successfully", Toast.LENGTH_SHORT)
+                            .show()
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "Export failed: ${e.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, "Export failed: ${e.message}", Toast.LENGTH_LONG)
+                            .show()
                     }
                 }
             }
@@ -170,15 +162,24 @@ fun MainScreen(
 
                     withContext(Dispatchers.Main) {
                         if (success) {
-                            Toast.makeText(context, "Database restored successfully!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                context,
+                                "Database restored successfully!",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         } else {
-                            Toast.makeText(context, "Failed to parse backup file.", Toast.LENGTH_LONG).show()
+                            Toast.makeText(
+                                context,
+                                "Failed to parse backup file.",
+                                Toast.LENGTH_LONG
+                            ).show()
                         }
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "Import failed: ${e.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, "Import failed: ${e.message}", Toast.LENGTH_LONG)
+                            .show()
                     }
                 }
             }
@@ -198,7 +199,11 @@ fun MainScreen(
                 },
                 actions = {
                     IconButton(onClick = { viewModel.updateAllPricesFromApi() }) {
-                        Icon(Icons.Default.Refresh, "Update Prices", tint = MaterialTheme.colorScheme.onBackground)
+                        Icon(
+                            Icons.Default.Refresh,
+                            "Update Prices",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
                     }
 
                     IconButton(onClick = { themeViewModel.toggleTheme() }) {
@@ -211,7 +216,11 @@ fun MainScreen(
 
                     Box {
                         IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Default.MoreVert, "More Options", tint = MaterialTheme.colorScheme.onBackground)
+                            Icon(
+                                Icons.Default.MoreVert,
+                                "More Options",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
                         }
                         DropdownMenu(
                             expanded = showMenu,
@@ -219,21 +228,36 @@ fun MainScreen(
                             containerColor = MaterialTheme.colorScheme.surface
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Currency: $currency", color = MaterialTheme.colorScheme.onSurface) },
+                                text = {
+                                    Text(
+                                        "Currency: $currency",
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
                                 onClick = {
                                     showMenu = false
                                     showCurrencyDialog = true
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Export Backup", color = MaterialTheme.colorScheme.onSurface) },
+                                text = {
+                                    Text(
+                                        "Export Backup",
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
                                 onClick = {
                                     showMenu = false
                                     exportLauncher.launch("gold_portfolio_backup.json")
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Import Backup", color = MaterialTheme.colorScheme.onSurface) },
+                                text = {
+                                    Text(
+                                        "Import Backup",
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
                                 onClick = {
                                     showMenu = false
                                     importLauncher.launch(arrayOf("application/json"))
@@ -255,7 +279,9 @@ fun MainScreen(
             }
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+        Column(modifier = Modifier
+            .padding(padding)
+            .fillMaxSize()) {
             LazyColumn(
                 contentPadding = PaddingValues(bottom = 80.dp),
                 modifier = Modifier.weight(1f)
@@ -267,7 +293,9 @@ fun MainScreen(
                         PortfolioPerformanceCard(portfolioPoints)
                     } else {
                         Box(
-                            modifier = Modifier.fillMaxWidth().height(150.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(150.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -316,7 +344,8 @@ fun MainScreen(
                     SwipeToDismissBox(
                         state = dismissState,
                         backgroundContent = {
-                            val color = if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) LossRed else Color.Transparent
+                            val color =
+                                if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) LossRed else Color.Transparent
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -383,7 +412,9 @@ fun MainScreen(
                         ) {
                             RadioButton(
                                 selected = (code == currency),
-                                onClick = { viewModel.setCurrency(code); showCurrencyDialog = false },
+                                onClick = {
+                                    viewModel.setCurrency(code); showCurrencyDialog = false
+                                },
                                 colors = RadioButtonDefaults.colors(selectedColor = GoldStart)
                             )
                             Text(
@@ -396,7 +427,12 @@ fun MainScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showCurrencyDialog = false }) { Text("Cancel", color = TextGray) }
+                TextButton(onClick = { showCurrencyDialog = false }) {
+                    Text(
+                        "Cancel",
+                        color = TextGray
+                    )
+                }
             }
         )
     }
@@ -414,7 +450,9 @@ fun AssetItem(asset: GoldAsset, currency: String, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             val shape = if (asset.type == AssetType.COIN) CircleShape else RoundedCornerShape(4.dp)
@@ -427,7 +465,12 @@ fun AssetItem(asset: GoldAsset, currency: String, onClick: () -> Unit) {
                     .background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = iconText, color = GoldStart, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text(
+                    text = iconText,
+                    color = GoldStart,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                )
             }
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -474,7 +517,9 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
@@ -529,7 +574,8 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String) {
                     val color = if (isProfit) ProfitGreen else LossRed
                     val sign = if (isProfit) "+" else ""
 
-                    val percentage = if (stats.totalInvested > 0) (stats.totalProfit / stats.totalInvested) * 100 else 0.0
+                    val percentage =
+                        if (stats.totalInvested > 0) (stats.totalProfit / stats.totalInvested) * 100 else 0.0
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
@@ -566,21 +612,52 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String) {
 // Updated Chart for MainScreen (needs to be updated if you want currency symbol on axis)
 @Composable
 fun PortfolioPerformanceCard(points: List<Pair<Long, Double>>) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        Column(modifier = Modifier.padding(16.dp)) { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.DateRange, contentDescription = null, tint = GoldStart); Spacer(modifier = Modifier.width(8.dp)); Text(stringResource(R.string.performance_title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) }; Spacer(modifier = Modifier.height(16.dp)); PortfolioChart(points = points) }
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = RoundedCornerShape(24.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.DateRange,
+                    contentDescription = null,
+                    tint = GoldStart
+                ); Spacer(modifier = Modifier.width(8.dp)); Text(
+                stringResource(R.string.performance_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold
+            )
+            };
+        }
     }
 }
 
 @Composable
-fun PortfolioChart(points: List<Pair<Long, Double>>) {
-    val chartModel = entryModelOf(*points.map { it.second.toFloat() }.toTypedArray())
-    val horizontalFormatter = AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ -> val index = value.toInt(); if (index in points.indices) SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date(points[index].first)) else "" }
-    val verticalFormatter = AxisValueFormatter<AxisPosition.Vertical.Start> { value, _ -> if (value >= 1000) "${String.format("%.1f", value / 1000f)}k" else "${value.toInt()}" }
-    val labelColor = MaterialTheme.colorScheme.onSurfaceVariant.toArgb(); val axisLabelStyle = textComponent { color = labelColor; textSizeSp = 10f }
-    val lineSpec = com.patrykandpatrick.vico.compose.chart.line.lineSpec(lineColor = GoldStart, lineBackgroundShader = verticalGradient(colors = arrayOf(GoldStart.copy(alpha = 0.5f), Color.Transparent)))
-    Chart(chart = lineChart(lines = listOf(lineSpec)), model = chartModel, startAxis = rememberStartAxis(label = axisLabelStyle, valueFormatter = verticalFormatter, guideline = null, tickLength = 0.dp, itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 5)), bottomAxis = rememberBottomAxis(label = axisLabelStyle, valueFormatter = horizontalFormatter, guideline = null, tickLength = 0.dp), marker = rememberMarker(), modifier = Modifier.fillMaxWidth().height(220.dp).padding(horizontal = 16.dp, vertical = 8.dp))
-}
-@Composable
 fun DeleteConfirmationDialog(asset: GoldAsset, onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(containerColor = MaterialTheme.colorScheme.surface, titleContentColor = MaterialTheme.colorScheme.onSurface, textContentColor = MaterialTheme.colorScheme.onSurfaceVariant, onDismissRequest = onDismiss, title = { Text(stringResource(R.string.delete_title)) }, text = { Text(stringResource(R.string.delete_message, asset.name)) }, confirmButton = { Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = LossRed, contentColor = Color.White)) { Text(stringResource(R.string.delete_action)) } }, dismissButton = { TextButton(onClick = onDismiss, colors = ButtonDefaults.textButtonColors(contentColor = TextGray)) { Text(stringResource(R.string.cancel_action)) } })
+    AlertDialog(
+        containerColor = MaterialTheme.colorScheme.surface,
+        titleContentColor = MaterialTheme.colorScheme.onSurface,
+        textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.delete_title)) },
+        text = { Text(stringResource(R.string.delete_message, asset.name)) },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = LossRed,
+                    contentColor = Color.White
+                )
+            ) { Text(stringResource(R.string.delete_action)) }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(contentColor = TextGray)
+            ) { Text(stringResource(R.string.cancel_action)) }
+        })
 }
