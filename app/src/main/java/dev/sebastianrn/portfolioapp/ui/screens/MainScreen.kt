@@ -67,13 +67,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
+import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
+import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
+import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
+import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
+import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModel
+import com.patrykandpatrick.vico.core.cartesian.data.LineCartesianLayerModel
 import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.AssetType
 import dev.sebastianrn.portfolioapp.data.GoldAsset
@@ -91,8 +99,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
 
@@ -604,12 +610,6 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String) {
     }
 }
 
-// AddAssetDialog, DeleteConfirmationDialog, PortfolioPerformanceCard, PortfolioChart
-// These can remain as they were in the previous version, or I can reprint them if you need them.
-// They don't use currency strings internally (except input which is user typed string)
-// except for the charts which use Y-Axis formatter.
-
-// Updated Chart for MainScreen (needs to be updated if you want currency symbol on axis)
 @Composable
 fun PortfolioPerformanceCard(points: List<Pair<Long, Double>>) {
     Card(
@@ -621,19 +621,47 @@ fun PortfolioPerformanceCard(points: List<Pair<Long, Double>>) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Default.DateRange,
-                    contentDescription = null,
-                    tint = GoldStart
-                ); Spacer(modifier = Modifier.width(8.dp)); Text(
-                stringResource(R.string.performance_title),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold
-            )
-            };
+                Icon(Icons.Default.DateRange, contentDescription = null, tint = GoldStart)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    stringResource(R.string.performance_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            PortfolioChart(points)
         }
     }
+}
+
+@Composable
+fun PortfolioChart(points: List<Pair<Long, Double>>) {
+    val model = remember(points) {
+        CartesianChartModel(
+            LineCartesianLayerModel.build {
+                series(
+                    x = points.map { it.first.toFloat() },
+                    y = points.map { it.second.toFloat() }
+                )
+            }
+        )
+    }
+
+    CartesianChartHost(
+        chart = rememberCartesianChart(
+            rememberLineCartesianLayer(),
+            startAxis = VerticalAxis.rememberStart(),
+            bottomAxis = HorizontalAxis.rememberBottom(),
+        ),
+        model = model,
+        scrollState = rememberVicoScrollState(scrollEnabled = false),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp)
+    )
 }
 
 @Composable
