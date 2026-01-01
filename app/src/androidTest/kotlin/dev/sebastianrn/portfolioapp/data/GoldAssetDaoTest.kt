@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import dev.sebastianrn.portfolioapp.util.TestDataGenerator
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -34,6 +35,13 @@ class GoldAssetDaoTest {
     }
 
     @Test
+    fun generateLargeDataset() = runBlocking {
+        val generator = TestDataGenerator(dao)
+        // Configure your counts here
+        generator.generateData(assetCount = 15, historyPerAsset = 100)
+    }
+
+    @Test
     fun insertAndReadAsset() = runBlocking {
         val asset = GoldAsset(
             name = "Test Coin",
@@ -54,7 +62,15 @@ class GoldAssetDaoTest {
     @Test
     fun insertHistoryAndCheckForeignKeys() = runBlocking {
         // 1. Insert Parent (Asset)
-        val asset = GoldAsset(name = "Parent", type = AssetType.BAR, originalPrice = 0.0, currentPrice = 0.0, quantity = 1, weightInGrams = 0.0, premiumPercent = 0.0)
+        val asset = GoldAsset(
+            name = "Parent",
+            type = AssetType.BAR,
+            originalPrice = 0.0,
+            currentPrice = 0.0,
+            quantity = 1,
+            weightInGrams = 0.0,
+            premiumPercent = 0.0
+        )
         val assetId = dao.insert(asset).toInt()
 
         // 2. Insert Child (History)
@@ -68,7 +84,17 @@ class GoldAssetDaoTest {
     @Test
     fun deleteAssetCascadesToHistory() = runBlocking {
         // 1. Create Asset & History
-        val assetId = dao.insert(GoldAsset(name = "To Delete", type = AssetType.COIN, originalPrice = 0.0, currentPrice = 0.0, quantity = 1, weightInGrams = 0.0, premiumPercent = 0.0)).toInt()
+        val assetId = dao.insert(
+            GoldAsset(
+                name = "To Delete",
+                type = AssetType.COIN,
+                originalPrice = 0.0,
+                currentPrice = 0.0,
+                quantity = 1,
+                weightInGrams = 0.0,
+                premiumPercent = 0.0
+            )
+        ).toInt()
         dao.insertHistory(PriceHistory(assetId = assetId, dateTimestamp = 1L, price = 100.0))
 
         // 2. Verify creation

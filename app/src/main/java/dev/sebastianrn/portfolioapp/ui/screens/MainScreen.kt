@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
@@ -96,7 +97,6 @@ import java.util.Locale
 import kotlin.math.abs
 
 private val YDecimalFormat = DecimalFormat("#.##")
-private val StartAxisValueFormatter = CartesianValueFormatter.decimal(YDecimalFormat)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -265,6 +265,28 @@ fun MainScreen(
                                     importLauncher.launch(arrayOf("application/json"))
                                 }
                             )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        "Generate Test Data",
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.generateTestData(
+                                        assetCount = 12,
+                                        historyPerAsset = 45
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Build,
+                                        contentDescription = null,
+                                        tint = GoldStart
+                                    )
+                                }
+                            )
                         }
                     }
                 },
@@ -281,9 +303,11 @@ fun MainScreen(
             }
         }
     ) { padding ->
-        Column(modifier = Modifier
-            .padding(padding)
-            .fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
             LazyColumn(
                 contentPadding = PaddingValues(bottom = 80.dp),
                 modifier = Modifier.weight(1f)

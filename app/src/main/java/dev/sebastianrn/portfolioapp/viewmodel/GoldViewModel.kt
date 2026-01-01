@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -303,6 +304,52 @@ class GoldViewModel(
         } catch (e: Exception) {
             e.printStackTrace()
             false
+        }
+    }
+
+    fun getChartPointsForAsset(assetId: Int): StateFlow<List<Pair<Long, Double>>> {
+        return dao.getHistoryForAsset(assetId)
+            .map { history ->
+                if (history.isEmpty()) return@map emptyList()
+
+                // 1. Process on background thread
+                val rawPoints = history.reversed().map { it.dateTimestamp to it.price }
+
+                // 2. Downsample: If we have many points, only take a max of 100
+                // to keep chart rendering performant
+                if (rawPoints.size > 100) {
+                    val step = rawPoints.size / 100
+                    rawPoints.filterIndexed { index, _ ->
+                        index % step == 0 || index == rawPoints.lastIndex
+                    }
+                } else {
+                    rawPoints
+                }
+            }
+            .flowOn(Dispatchers.Default) // Ensure processing is off-main
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    }
+
+    /**
+     * Triggers the programmatic generation of test data.
+     * @param assetCount Number of GoldAssets to create.
+     * @param historyPerAsset Number of PriceHistory records for each asset.
+     */
+    fun generateTestData(assetCount: Int = 10, historyPerAsset: Int = 30) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Using your existing TestDataGenerator class
+                val generator = dev.sebastianrn.portfolioapp.util.TestDataGenerator(dao)
+                generator.generateData(assetCount, historyPerAsset)
+
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(application, "Generated $assetCount assets with $historyPerAsset records each", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(application, "Error generating data: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
         }
     }
 

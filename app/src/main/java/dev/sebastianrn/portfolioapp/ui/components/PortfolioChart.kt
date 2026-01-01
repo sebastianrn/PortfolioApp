@@ -37,21 +37,21 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 
-
 @Composable
 fun PortfolioChart(points: List<Pair<Long, Double>>) {
-    val dateFormat = SimpleDateFormat("MMM dd", Locale.getDefault())
 
     val model = remember(points) {
         CartesianChartModel(
             LineCartesianLayerModel.build {
                 series(
-                    x = points.map { it.first.toDouble() },
+                    x = points.indices.map { it.toFloat() },
                     y = points.map { it.second }
                 )
             }
         )
     }
+
+    val dateTimeFormatter = remember { SimpleDateFormat("MMM yy", Locale.getDefault()) }
 
     val axisLabelComponent = rememberAxisLabelComponent(
         color = Color.White,
@@ -87,15 +87,11 @@ fun PortfolioChart(points: List<Pair<Long, Double>>) {
 
     val xAxisFormatter = { value: Double ->
         val timestampMs = value.toLong()
-        dateFormat.format(Date(timestampMs))
+        dateTimeFormatter.format(Date(timestampMs))
     }
 
     val yAxisValueFormatter = remember {
         CartesianValueFormatter { _, value, _ -> yAxisFormatter(value) }
-    }
-
-    val xAxisValueFormatter = remember {
-        CartesianValueFormatter { _, value, _ -> xAxisFormatter(value) }
     }
 
     val markerYValueFormatter = { value: Double ->
@@ -109,15 +105,16 @@ fun PortfolioChart(points: List<Pair<Long, Double>>) {
         indicator = { indicatorComponent },
         indicatorSize = 12.dp,
         guideline = guidelineComponent,
-        valueFormatter = { context, targets ->  // Correct signature: context first, then list of targets
-            val lineTarget = targets.firstOrNull() as? com.patrykandpatrick.vico.core.cartesian.marker.LineCartesianLayerMarkerTarget
-            val entry = lineTarget?.points?.firstOrNull()?.entry  // Single series → single point
+        valueFormatter = { _, targets ->
+            val lineTarget =
+                targets.firstOrNull() as? com.patrykandpatrick.vico.core.cartesian.marker.LineCartesianLayerMarkerTarget
+            val entry = lineTarget?.points?.firstOrNull()?.entry
             if (entry != null) {
                 val dateStr = xAxisFormatter(entry.x)
                 val valueStr = markerYValueFormatter(entry.y)
                 "$dateStr\n$valueStr"
             } else {
-                "no data"  // For debugging; change to "" once working
+                "no data"
             }
         }
     )
@@ -144,9 +141,20 @@ fun PortfolioChart(points: List<Pair<Long, Double>>) {
                 guideline = null
             ),
             bottomAxis = HorizontalAxis.rememberBottom(
-                valueFormatter = xAxisValueFormatter,
+                valueFormatter = { _, value, _ ->
+                    val index = value.toInt()
+                    if (index in points.indices) {
+                        dateTimeFormatter.format(Date(points[index].first))
+                    } else "-"
+                },
                 label = axisLabelComponent,
                 guideline = null,
+                itemPlacer = remember {
+                    HorizontalAxis.ItemPlacer.aligned(
+                        spacing = { 5 },
+                        addExtremeLabelPadding = true
+                    )
+                }
             ),
             marker = marker
         ),

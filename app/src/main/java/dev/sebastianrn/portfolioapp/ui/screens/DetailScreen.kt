@@ -97,37 +97,40 @@ fun DetailScreen(
     var showSheet by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
 
-    // State to track which history record is being edited
     var historyRecordToEdit by remember { mutableStateOf<PriceHistory?>(null) }
+
+    val chartPoints by remember(coinId) {
+        viewModel.getChartPointsForAsset(coinId)
+    }.collectAsState()
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background, topBar = {
         CenterAlignedTopAppBar(
             title = {
-            Text(
-                coinName,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Bold
+                Text(
+                    coinName,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontWeight = FontWeight.Bold
+                )
+            }, navigationIcon = {
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            }, actions = {
+                // Edit Asset Button
+                IconButton(onClick = { showEditDialog = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit Asset",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            }, colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background
             )
-        }, navigationIcon = {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
-        }, actions = {
-            // Edit Asset Button
-            IconButton(onClick = { showEditDialog = true }) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Edit Asset",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
-        }, colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background
-        )
         )
     }, floatingActionButton = {
         FloatingActionButton(
@@ -148,9 +151,8 @@ fun DetailScreen(
 
             // 2. Performance Chart
             item {
-                if (history.isNotEmpty()) {
-                    val chartPoints = history.reversed().map { it.dateTimestamp to it.price }
-                    PerformanceCard(chartPoints)
+                if (chartPoints.isNotEmpty()) {
+                    PerformanceCard(chartPoints) // PerformanceCard now gets pre-processed data
                 }
             }
 
@@ -195,7 +197,6 @@ fun DetailScreen(
         })
     }
 
-    // Edit History Dialog
     if (historyRecordToEdit != null) {
         UpdatePriceSheet(
             onDismiss = { historyRecordToEdit = null },
@@ -225,9 +226,6 @@ fun DetailScreen(
             })
     }
 }
-
-// ... [AssetStatsHeader, PerformanceCard, SingleCoinChart, HistoryItemCard, UpdatePriceSheet remain unchanged] ...
-// (If you need the full code for these again, let me know, otherwise I will just paste the new Dialog below)
 
 @Composable
 fun AssetStatsHeader(asset: GoldAsset, currency: String) {
@@ -392,13 +390,15 @@ fun PerformanceCard(points: List<Pair<Long, Double>>) {
                     Icons.AutoMirrored.Filled.ShowChart,
                     contentDescription = null,
                     tint = GoldStart
-                ); Spacer(modifier = Modifier.width(8.dp)); Text(
-                stringResource(R.string.performance_title),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold
-            )
-            };
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    stringResource(R.string.performance_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
             PortfolioChart(points)
@@ -521,7 +521,10 @@ fun UpdatePriceSheet(
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
                 // Handle navigation bars and keyboard like AssetSheet
-                .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp)
+                .padding(
+                    bottom = WindowInsets.navigationBars.asPaddingValues()
+                        .calculateBottomPadding() + 24.dp
+                )
                 .imePadding()
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -539,7 +542,12 @@ fun UpdatePriceSheet(
                     value = sdf.format(Date(selectedDate)),
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text(stringResource(R.string.date_label, "").replace(": ", ""), color = TextGray) },
+                    label = {
+                        Text(
+                            stringResource(R.string.date_label, "").replace(": ", ""),
+                            color = TextGray
+                        )
+                    },
                     trailingIcon = {
                         Icon(Icons.Default.DateRange, contentDescription = null, tint = GoldStart)
                     },
