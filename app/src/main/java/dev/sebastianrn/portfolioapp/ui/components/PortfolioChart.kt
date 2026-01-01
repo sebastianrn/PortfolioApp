@@ -51,7 +51,7 @@ fun PortfolioChart(points: List<Pair<Long, Double>>) {
         )
     }
 
-    val dateTimeFormatter = remember { SimpleDateFormat("MMM yy", Locale.getDefault()) }
+    val dateTimeFormatter = remember { SimpleDateFormat("dd.MM.yy", Locale.getDefault()) }
 
     val axisLabelComponent = rememberAxisLabelComponent(
         color = Color.White,
@@ -85,11 +85,6 @@ fun PortfolioChart(points: List<Pair<Long, Double>>) {
         }
     }
 
-    val xAxisFormatter = { value: Double ->
-        val timestampMs = value.toLong()
-        dateTimeFormatter.format(Date(timestampMs))
-    }
-
     val yAxisValueFormatter = remember {
         CartesianValueFormatter { _, value, _ -> yAxisFormatter(value) }
     }
@@ -97,6 +92,15 @@ fun PortfolioChart(points: List<Pair<Long, Double>>) {
     val markerYValueFormatter = { value: Double ->
         val formatted = NumberFormat.getInstance(Locale.GERMAN).format(value.roundToInt())
         "CHF $formatted"
+    }
+
+    val getFormattedDate = { value: Double ->
+        val index = value.toInt()
+        if (index in points.indices) {
+            dateTimeFormatter.format(Date(points[index].first))
+        } else {
+            "–"
+        }
     }
 
     val marker = rememberDefaultCartesianMarker(
@@ -110,7 +114,7 @@ fun PortfolioChart(points: List<Pair<Long, Double>>) {
                 targets.firstOrNull() as? com.patrykandpatrick.vico.core.cartesian.marker.LineCartesianLayerMarkerTarget
             val entry = lineTarget?.points?.firstOrNull()?.entry
             if (entry != null) {
-                val dateStr = xAxisFormatter(entry.x)
+                val dateStr = getFormattedDate(entry.x)
                 val valueStr = markerYValueFormatter(entry.y)
                 "$dateStr\n$valueStr"
             } else {
@@ -141,12 +145,7 @@ fun PortfolioChart(points: List<Pair<Long, Double>>) {
                 guideline = null
             ),
             bottomAxis = HorizontalAxis.rememberBottom(
-                valueFormatter = { _, value, _ ->
-                    val index = value.toInt()
-                    if (index in points.indices) {
-                        dateTimeFormatter.format(Date(points[index].first))
-                    } else "-"
-                },
+                valueFormatter = { _, value, _ -> getFormattedDate(value) },
                 label = axisLabelComponent,
                 guideline = null,
                 itemPlacer = remember {
