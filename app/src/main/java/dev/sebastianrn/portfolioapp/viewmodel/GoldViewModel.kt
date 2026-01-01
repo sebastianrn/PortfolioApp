@@ -61,37 +61,24 @@ class GoldViewModel(
         .combine(allAssets) { history, assets ->
             if (history.isEmpty() || assets.isEmpty()) return@combine emptyList()
 
-            // 1. PERFORM CALCULATION ON BACKGROUND THREAD
-            withContext(Dispatchers.Default) {
-                val assetMap = assets.associateBy { it.id }
-                val sortedHistory = history.sortedBy { it.dateTimestamp }
+            val assetMap = assets.associateBy { it.id }
+            val latestPrices = mutableMapOf<Int, Double>()
 
-                // 2. USE A MAP-BASED APPROACH INSTEAD OF STEPPING THROUGH EVERY DAY
-                // This prevents "Signal 3" when there are 7-year gaps
-                val curve = mutableListOf<Pair<Long, Double>>()
-                val latestPrices = mutableMapOf<Int, Double>()
+            // Group entries by date to ensure we only have ONE point per day
+            history.sortedBy { it.dateTimestamp }
+                .groupBy { it.dateTimestamp }
+                .map { (timestamp, entriesForDay) ->
+                    // 1. Update latest known prices for all assets in these entries
+                    entriesForDay.forEach { latestPrices[it.assetId] = it.price }
 
-                sortedHistory.forEach { entry ->
-                    latestPrices[entry.assetId] = entry.price
-
-                    var totalValue = 0.0
-                    latestPrices.forEach { (id, price) ->
+                    // 2. Calculate the total portfolio value using the latest known price for EVERY asset
+                    val totalValue = latestPrices.entries.sumOf { (id, price) ->
                         val asset = assetMap[id]
-                        if (asset != null) {
-                            totalValue += price * asset.quantity
-                        }
+                        (asset?.quantity ?: 0).toDouble() * price
                     }
-                    curve.add(entry.dateTimestamp to totalValue)
-                }
 
-                // 3. DOWNSAMPLE IF NECESSARY
-                if (curve.size > 150) {
-                    val step = curve.size / 150
-                    curve.filterIndexed { index, _ -> index % step == 0 || index == curve.lastIndex }
-                } else {
-                    curve
+                    timestamp to totalValue
                 }
-            }
         }
         .flowOn(Dispatchers.Default) // Double ensure it's off the Main thread
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
