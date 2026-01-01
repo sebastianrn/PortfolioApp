@@ -64,27 +64,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
-import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
-import com.patrykandpatrick.vico.compose.chart.Chart
-import com.patrykandpatrick.vico.compose.chart.line.lineChart
-import com.patrykandpatrick.vico.compose.component.shape.shader.verticalGradient
-import com.patrykandpatrick.vico.core.axis.AxisItemPlacer
-import com.patrykandpatrick.vico.core.axis.AxisPosition
-import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
-import com.patrykandpatrick.vico.core.component.text.textComponent
-import com.patrykandpatrick.vico.core.entry.entryModelOf
 import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.GoldAsset
 import dev.sebastianrn.portfolioapp.data.PriceHistory
 import dev.sebastianrn.portfolioapp.ui.components.AssetSheet
 import dev.sebastianrn.portfolioapp.ui.components.ModernTextField
-import dev.sebastianrn.portfolioapp.ui.components.rememberMarker
+import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import dev.sebastianrn.portfolioapp.ui.theme.LossRed
 import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen
@@ -108,37 +97,38 @@ fun DetailScreen(
     var showSheet by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
 
-    // State to track which history record is being edited
     var historyRecordToEdit by remember { mutableStateOf<PriceHistory?>(null) }
+
+    val chartPoints by viewModel.getChartPointsForAsset(coinId).collectAsState()
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background, topBar = {
         CenterAlignedTopAppBar(
             title = {
-            Text(
-                coinName,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Bold
+                Text(
+                    coinName,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontWeight = FontWeight.Bold
+                )
+            }, navigationIcon = {
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            }, actions = {
+                // Edit Asset Button
+                IconButton(onClick = { showEditDialog = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit Asset",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            }, colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background
             )
-        }, navigationIcon = {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
-        }, actions = {
-            // Edit Asset Button
-            IconButton(onClick = { showEditDialog = true }) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Edit Asset",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
-        }, colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background
-        )
         )
     }, floatingActionButton = {
         FloatingActionButton(
@@ -159,9 +149,8 @@ fun DetailScreen(
 
             // 2. Performance Chart
             item {
-                if (history.isNotEmpty()) {
-                    val chartPoints = history.reversed().map { it.dateTimestamp to it.price }
-                    PerformanceCard(chartPoints)
+                if (chartPoints.isNotEmpty()) {
+                    PerformanceCard(chartPoints) // PerformanceCard now gets pre-processed data
                 }
             }
 
@@ -206,7 +195,6 @@ fun DetailScreen(
         })
     }
 
-    // Edit History Dialog
     if (historyRecordToEdit != null) {
         UpdatePriceSheet(
             onDismiss = { historyRecordToEdit = null },
@@ -236,9 +224,6 @@ fun DetailScreen(
             })
     }
 }
-
-// ... [AssetStatsHeader, PerformanceCard, SingleCoinChart, HistoryItemCard, UpdatePriceSheet remain unchanged] ...
-// (If you need the full code for these again, let me know, otherwise I will just paste the new Dialog below)
 
 @Composable
 fun AssetStatsHeader(asset: GoldAsset, currency: String) {
@@ -403,72 +388,20 @@ fun PerformanceCard(points: List<Pair<Long, Double>>) {
                     Icons.AutoMirrored.Filled.ShowChart,
                     contentDescription = null,
                     tint = GoldStart
-                ); Spacer(modifier = Modifier.width(8.dp)); Text(
-                stringResource(R.string.performance_title),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold
-            )
-            }; Spacer(modifier = Modifier.height(16.dp)); SingleCoinChart(points)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    stringResource(R.string.performance_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            PortfolioChart(points)
         }
     }
-}
-
-@Composable
-fun SingleCoinChart(points: List<Pair<Long, Double>>) {
-    val chartPoints = if (points.size == 1) listOf(
-        points[0],
-        points[0].copy(first = points[0].first + 1)
-    ) else points
-    val chartEntryModel = entryModelOf(*chartPoints.map { it.second.toFloat() }.toTypedArray())
-    val horizontalFormatter = AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
-        val index = value.toInt(); if (index in chartPoints.indices) SimpleDateFormat(
-        "MMM dd",
-        Locale.getDefault()
-    ).format(Date(chartPoints[index].first)) else ""
-    }
-    val verticalFormatter = AxisValueFormatter<AxisPosition.Vertical.Start> { value, _ ->
-        if (value >= 1000) "${
-            String.format(
-                "%.1f",
-                value / 1000f
-            )
-        }k" else "${value.toInt()}"
-    }
-    val axisLabelStyle = textComponent {
-        color = MaterialTheme.colorScheme.onSurfaceVariant.toArgb(); textSizeSp = 10f
-    }
-    val lineSpec = com.patrykandpatrick.vico.compose.chart.line.lineSpec(
-        lineColor = GoldStart,
-        lineBackgroundShader = verticalGradient(
-            colors = arrayOf(
-                GoldStart.copy(alpha = 0.5f),
-                Color.Transparent
-            )
-        )
-    )
-    Chart(
-        chart = lineChart(lines = listOf(lineSpec)),
-        model = chartEntryModel,
-        startAxis = rememberStartAxis(
-            label = axisLabelStyle,
-            valueFormatter = verticalFormatter,
-            guideline = null,
-            tickLength = 0.dp,
-            itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 5)
-        ),
-        bottomAxis = rememberBottomAxis(
-            label = axisLabelStyle,
-            valueFormatter = horizontalFormatter,
-            guideline = null,
-            tickLength = 0.dp
-        ),
-        marker = rememberMarker(),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp)
-            .padding(horizontal = 16.dp)
-    )
 }
 
 @Composable
@@ -586,7 +519,10 @@ fun UpdatePriceSheet(
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
                 // Handle navigation bars and keyboard like AssetSheet
-                .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp)
+                .padding(
+                    bottom = WindowInsets.navigationBars.asPaddingValues()
+                        .calculateBottomPadding() + 24.dp
+                )
                 .imePadding()
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -604,7 +540,12 @@ fun UpdatePriceSheet(
                     value = sdf.format(Date(selectedDate)),
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text(stringResource(R.string.date_label, "").replace(": ", ""), color = TextGray) },
+                    label = {
+                        Text(
+                            stringResource(R.string.date_label, "").replace(": ", ""),
+                            color = TextGray
+                        )
+                    },
                     trailingIcon = {
                         Icon(Icons.Default.DateRange, contentDescription = null, tint = GoldStart)
                     },

@@ -24,12 +24,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.Instant
-import java.time.ZoneId
 import java.util.Calendar
 import kotlin.math.abs
 
@@ -58,12 +57,31 @@ class GoldViewModel(
         PortfolioSummary(value, profit, invested)
     }.stateIn(viewModelScope, SharingStarted.Lazily, PortfolioSummary())
 
-    val portfolioCurve: StateFlow<List<Pair<Long, Double>>> = combine(
-        dao.getAllHistory(),
-        allAssets
-    ) { history, assets ->
-        calculatePortfolioCurve(assets, history)
-    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    val portfolioCurve: StateFlow<List<Pair<Long, Double>>> = dao.getAllHistory()
+        .combine(allAssets) { history, assets ->
+            if (history.isEmpty() || assets.isEmpty()) return@combine emptyList()
+
+            val assetMap = assets.associateBy { it.id }
+            val latestPrices = mutableMapOf<Int, Double>()
+
+            // Group entries by date to ensure we only have ONE point per day
+            history.sortedBy { it.dateTimestamp }
+                .groupBy { it.dateTimestamp }
+                .map { (timestamp, entriesForDay) ->
+                    // 1. Update latest known prices for all assets in these entries
+                    entriesForDay.forEach { latestPrices[it.assetId] = it.price }
+
+                    // 2. Calculate the total portfolio value using the latest known price for EVERY asset
+                    val totalValue = latestPrices.entries.sumOf { (id, price) ->
+                        val asset = assetMap[id]
+                        (asset?.quantity ?: 0).toDouble() * price
+                    }
+
+                    timestamp to totalValue
+                }
+        }
+        .flowOn(Dispatchers.Default) // Double ensure it's off the Main thread
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     fun getAssetById(id: Int): Flow<GoldAsset> = dao.getAssetById(id)
     fun getHistoryForAsset(assetId: Int): Flow<List<PriceHistory>> = dao.getHistoryForAsset(assetId)
@@ -306,6 +324,52 @@ class GoldViewModel(
         }
     }
 
+    fun getChartPointsForAsset(assetId: Int): StateFlow<List<Pair<Long, Double>>> {
+        return dao.getHistoryForAsset(assetId)
+            .map { history ->
+                if (history.isEmpty()) return@map emptyList()
+
+                // 1. Process on background thread
+                val rawPoints = history.reversed().map { it.dateTimestamp to it.price }
+
+                // 2. Downsample: If we have many points, only take a max of 100
+                // to keep chart rendering performant
+                if (rawPoints.size > 100) {
+                    val step = rawPoints.size / 100
+                    rawPoints.filterIndexed { index, _ ->
+                        index % step == 0 || index == rawPoints.lastIndex
+                    }
+                } else {
+                    rawPoints
+                }
+            }
+            .flowOn(Dispatchers.Default) // Ensure processing is off-main
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    }
+
+    /**
+     * Triggers the programmatic generation of test data.
+     * @param assetCount Number of GoldAssets to create.
+     * @param historyPerAsset Number of PriceHistory records for each asset.
+     */
+    fun generateTestData(assetCount: Int = 10, historyPerAsset: Int = 30) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Using your existing TestDataGenerator class
+                val generator = dev.sebastianrn.portfolioapp.util.TestDataGenerator(dao)
+                generator.generateData(assetCount, historyPerAsset)
+
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(application, "Generated $assetCount assets with $historyPerAsset records each", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(application, "Error generating data: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
     // --- HELPERS ---
 
     private fun mergeTimeIntoDate(dateMillis: Long): Long {
@@ -317,67 +381,6 @@ class GoldViewModel(
         return calendarDate.timeInMillis
     }
 
-    private fun calculatePortfolioCurve(assets: List<GoldAsset>, history: List<PriceHistory>): List<Pair<Long, Double>> {
-        if (assets.isEmpty()) return emptyList()
-
-        // 1. Initial State: Current quantities and Original Prices
-        val priceMap = assets.associate { it.id to it.originalPrice }.toMutableMap()
-        val qtyMap = assets.associate { it.id to it.quantity }
-
-        // 2. Group history records by "Calendar Day" (Midnight)
-        val zoneId = ZoneId.systemDefault()
-
-        val historyByDay = history.groupBy { record ->
-            Instant.ofEpochMilli(record.dateTimestamp)
-                .atZone(zoneId)
-                .toLocalDate()
-                .atStartOfDay(zoneId)
-                .toInstant()
-                .toEpochMilli()
-        }
-
-        // 3. Sort days chronologically
-        val sortedDays = historyByDay.keys.sorted()
-        val points = mutableListOf<Pair<Long, Double>>()
-
-        // 4. Iterate through each unique calendar day
-        for (dayMillis in sortedDays) {
-            val dayRecords = historyByDay[dayMillis] ?: emptyList()
-
-            // Group by Asset ID to handle multiple updates per asset per day
-            val updatesForDay = dayRecords.groupBy { it.assetId }
-                .mapValues { (_, records) ->
-                    // CHANGED: Calculate the AVERAGE price for this asset on this day
-                    records.map { it.price }.average()
-                }
-
-            // Update our running price map with the new average prices
-            updatesForDay.forEach { (assetId, avgPrice) ->
-                priceMap[assetId] = avgPrice
-            }
-
-            // Calculate total portfolio value for this day using the updated prices
-            var dailyTotal = 0.0
-            qtyMap.forEach { (id, qty) ->
-                val price = priceMap[id] ?: 0.0
-                dailyTotal += (qty * price)
-            }
-
-            points.add(dayMillis to dailyTotal)
-        }
-
-        // 5. Downsampling
-        val maxPoints = 60
-        if (points.size > maxPoints) {
-            val step = points.size / maxPoints
-            return points.filterIndexed { index, _ ->
-                index % step == 0 || index == points.lastIndex
-            }
-        }
-
-        return points
-    }
-    // 2. Add Factory for Android to use
     companion object {
         val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
