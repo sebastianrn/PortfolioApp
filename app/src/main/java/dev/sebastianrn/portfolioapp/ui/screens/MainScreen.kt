@@ -78,6 +78,7 @@ import dev.sebastianrn.portfolioapp.data.AssetType
 import dev.sebastianrn.portfolioapp.data.GoldAsset
 import dev.sebastianrn.portfolioapp.ui.components.AssetSheet
 import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
+import dev.sebastianrn.portfolioapp.ui.components.PriceChangeIndicator
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import dev.sebastianrn.portfolioapp.ui.theme.LossRed
 import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen
@@ -308,7 +309,7 @@ fun MainScreen(
                 contentPadding = PaddingValues(bottom = 80.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                item { PortfolioSummaryCard(stats, currency) }
+                item { PortfolioSummaryCard(stats, currency, viewModel) }
 
                 item {
                     if (portfolioPoints.isNotEmpty()) {
@@ -381,7 +382,12 @@ fun MainScreen(
                             }
                         },
                         enableDismissFromStartToEnd = false,
-                        content = { AssetItem(asset, currency, onClick = { onCoinClick(asset) }) }
+                        content = {
+                            AssetItem(
+                                asset,
+                                currency,
+                                onClick = { onCoinClick(asset) })
+                        }
                     )
                 }
             }
@@ -534,7 +540,9 @@ fun AssetItem(asset: GoldAsset, currency: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String) {
+fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String, viewModel: GoldViewModel) {
+    val dailyChange by viewModel.portfolioChange.collectAsState()
+
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(24.dp),
@@ -544,18 +552,27 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String) {
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
-            // Total Value
-            Column {
-                Text(
-                    text = stringResource(R.string.total_portfolio_value),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelLarge
-                )
-                Text(
-                    text = stats.totalValue.formatCurrency(),
-                    color = GoldStart,
-                    fontSize = 36.sp,
-                    fontWeight = FontWeight.ExtraBold
+            Row (
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Total Value
+                Column {
+                    Text(
+                        text = stringResource(R.string.total_portfolio_value),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                    Text(
+                        text = stats.totalValue.formatCurrency(),
+                        color = GoldStart,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+                PriceChangeIndicator(
+                    amount = dailyChange.first,
+                    percent = dailyChange.second
                 )
             }
 
@@ -568,27 +585,24 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Invested Capital
                 Column {
                     Text(
                         stringResource(R.string.invested_capital),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodyMedium
                     )
                     Text(
                         text = stats.totalInvested.formatCurrency(),
                         color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
-
                 // Total Return
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         stringResource(R.string.total_return),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodyMedium
                     )
 
                     val isProfit = stats.totalProfit >= 0
@@ -605,7 +619,7 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String) {
                             modifier = Modifier.size(24.dp)
                         )
                         Text(
-                            text = "${String.format(Locale.US, "%.2f", abs(percentage))}%",
+                            text = "${String.format(Locale.GERMAN, "%.2f", abs(percentage))}%",
                             color = color,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold

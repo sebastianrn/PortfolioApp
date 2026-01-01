@@ -83,10 +83,28 @@ class GoldViewModel(
         .flowOn(Dispatchers.Default) // Double ensure it's off the Main thread
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
+    val portfolioChange: StateFlow<Pair<Double, Double>> = portfolioCurve.map { curve ->
+        if (curve.size < 2) return@map 0.0 to 0.0
+        val latest = curve.last().second
+        val previous = curve[curve.size - 2].second
+        val diff = latest - previous
+        val percent = if (previous != 0.0) (diff / previous) * 100 else 0.0
+        diff to percent
+    }.stateIn(viewModelScope, SharingStarted.Lazily, 0.0 to 0.0)
+
     fun getAssetById(id: Int): Flow<GoldAsset> = dao.getAssetById(id)
     fun getHistoryForAsset(assetId: Int): Flow<List<PriceHistory>> = dao.getHistoryForAsset(assetId)
 
-    // --- CURRENCY ---
+    fun getAssetChange(assetId: Int): Flow<Pair<Double, Double>> = dao.getHistoryForAsset(assetId).map { history ->
+        if (history.size < 2) return@map 0.0 to 0.0
+        // History is usually sorted by date descending in DAO
+        val latest = history[0].price
+        val previous = history[1].price
+        val diff = latest - previous
+        val percent = if (previous != 0.0) (diff / previous) * 100 else 0.0
+        diff to percent
+    }
+
     fun setCurrency(newCode: String) {
         val oldCode = currentCurrency.value
         if (oldCode == newCode) return

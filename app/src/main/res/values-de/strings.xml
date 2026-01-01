@@ -3,8 +3,9 @@
     <string name="app_title">Gold Portfolio</string>
 
     <!-- Main Screen -->
-    <string name="total_portfolio_value">Gesamtwert Portfolio</string>
+    <string name="total_portfolio_value">Gesamtwert</string>
     <string name="invested_capital">Investiertes Kapital</string>
+    <string name="daily_change">Änderung Vortag</string>
     <string name="total_return">Gesamtrendite</string>
     <string name="empty_assets_list">Fügen Sie Anlagen hinzu, um die Leistung zu sehen</string>
     <string name="your_assets">Ihre Anlagen</string>
@@ -29,7 +30,7 @@
     <string name="delete_message">Möchten Sie \'%1$s\' wirklich löschen? Dies kann nicht rückgängig gemacht werden.</string>
 
     <!-- Update price from api -->
-    <string name="fetching_price_from_api">Fetching Spot Price...</string>
+    <string name="fetching_price_from_api">Fetching Spot Price…</string>
     <string name="fetching_price_from_api_failed">Update Failed:</string>
     <string name="fetching_price_from_api_updated">Updated %1$s assets.</string>
     <string name="api_key_missing">API Key missing in local.properties</string>
