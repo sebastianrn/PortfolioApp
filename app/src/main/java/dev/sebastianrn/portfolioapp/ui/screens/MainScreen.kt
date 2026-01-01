@@ -525,11 +525,10 @@ fun AssetItem(asset: GoldAsset, currency: String, onClick: () -> Unit) {
 
                 val isProfit = asset.totalProfitOrLoss >= 0
                 val color = if (isProfit) ProfitGreen else LossRed
-                val sign = if (isProfit) "+" else ""
 
                 Text(
-                    text = "$sign${abs(asset.totalProfitOrLoss).toCurrencyString(currency)}",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = abs(asset.totalProfitOrLoss).toCurrencyString(currency),
+                    style = MaterialTheme.typography.bodyLarge,
                     color = color,
                     fontWeight = FontWeight.Bold
                 )
@@ -598,7 +597,6 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String) {
 
                     val isProfit = stats.totalProfit >= 0
                     val color = if (isProfit) ProfitGreen else LossRed
-                    val sign = if (isProfit) "+" else ""
 
                     val percentage =
                         if (stats.totalInvested > 0) (stats.totalProfit / stats.totalInvested) * 100 else 0.0
@@ -619,9 +617,9 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String) {
                     }
 
                     Text(
-                        text = "$sign${abs(stats.totalProfit).toCurrencyString(currency)}",
+                        text = abs(stats.totalProfit).toCurrencyString(currency),
                         color = color,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium
                     )
                 }
