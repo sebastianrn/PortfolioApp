@@ -99,9 +99,7 @@ fun DetailScreen(
 
     var historyRecordToEdit by remember { mutableStateOf<PriceHistory?>(null) }
 
-    val chartPoints by remember(coinId) {
-        viewModel.getChartPointsForAsset(coinId)
-    }.collectAsState()
+    val chartPoints by viewModel.getChartPointsForAsset(coinId).collectAsState()
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background, topBar = {
         CenterAlignedTopAppBar(

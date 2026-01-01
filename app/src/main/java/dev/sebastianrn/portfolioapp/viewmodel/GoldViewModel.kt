@@ -29,8 +29,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.Instant
-import java.time.ZoneId
 import java.util.Calendar
 import kotlin.math.abs
 
@@ -59,12 +57,44 @@ class GoldViewModel(
         PortfolioSummary(value, profit, invested)
     }.stateIn(viewModelScope, SharingStarted.Lazily, PortfolioSummary())
 
-    val portfolioCurve: StateFlow<List<Pair<Long, Double>>> = combine(
-        dao.getAllHistory(),
-        allAssets
-    ) { history, assets ->
-        calculatePortfolioCurve(assets, history)
-    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    val portfolioCurve: StateFlow<List<Pair<Long, Double>>> = dao.getAllHistory()
+        .combine(allAssets) { history, assets ->
+            if (history.isEmpty() || assets.isEmpty()) return@combine emptyList()
+
+            // 1. PERFORM CALCULATION ON BACKGROUND THREAD
+            withContext(Dispatchers.Default) {
+                val assetMap = assets.associateBy { it.id }
+                val sortedHistory = history.sortedBy { it.dateTimestamp }
+
+                // 2. USE A MAP-BASED APPROACH INSTEAD OF STEPPING THROUGH EVERY DAY
+                // This prevents "Signal 3" when there are 7-year gaps
+                val curve = mutableListOf<Pair<Long, Double>>()
+                val latestPrices = mutableMapOf<Int, Double>()
+
+                sortedHistory.forEach { entry ->
+                    latestPrices[entry.assetId] = entry.price
+
+                    var totalValue = 0.0
+                    latestPrices.forEach { (id, price) ->
+                        val asset = assetMap[id]
+                        if (asset != null) {
+                            totalValue += price * asset.quantity
+                        }
+                    }
+                    curve.add(entry.dateTimestamp to totalValue)
+                }
+
+                // 3. DOWNSAMPLE IF NECESSARY
+                if (curve.size > 150) {
+                    val step = curve.size / 150
+                    curve.filterIndexed { index, _ -> index % step == 0 || index == curve.lastIndex }
+                } else {
+                    curve
+                }
+            }
+        }
+        .flowOn(Dispatchers.Default) // Double ensure it's off the Main thread
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     fun getAssetById(id: Int): Flow<GoldAsset> = dao.getAssetById(id)
     fun getHistoryForAsset(assetId: Int): Flow<List<PriceHistory>> = dao.getHistoryForAsset(assetId)
@@ -364,67 +394,6 @@ class GoldViewModel(
         return calendarDate.timeInMillis
     }
 
-    private fun calculatePortfolioCurve(assets: List<GoldAsset>, history: List<PriceHistory>): List<Pair<Long, Double>> {
-        if (assets.isEmpty()) return emptyList()
-
-        // 1. Initial State: Current quantities and Original Prices
-        val priceMap = assets.associate { it.id to it.originalPrice }.toMutableMap()
-        val qtyMap = assets.associate { it.id to it.quantity }
-
-        // 2. Group history records by "Calendar Day" (Midnight)
-        val zoneId = ZoneId.systemDefault()
-
-        val historyByDay = history.groupBy { record ->
-            Instant.ofEpochMilli(record.dateTimestamp)
-                .atZone(zoneId)
-                .toLocalDate()
-                .atStartOfDay(zoneId)
-                .toInstant()
-                .toEpochMilli()
-        }
-
-        // 3. Sort days chronologically
-        val sortedDays = historyByDay.keys.sorted()
-        val points = mutableListOf<Pair<Long, Double>>()
-
-        // 4. Iterate through each unique calendar day
-        for (dayMillis in sortedDays) {
-            val dayRecords = historyByDay[dayMillis] ?: emptyList()
-
-            // Group by Asset ID to handle multiple updates per asset per day
-            val updatesForDay = dayRecords.groupBy { it.assetId }
-                .mapValues { (_, records) ->
-                    // CHANGED: Calculate the AVERAGE price for this asset on this day
-                    records.map { it.price }.average()
-                }
-
-            // Update our running price map with the new average prices
-            updatesForDay.forEach { (assetId, avgPrice) ->
-                priceMap[assetId] = avgPrice
-            }
-
-            // Calculate total portfolio value for this day using the updated prices
-            var dailyTotal = 0.0
-            qtyMap.forEach { (id, qty) ->
-                val price = priceMap[id] ?: 0.0
-                dailyTotal += (qty * price)
-            }
-
-            points.add(dayMillis to dailyTotal)
-        }
-
-        // 5. Downsampling
-        val maxPoints = 60
-        if (points.size > maxPoints) {
-            val step = points.size / maxPoints
-            return points.filterIndexed { index, _ ->
-                index % step == 0 || index == points.lastIndex
-            }
-        }
-
-        return points
-    }
-    // 2. Add Factory for Android to use
     companion object {
         val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")

@@ -40,6 +40,8 @@ import kotlin.math.roundToInt
 @Composable
 fun PortfolioChart(points: List<Pair<Long, Double>>) {
 
+    if (points.isEmpty()) return
+
     val model = remember(points) {
         CartesianChartModel(
             LineCartesianLayerModel.build {
