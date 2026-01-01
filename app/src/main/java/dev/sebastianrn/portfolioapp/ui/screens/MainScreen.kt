@@ -73,7 +73,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.AssetType
 import dev.sebastianrn.portfolioapp.data.GoldAsset
@@ -83,7 +82,7 @@ import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import dev.sebastianrn.portfolioapp.ui.theme.LossRed
 import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen
 import dev.sebastianrn.portfolioapp.ui.theme.TextGray
-import dev.sebastianrn.portfolioapp.util.toCurrencyString
+import dev.sebastianrn.portfolioapp.util.formatCurrency
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 import dev.sebastianrn.portfolioapp.viewmodel.PortfolioSummary
 import dev.sebastianrn.portfolioapp.viewmodel.ThemeViewModel
@@ -92,11 +91,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.text.DecimalFormat
 import java.util.Locale
 import kotlin.math.abs
-
-private val YDecimalFormat = DecimalFormat("#.##")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -517,7 +513,7 @@ fun AssetItem(asset: GoldAsset, currency: String, onClick: () -> Unit) {
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    asset.totalCurrentValue.toCurrencyString(currency),
+                    asset.totalCurrentValue.formatCurrency(),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold
@@ -527,7 +523,7 @@ fun AssetItem(asset: GoldAsset, currency: String, onClick: () -> Unit) {
                 val color = if (isProfit) ProfitGreen else LossRed
 
                 Text(
-                    text = abs(asset.totalProfitOrLoss).toCurrencyString(currency),
+                    text = abs(asset.totalProfitOrLoss).formatCurrency(),
                     style = MaterialTheme.typography.bodyLarge,
                     color = color,
                     fontWeight = FontWeight.Bold
@@ -556,7 +552,7 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String) {
                     style = MaterialTheme.typography.labelLarge
                 )
                 Text(
-                    text = stats.totalValue.toCurrencyString(currency),
+                    text = stats.totalValue.formatCurrency(),
                     color = GoldStart,
                     fontSize = 36.sp,
                     fontWeight = FontWeight.ExtraBold
@@ -580,7 +576,7 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String) {
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        text = stats.totalInvested.toCurrencyString(currency),
+                        text = stats.totalInvested.formatCurrency(),
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp
@@ -617,7 +613,7 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String) {
                     }
 
                     Text(
-                        text = abs(stats.totalProfit).toCurrencyString(currency),
+                        text = abs(stats.totalProfit).formatCurrency(),
                         color = color,
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium

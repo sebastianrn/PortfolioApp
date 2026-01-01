@@ -78,7 +78,7 @@ import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import dev.sebastianrn.portfolioapp.ui.theme.LossRed
 import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen
 import dev.sebastianrn.portfolioapp.ui.theme.TextGray
-import dev.sebastianrn.portfolioapp.util.toCurrencyString
+import dev.sebastianrn.portfolioapp.util.formatCurrency
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -306,7 +306,7 @@ fun AssetStatsHeader(asset: GoldAsset, currency: String) {
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        asset.totalCurrentValue.toCurrencyString(currency),
+                        asset.totalCurrentValue.formatCurrency(),
                         color = GoldStart,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 24.sp
@@ -329,7 +329,7 @@ fun AssetStatsHeader(asset: GoldAsset, currency: String) {
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        asset.originalPrice.toCurrencyString(currency),
+                        asset.originalPrice.formatCurrency(),
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp
@@ -362,9 +362,9 @@ fun AssetStatsHeader(asset: GoldAsset, currency: String) {
                         )
                     }
                     Text(
-                        text = abs(asset.totalProfitOrLoss).toCurrencyString(currency),
+                        text = abs(asset.totalProfitOrLoss).formatCurrency(),
                         color = color,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -458,7 +458,7 @@ fun HistoryItemCard(record: PriceHistory, currency: String, onEditClick: () -> U
                 }
             }
             Text(
-                text = record.price.toCurrencyString(currency),
+                text = record.price.formatCurrency(),
                 color = GoldStart,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 18.sp

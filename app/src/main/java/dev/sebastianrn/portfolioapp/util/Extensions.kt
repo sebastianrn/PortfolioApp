@@ -1,16 +1,12 @@
 package dev.sebastianrn.portfolioapp.util
 
+import java.text.NumberFormat
 import java.util.Locale
-
-// Extension function to convert any Double to a localized currency string
-fun Double.toCurrencyString(currencyCode: String): String {
-    val symbol = when (currencyCode) {
-        "USD" -> "$"
-        "EUR" -> "€"
-        "GBP" -> "£"
-        "JPY" -> "¥"
-        "CHF" -> "CHF "
-        else -> "$currencyCode "
+fun Double.formatCurrency(includeSymbol: Boolean = true): String {
+    val formatter = NumberFormat.getInstance(Locale.GERMAN).apply {
+        minimumFractionDigits = 2
+        maximumFractionDigits = 2
     }
-    return "$symbol%.2f".format(Locale.US, this)
+    val formattedValue = formatter.format(this)
+    return if (includeSymbol) "CHF $formattedValue" else formattedValue
 }
