@@ -73,6 +73,7 @@ import dev.sebastianrn.portfolioapp.data.GoldAsset
 import dev.sebastianrn.portfolioapp.data.PriceHistory
 import dev.sebastianrn.portfolioapp.ui.components.AssetSheet
 import dev.sebastianrn.portfolioapp.ui.components.ModernTextField
+import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import dev.sebastianrn.portfolioapp.ui.theme.LossRed
 import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen
@@ -398,6 +399,9 @@ fun PerformanceCard(points: List<Pair<Long, Double>>) {
                 fontWeight = FontWeight.Bold
             )
             };
+
+            Spacer(modifier = Modifier.height(16.dp))
+            PortfolioChart(points)
         }
     }
 }

@@ -72,20 +72,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
-import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
-import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
-import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
-import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
-import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
-import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModel
-import com.patrykandpatrick.vico.core.cartesian.data.LineCartesianLayerModel
+import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.AssetType
 import dev.sebastianrn.portfolioapp.data.GoldAsset
 import dev.sebastianrn.portfolioapp.ui.components.AssetSheet
+import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import dev.sebastianrn.portfolioapp.ui.theme.LossRed
 import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen
@@ -99,8 +91,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.text.DecimalFormat
 import java.util.Locale
 import kotlin.math.abs
+
+private val YDecimalFormat = DecimalFormat("#.##")
+private val StartAxisValueFormatter = CartesianValueFormatter.decimal(YDecimalFormat)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -635,33 +631,6 @@ fun PortfolioPerformanceCard(points: List<Pair<Long, Double>>) {
             PortfolioChart(points)
         }
     }
-}
-
-@Composable
-fun PortfolioChart(points: List<Pair<Long, Double>>) {
-    val model = remember(points) {
-        CartesianChartModel(
-            LineCartesianLayerModel.build {
-                series(
-                    x = points.map { it.first.toFloat() },
-                    y = points.map { it.second.toFloat() }
-                )
-            }
-        )
-    }
-
-    CartesianChartHost(
-        chart = rememberCartesianChart(
-            rememberLineCartesianLayer(),
-            startAxis = VerticalAxis.rememberStart(),
-            bottomAxis = HorizontalAxis.rememberBottom(),
-        ),
-        model = model,
-        scrollState = rememberVicoScrollState(scrollEnabled = false),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp)
-    )
 }
 
 @Composable
