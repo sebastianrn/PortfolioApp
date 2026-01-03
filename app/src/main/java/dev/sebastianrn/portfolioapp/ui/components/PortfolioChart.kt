@@ -13,6 +13,7 @@ import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLabelComponent
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
+import com.patrykandpatrick.vico.compose.cartesian.cartesianLayerPadding
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLine
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.marker.rememberDefaultCartesianMarker
@@ -25,6 +26,7 @@ import com.patrykandpatrick.vico.compose.common.shader.verticalGradient
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModel
+import com.patrykandpatrick.vico.core.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.core.cartesian.data.LineCartesianLayerModel
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
@@ -38,7 +40,9 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 @Composable
-fun PortfolioChart(points: List<Pair<Long, Double>>) {
+fun PortfolioChart(
+    points: List<Pair<Long, Double>>
+) {
 
     if (points.isEmpty()) return
 
@@ -128,6 +132,7 @@ fun PortfolioChart(points: List<Pair<Long, Double>>) {
     CartesianChartHost(
         chart = rememberCartesianChart(
             rememberLineCartesianLayer(
+                rangeProvider = remember { CartesianLayerRangeProvider.fixed(minX = 0.0) },
                 lineProvider = LineCartesianLayer.LineProvider.series(
                     LineCartesianLayer.rememberLine(
                         fill = LineCartesianLayer.LineFill.single(fill(GoldStart)),
@@ -152,11 +157,16 @@ fun PortfolioChart(points: List<Pair<Long, Double>>) {
                 guideline = null,
                 itemPlacer = remember {
                     HorizontalAxis.ItemPlacer.aligned(
-                        spacing = { 5 },
-                        addExtremeLabelPadding = true
+                        // If you have 200 points, spacing = 5 is too crowded.
+                        // This shows roughly 6-7 labels across the whole chart.
+                        spacing = { if (points.size > 1) points.size / 6 else 1 },
+                        addExtremeLabelPadding = false
                     )
                 }
             ),
+            layerPadding = {
+                cartesianLayerPadding(0.dp, 0.dp)
+            },
             marker = marker
         ),
         model = model,
