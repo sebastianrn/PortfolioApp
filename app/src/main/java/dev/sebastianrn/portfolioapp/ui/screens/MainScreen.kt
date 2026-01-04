@@ -63,6 +63,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,6 +74,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.AssetType
 import dev.sebastianrn.portfolioapp.data.GoldAsset
@@ -107,7 +110,9 @@ fun MainScreen(
     val portfolioPoints by viewModel.portfolioCurve.collectAsState()
     val isDark by themeViewModel.isDarkTheme.collectAsState()
     val currency by viewModel.currentCurrency.collectAsState()
+    val portfolioCurve by viewModel.portfolioCurve.collectAsState()
 
+    var isChartZoomed by rememberSaveable { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showCurrencyDialog by remember { mutableStateOf(false) }
@@ -182,6 +187,23 @@ fun MainScreen(
                     }
                 }
             }
+        }
+    }
+
+    if (isChartZoomed) {
+        // Full screen overlay
+        Dialog(
+            onDismissRequest = { isChartZoomed = false },
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false, // Allows full screen
+                dismissOnBackPress = true
+            )
+        ) {
+            PortfolioChart(
+                points = portfolioCurve,
+                isFullScreen = true,
+                onZoomClick = { isChartZoomed = false }
+            )
         }
     }
 
@@ -309,11 +331,19 @@ fun MainScreen(
                 contentPadding = PaddingValues(bottom = 80.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                item { PortfolioSummaryCard(stats, currency, viewModel) }
+                item {
+                    PortfolioSummaryCard(
+                        stats,
+                        currency,
+                        viewModel)
+                }
 
                 item {
                     if (portfolioPoints.isNotEmpty()) {
-                        PortfolioPerformanceCard(portfolioPoints)
+                        PortfolioPerformanceCard(
+                            portfolioPoints,
+                            onZoomClick = { isChartZoomed = true }
+                        )
                     } else {
                         Box(
                             modifier = Modifier
@@ -540,7 +570,11 @@ fun AssetItem(asset: GoldAsset, currency: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String, viewModel: GoldViewModel) {
+fun PortfolioSummaryCard(
+    stats: PortfolioSummary,
+    currency: String,
+    viewModel: GoldViewModel
+) {
     val dailyChange by viewModel.portfolioChange.collectAsState()
 
     Card(
@@ -552,7 +586,7 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String, viewModel: G
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
-            Row (
+            Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -639,7 +673,10 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String, viewModel: G
 }
 
 @Composable
-fun PortfolioPerformanceCard(points: List<Pair<Long, Double>>) {
+fun PortfolioPerformanceCard(
+    points: List<Pair<Long, Double>>,
+    onZoomClick: () -> Unit
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         shape = RoundedCornerShape(24.dp),
@@ -660,7 +697,7 @@ fun PortfolioPerformanceCard(points: List<Pair<Long, Double>>) {
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            PortfolioChart(points)
+            PortfolioChart(points, onZoomClick = onZoomClick)
         }
     }
 }

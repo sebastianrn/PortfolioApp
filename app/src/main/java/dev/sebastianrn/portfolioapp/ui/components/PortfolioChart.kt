@@ -1,12 +1,28 @@
 package dev.sebastianrn.portfolioapp.ui.components
 
+import android.app.Activity
+import android.content.pm.ActivityInfo
 import android.text.Layout
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.FullscreenExit
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
@@ -19,6 +35,7 @@ import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLa
 import com.patrykandpatrick.vico.compose.cartesian.marker.rememberDefaultCartesianMarker
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
+import com.patrykandpatrick.vico.compose.cartesian.rememberVicoZoomState
 import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
 import com.patrykandpatrick.vico.compose.common.fill
@@ -41,8 +58,11 @@ import kotlin.math.roundToInt
 
 @Composable
 fun PortfolioChart(
-    points: List<Pair<Long, Double>>
+    points: List<Pair<Long, Double>>,
+    isFullScreen: Boolean = false,
+    onZoomClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
 
     if (points.isEmpty()) return
 
@@ -129,50 +149,77 @@ fun PortfolioChart(
         }
     )
 
-    CartesianChartHost(
-        chart = rememberCartesianChart(
-            rememberLineCartesianLayer(
-                rangeProvider = remember { CartesianLayerRangeProvider.fixed(minX = 0.0) },
-                lineProvider = LineCartesianLayer.LineProvider.series(
-                    LineCartesianLayer.rememberLine(
-                        fill = LineCartesianLayer.LineFill.single(fill(GoldStart)),
-                        areaFill = LineCartesianLayer.AreaFill.single(
-                            fill(
-                                ShaderProvider.verticalGradient(
-                                    arrayOf(GoldStart.copy(alpha = 0.5f), Color.Transparent)
+    DisposableEffect(isFullScreen) {
+        val activity = context as? Activity
+        if (isFullScreen) {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        } else {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+        onDispose { }
+    }
+
+    Box(
+        modifier = if (isFullScreen) Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+        else Modifier.fillMaxWidth().height(200.dp)
+    ) {
+        CartesianChartHost(
+            chart = rememberCartesianChart(
+                rememberLineCartesianLayer(
+                    rangeProvider = remember { CartesianLayerRangeProvider.fixed(minX = 0.0) },
+                    lineProvider = LineCartesianLayer.LineProvider.series(
+                        LineCartesianLayer.rememberLine(
+                            fill = LineCartesianLayer.LineFill.single(fill(GoldStart)),
+                            areaFill = LineCartesianLayer.AreaFill.single(
+                                fill(
+                                    ShaderProvider.verticalGradient(
+                                        arrayOf(GoldStart.copy(alpha = 0.5f), Color.Transparent)
+                                    )
                                 )
                             )
                         )
                     )
-                )
+                ),
+                startAxis = VerticalAxis.rememberStart(
+                    valueFormatter = yAxisValueFormatter,
+                    label = axisLabelComponent,
+                    guideline = null
+                ),
+                bottomAxis = HorizontalAxis.rememberBottom(
+                    valueFormatter = { _, value, _ -> getFormattedDate(value) },
+                    label = axisLabelComponent,
+                    guideline = null,
+                    itemPlacer = remember {
+                        HorizontalAxis.ItemPlacer.aligned(
+                            // If you have 200 points, spacing = 5 is too crowded.
+                            // This shows roughly 6-7 labels across the whole chart.
+                            spacing = { if (points.size > 1) points.size / 6 else 1 },
+                            addExtremeLabelPadding = false
+                        )
+                    }
+                ),
+                layerPadding = {
+                    cartesianLayerPadding(0.dp, 0.dp)
+                },
+                marker = marker
             ),
-            startAxis = VerticalAxis.rememberStart(
-                valueFormatter = yAxisValueFormatter,
-                label = axisLabelComponent,
-                guideline = null
-            ),
-            bottomAxis = HorizontalAxis.rememberBottom(
-                valueFormatter = { _, value, _ -> getFormattedDate(value) },
-                label = axisLabelComponent,
-                guideline = null,
-                itemPlacer = remember {
-                    HorizontalAxis.ItemPlacer.aligned(
-                        // If you have 200 points, spacing = 5 is too crowded.
-                        // This shows roughly 6-7 labels across the whole chart.
-                        spacing = { if (points.size > 1) points.size / 6 else 1 },
-                        addExtremeLabelPadding = false
-                    )
-                }
-            ),
-            layerPadding = {
-                cartesianLayerPadding(0.dp, 0.dp)
-            },
-            marker = marker
-        ),
-        model = model,
-        scrollState = rememberVicoScrollState(scrollEnabled = false),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp)
-    )
+            model = model,
+            scrollState = rememberVicoScrollState(scrollEnabled = isFullScreen),
+            zoomState = rememberVicoZoomState(zoomEnabled = isFullScreen),
+            modifier = Modifier.fillMaxSize()
+        )
+        IconButton(
+            onClick = onZoomClick,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(8.dp)
+                .background(Color.Black.copy(alpha = 0.3f), CircleShape)
+        ) {
+            Icon(
+                imageVector = if (isFullScreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen,
+                contentDescription = "Zoom",
+                tint = Color.White
+            )
+        }
+    }
 }
