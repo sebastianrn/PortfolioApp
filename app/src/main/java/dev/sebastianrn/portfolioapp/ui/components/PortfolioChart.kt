@@ -1,9 +1,12 @@
 package dev.sebastianrn.portfolioapp.ui.components
 
 import android.text.Layout
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,11 +29,14 @@ import com.patrykandpatrick.vico.compose.common.shader.verticalGradient
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModel
+import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.core.cartesian.data.LineCartesianLayerModel
+import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.core.cartesian.marker.DefaultCartesianMarker
+import com.patrykandpatrick.vico.core.cartesian.marker.LineCartesianLayerMarkerTarget
 import com.patrykandpatrick.vico.core.common.shader.ShaderProvider
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import java.text.NumberFormat
@@ -46,15 +52,17 @@ fun PortfolioChart(
 
     if (points.isEmpty()) return
 
-    val model = remember(points) {
-        CartesianChartModel(
-            LineCartesianLayerModel.build {
+    val modelProducer = remember{CartesianChartModelProducer()}
+
+    LaunchedEffect(points) {
+        modelProducer.runTransaction {
+            lineSeries {
                 series(
                     x = points.indices.map { it.toFloat() },
                     y = points.map { it.second }
                 )
             }
-        )
+        }
     }
 
     val dateTimeFormatter = remember { SimpleDateFormat("dd.MM.yy", Locale.getDefault()) }
@@ -117,7 +125,7 @@ fun PortfolioChart(
         guideline = guidelineComponent,
         valueFormatter = { _, targets ->
             val lineTarget =
-                targets.firstOrNull() as? com.patrykandpatrick.vico.core.cartesian.marker.LineCartesianLayerMarkerTarget
+                targets.firstOrNull() as? LineCartesianLayerMarkerTarget
             val entry = lineTarget?.points?.firstOrNull()?.entry
             if (entry != null) {
                 val dateStr = getFormattedDate(entry.x)
@@ -169,8 +177,12 @@ fun PortfolioChart(
             },
             marker = marker
         ),
-        model = model,
+        modelProducer = modelProducer,
         scrollState = rememberVicoScrollState(scrollEnabled = false),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessVeryLow
+        ),
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
