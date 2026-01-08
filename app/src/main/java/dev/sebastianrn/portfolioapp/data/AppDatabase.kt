@@ -8,7 +8,7 @@ import androidx.room.TypeConverters
 
 @Database(
     entities = [GoldAsset::class, PriceHistory::class],
-    version = 4, // Version Bump
+    version = 5, // Version Bump
     exportSchema = false
 )
 @TypeConverters(Converters::class)

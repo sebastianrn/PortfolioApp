@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -279,6 +280,25 @@ fun MainScreen(
                                 leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Default.Build,
+                                        contentDescription = null,
+                                        tint = GoldStart
+                                    )
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        "Test Scraping",
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.testScrapingService() // <--- Call the new function
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Search, // Or any suitable icon
                                         contentDescription = null,
                                         tint = GoldStart
                                     )

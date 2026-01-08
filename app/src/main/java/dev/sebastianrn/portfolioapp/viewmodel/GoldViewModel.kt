@@ -15,6 +15,7 @@ import dev.sebastianrn.portfolioapp.data.BackupData
 import dev.sebastianrn.portfolioapp.data.GoldAsset
 import dev.sebastianrn.portfolioapp.data.GoldAssetDao
 import dev.sebastianrn.portfolioapp.data.NetworkModule
+import dev.sebastianrn.portfolioapp.data.PhiloroScrapingService
 import dev.sebastianrn.portfolioapp.data.PriceHistory
 import dev.sebastianrn.portfolioapp.data.UserPreferences
 import kotlinx.coroutines.Dispatchers
@@ -414,6 +415,34 @@ class GoldViewModel(
                 val prefs = UserPreferences(application)
 
                 return GoldViewModel(application, dao, prefs) as T
+            }
+        }
+    }
+
+    fun testScrapingService() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(application, "Starting Scraping...", Toast.LENGTH_SHORT).show()
+                }
+
+                val scraper = PhiloroScrapingService()
+                val results = scraper.scrapePrices()
+
+                withContext(Dispatchers.Main) {
+                    if (results.isNotEmpty()) {
+                        // For demonstration, show the first result in a Toast
+                        val first = results.first()
+                        Toast.makeText(application, "Found ${results.size} items. First: ${first.name} (${first.buyPrice})", Toast.LENGTH_LONG).show()
+                    } else {
+                        Toast.makeText(application, "Scraping finished but no items found. Check Logcat.", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(application, "Scraping Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
