@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -35,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.data.AssetType
 import dev.sebastianrn.portfolioapp.data.GoldAsset
@@ -47,11 +49,12 @@ import kotlin.math.abs
 fun AssetSheet(
     asset: GoldAsset? = null,
     onDismiss: () -> Unit,
-    onSave: (String, AssetType, Double, Int, Double, Double) -> Unit
+    onSave: (GoldAsset) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     data class WeightOption(val label: String, val grams: Double, val type: AssetType)
+
     val options = listOf(
         WeightOption("1 oz Coin", 31.1035, AssetType.COIN),
         WeightOption("1/2 oz Coin", 15.5517, AssetType.COIN),
@@ -63,15 +66,19 @@ fun AssetSheet(
     )
 
     val initialOption = if (asset != null) {
-        options.find { abs(it.grams - asset.weightInGrams) < 0.1 && it.type == asset.type } ?: options[0]
+        options.find { abs(it.grams - asset.weightInGrams) < 0.1 && it.type == asset.type }
+            ?: options[0]
     } else {
         options[0]
     }
 
     var name by remember { mutableStateOf(asset?.name ?: "") }
+    var type by remember { mutableStateOf(asset?.type ?: AssetType.COIN) }
+    var purchasePrice by remember { mutableStateOf(asset?.purchasePrice?.toString() ?: "") }
+    var currentSellPrice by remember { mutableStateOf(asset?.currentSellPrice?.toString() ?: "") }
+    var currentBuyPrice by remember { mutableStateOf(asset?.currentBuyPrice?.toString() ?: "") }
     var quantity by remember { mutableStateOf(asset?.quantity?.toString() ?: "1") }
-    var premium by remember { mutableStateOf(asset?.premiumPercent?.toString() ?: "5.0") }
-    var price by remember { mutableStateOf(asset?.originalPrice?.toString() ?: "") }
+    var philoroId by remember { mutableStateOf(asset?.philoroId?.toString() ?: "") }
     var selectedOption by remember { mutableStateOf(initialOption) }
     var expanded by remember { mutableStateOf(false) }
 
@@ -90,15 +97,26 @@ fun AssetSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp)
+                .padding(
+                    bottom = WindowInsets.navigationBars.asPaddingValues()
+                        .calculateBottomPadding() + 24.dp
+                )
                 .imePadding()
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(
+                title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
             Spacer(modifier = Modifier.height(24.dp))
 
-            ModernTextField(value = name, onValueChange = { name = it }, label = "Asset Name (e.g. Vreneli)")
+            ModernTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = "Asset Name (e.g. Vreneli)"
+            )
             Spacer(modifier = Modifier.height(16.dp))
 
             ExposedDropdownMenuBox(
@@ -121,7 +139,9 @@ fun AssetSheet(
                         focusedLabelColor = GoldStart,
                         unfocusedLabelColor = TextGray
                     ),
-                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
                 )
                 ExposedDropdownMenu(
                     expanded = expanded,
@@ -131,7 +151,12 @@ fun AssetSheet(
                 ) {
                     options.forEach { option ->
                         DropdownMenuItem(
-                            text = { Text(option.label, color = MaterialTheme.colorScheme.onSurface) },
+                            text = {
+                                Text(
+                                    option.label,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            },
                             onClick = { selectedOption = option; expanded = false }
                         )
                     }
@@ -139,19 +164,66 @@ fun AssetSheet(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(modifier = Modifier.weight(1f)) { ModernTextField(value = quantity, onValueChange = { if (it.all { c -> c.isDigit() }) quantity = it }, label = "Qty", isNumber = true) }
-                Box(modifier = Modifier.weight(1f)) { ModernTextField(value = premium, onValueChange = { premium = it }, label = "Prem %", isNumber = true) }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    ModernTextField(
+                        value = quantity,
+                        onValueChange = { if (it.all { c -> c.isDigit() }) quantity = it },
+                        label = "Qty",
+                        isNumber = true
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            ModernTextField(value = price, onValueChange = { price = it }, label = if (isEditMode) "Bought At (Total)" else "Paid Price (Total)", isNumber = true)
+            OutlinedTextField(
+                value = philoroId,
+                onValueChange = { philoroId = it },
+                label = { Text("Philoro ID (for Scraping)") },
+                placeholder = { Text("e.g. 1991") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            ModernTextField(
+                value = purchasePrice,
+                onValueChange = { purchasePrice = it },
+                label = if (isEditMode) "Bought At (Total)" else "Paid Price (Total)",
+                isNumber = true
+            )
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { if (name.isNotEmpty()) onSave(name, selectedOption.type, price.toDoubleOrNull() ?: 0.0, quantity.toIntOrNull() ?: 1, selectedOption.grams, premium.toDoubleOrNull() ?: 0.0) },
+                onClick = {
+                    val q = quantity.toIntOrNull()
+                    val p = purchasePrice.toDoubleOrNull()
+                    val c = currentSellPrice.toDoubleOrNull()
+                    val i = philoroId.toIntOrNull()
+
+                    if (name.isNotBlank() && q != null && p != null && c != null) {
+                        onSave(
+                            GoldAsset(
+                                id = asset?.id ?: 0,
+                                name = name,
+                                type = type,
+                                purchasePrice = p,
+                                currentSellPrice = c, // Save as Sell Price
+                                currentBuyPrice = asset?.currentBuyPrice ?: c, // Default to same if new
+                                quantity = q,
+                                weightInGrams = selectedOption.grams,
+                                philoroId = i
+                            )
+                        )
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = GoldStart, contentColor = Color.Black)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = GoldStart,
+                    contentColor = Color.Black
+                )
             ) {
                 Text(buttonText, fontWeight = FontWeight.Bold)
             }

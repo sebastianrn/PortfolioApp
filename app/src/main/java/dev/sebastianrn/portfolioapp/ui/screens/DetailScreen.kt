@@ -217,11 +217,20 @@ fun DetailScreen(
         AssetSheet(
             asset = asset,
             onDismiss = { showEditDialog = false },
-            onSave = { name, type, price, qty, weight, premium ->
-                // Pass all parameters to the update function
-                viewModel.updateAsset(asset!!.id, name, type, price, qty, weight, premium)
+            onSave = { updatedAsset ->
+                // FIX: Unpack the object properties
+                viewModel.updateAsset(
+                    id = updatedAsset.id,
+                    name = updatedAsset.name,
+                    type = updatedAsset.type,
+                    originalPrice = updatedAsset.purchasePrice,
+                    quantity = updatedAsset.quantity,
+                    weight = updatedAsset.weightInGrams,
+                    philoroId = updatedAsset.philoroId
+                )
                 showEditDialog = false
-            })
+            }
+        )
     }
 }
 
@@ -269,17 +278,6 @@ fun AssetStatsHeader(asset: GoldAsset, currency: String) {
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        "+${asset.premiumPercent}% Prem.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(8.dp, 4.dp)
-                    )
-                }
             }
 
             Row(
@@ -329,7 +327,7 @@ fun AssetStatsHeader(asset: GoldAsset, currency: String) {
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        asset.originalPrice.formatCurrency(),
+                        asset.purchasePrice.formatCurrency(),
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp
@@ -343,7 +341,7 @@ fun AssetStatsHeader(asset: GoldAsset, currency: String) {
                     )
                     val isProfit = asset.totalProfitOrLoss >= 0
                     val color = if (isProfit) ProfitGreen else LossRed
-                    val totalInvested = asset.originalPrice * asset.quantity
+                    val totalInvested = asset.purchasePrice * asset.quantity
                     val percentage =
                         if (totalInvested > 0) (asset.totalProfitOrLoss / totalInvested) * 100 else 0.0
 

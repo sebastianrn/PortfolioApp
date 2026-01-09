@@ -17,6 +17,7 @@ import dev.sebastianrn.portfolioapp.data.GoldAssetDao
 import dev.sebastianrn.portfolioapp.data.NetworkModule
 import dev.sebastianrn.portfolioapp.data.PhiloroScrapingService
 import dev.sebastianrn.portfolioapp.data.PriceHistory
+import dev.sebastianrn.portfolioapp.data.ScrapedAsset
 import dev.sebastianrn.portfolioapp.data.UserPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -44,6 +45,8 @@ class GoldViewModel(
     private val dao: GoldAssetDao,
     private val prefs: UserPreferences
 ) : AndroidViewModel(application) {
+    private val scrapingService = PhiloroScrapingService()
+
     // 1. Expose Currency State
     val currentCurrency: StateFlow<String> = prefs.currency
         .stateIn(viewModelScope, SharingStarted.Lazily, "CHF")
@@ -51,10 +54,14 @@ class GoldViewModel(
     val allAssets: StateFlow<List<GoldAsset>> = dao.getAllAssets()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
+    fun addAsset(asset: GoldAsset) = viewModelScope.launch { dao.insert(asset) }
+    fun updateAsset(asset: GoldAsset) = viewModelScope.launch { dao.update(asset) }
+    fun deleteAsset(asset: GoldAsset) = viewModelScope.launch { dao.deleteAsset(asset) }
+
     val portfolioStats: StateFlow<PortfolioSummary> = allAssets.map { assets ->
         val value = assets.sumOf { it.totalCurrentValue }
         val profit = assets.sumOf { it.totalProfitOrLoss }
-        val invested = assets.sumOf { it.originalPrice * it.quantity }
+        val invested = assets.sumOf { it.purchasePrice * it.quantity }
         PortfolioSummary(value, profit, invested)
     }.stateIn(viewModelScope, SharingStarted.Lazily, PortfolioSummary())
 
@@ -96,15 +103,16 @@ class GoldViewModel(
     fun getAssetById(id: Int): Flow<GoldAsset> = dao.getAssetById(id)
     fun getHistoryForAsset(assetId: Int): Flow<List<PriceHistory>> = dao.getHistoryForAsset(assetId)
 
-    fun getAssetChange(assetId: Int): Flow<Pair<Double, Double>> = dao.getHistoryForAsset(assetId).map { history ->
-        if (history.size < 2) return@map 0.0 to 0.0
-        // History is usually sorted by date descending in DAO
-        val latest = history[0].price
-        val previous = history[1].price
-        val diff = latest - previous
-        val percent = if (previous != 0.0) (diff / previous) * 100 else 0.0
-        diff to percent
-    }
+    fun getAssetChange(assetId: Int): Flow<Pair<Double, Double>> =
+        dao.getHistoryForAsset(assetId).map { history ->
+            if (history.size < 2) return@map 0.0 to 0.0
+            // History is usually sorted by date descending in DAO
+            val latest = history[0].price
+            val previous = history[1].price
+            val diff = latest - previous
+            val percent = if (previous != 0.0) (diff / previous) * 100 else 0.0
+            diff to percent
+        }
 
     fun setCurrency(newCode: String) {
         val oldCode = currentCurrency.value
@@ -113,7 +121,11 @@ class GoldViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(application, "Converting $oldCode to $newCode...", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        application,
+                        "Converting $oldCode to $newCode...",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
 
                 val apiKey = BuildConfig.GOLD_API_KEY
@@ -133,38 +145,54 @@ class GoldViewModel(
                 prefs.setCurrency(newCode)
 
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(application, "Converted! Rate: %.4f".format(factor), Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        application,
+                        "Converted! Rate: %.4f".format(factor),
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
 
             } catch (e: Exception) {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(application, "Conversion Failed. Internet required.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        application,
+                        "Conversion Failed. Internet required.",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
     }
 
-    // --- ACTIONS ---
-
-    fun insert(name: String, type: AssetType, price: Double, qty: Int, weight: Double, premium: Double) {
+    fun insert(
+        name: String,
+        type: AssetType,
+        price: Double,
+        qty: Int,
+        weight: Double,
+        philoroId: Int
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             val asset = GoldAsset(
                 name = name,
                 type = type,
-                originalPrice = price,
-                currentPrice = price,
-                quantity = qty,
-                weightInGrams = weight,
-                premiumPercent = premium
+                purchasePrice = price,
+                currentSellPrice = price, // Initial sell price (approx. purchase price)
+                currentBuyPrice = price,  // <--- ADD THIS: Set initial Buy Price to Purchase Price
+                quantity = qty, // Ensure Int is converted to Double
+                weightInGrams = weight,   // Ensure this matches your GoldAsset definition
+                philoroId = philoroId          // Optional: Explicitly null for manual entries
             )
             val id = dao.insert(asset)
-            dao.insertHistory(PriceHistory(
-                assetId = id.toInt(),
-                dateTimestamp = System.currentTimeMillis(),
-                price = price,
-                isManual = true
-            ))
+            dao.insertHistory(
+                PriceHistory(
+                    assetId = id.toInt(),
+                    dateTimestamp = System.currentTimeMillis(),
+                    price = price,
+                    isManual = true
+                )
+            )
         }
     }
 
@@ -175,25 +203,25 @@ class GoldViewModel(
         originalPrice: Double,
         quantity: Int,
         weight: Double,
-        premium: Double
+        philoroId: Int? = null
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             val oldAsset = dao.getAsset(id) ?: return@launch
 
-            val oldValueFactor = oldAsset.weightInGrams * (1 + oldAsset.premiumPercent / 100.0)
-            val newValueFactor = weight * (1 + premium / 100.0)
+            val oldValueFactor = oldAsset.weightInGrams
+            val newValueFactor = weight
             val adjustmentFactor = if (oldValueFactor > 0) newValueFactor / oldValueFactor else 1.0
 
-            val newCurrentPrice = oldAsset.currentPrice * adjustmentFactor
+            val newCurrentPrice = oldAsset.currentSellPrice * adjustmentFactor
 
             val updatedAsset = oldAsset.copy(
                 name = name,
                 type = type,
-                originalPrice = originalPrice,
-                currentPrice = newCurrentPrice,
-                quantity = quantity,
+                purchasePrice = originalPrice,
+                currentSellPrice = newCurrentPrice,
+                quantity = quantity, // Ensure DB gets Double
                 weightInGrams = weight,
-                premiumPercent = premium
+                philoroId = philoroId // <--- SAVE THE ID
             )
             dao.update(updatedAsset)
 
@@ -205,12 +233,6 @@ class GoldViewModel(
             if (firstHistory != null) {
                 dao.updateHistory(firstHistory.copy(price = originalPrice))
             }
-        }
-    }
-
-    fun deleteAsset(asset: GoldAsset) {
-        viewModelScope.launch(Dispatchers.IO) {
-            dao.deleteAsset(asset)
         }
     }
 
@@ -240,28 +262,33 @@ class GoldViewModel(
                 val coinFineness = 0.9999
 
                 for (asset in assets) {
-                    val intrinsicValue = spotPricePerGram24k * asset.weightInGrams * coinFineness
-                    val premiumMultiplier = 1 + (asset.premiumPercent / 100.0)
-                    val finalPrice = intrinsicValue * premiumMultiplier
+                    val finalPrice = spotPricePerGram24k * asset.weightInGrams * coinFineness
 
-                    dao.insertHistory(PriceHistory(
-                        assetId = asset.id,
-                        dateTimestamp = timestamp,
-                        price = finalPrice,
-                        isManual = false
-                    ))
+                    dao.insertHistory(
+                        PriceHistory(
+                            assetId = asset.id,
+                            dateTimestamp = timestamp,
+                            price = finalPrice,
+                            isManual = false
+                        )
+                    )
                     dao.updateCurrentPrice(asset.id, finalPrice)
                     updatedCount++
                 }
 
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(application, "Updated $updatedCount assets in $currency.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        application,
+                        "Updated $updatedCount assets in $currency.",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
 
             } catch (e: Exception) {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(application, "Update Failed: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(application, "Update Failed: ${e.message}", Toast.LENGTH_LONG)
+                        .show()
                 }
             }
         }
@@ -274,19 +301,27 @@ class GoldViewModel(
         val finalTimestamp = mergeTimeIntoDate(selectedDate)
 
         viewModelScope.launch(Dispatchers.IO) {
-            dao.insertHistory(PriceHistory(
-                assetId = assetId,
-                dateTimestamp = finalTimestamp,
-                price = newPrice,
-                isManual = true
-            ))
+            dao.insertHistory(
+                PriceHistory(
+                    assetId = assetId,
+                    dateTimestamp = finalTimestamp,
+                    price = newPrice,
+                    isManual = true
+                )
+            )
 
             // FIX: Recalculate current price based on the LATEST history record
             refreshAssetCurrentPrice(assetId)
         }
     }
 
-    fun updateHistoryRecord(historyId: Int, assetId: Int, newPrice: Double, newDate: Long, isManual: Boolean) {
+    fun updateHistoryRecord(
+        historyId: Int,
+        assetId: Int,
+        newPrice: Double,
+        newDate: Long,
+        isManual: Boolean
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             val updatedRecord = PriceHistory(
                 historyId = historyId,
@@ -302,7 +337,7 @@ class GoldViewModel(
             if (firstHistory != null && firstHistory.historyId == historyId) {
                 val asset = dao.getAsset(assetId)
                 if (asset != null) {
-                    dao.update(asset.copy(originalPrice = newPrice))
+                    dao.update(asset.copy(purchasePrice = newPrice))
                 }
             }
 
@@ -379,17 +414,23 @@ class GoldViewModel(
                 generator.generateData(assetCount, historyPerAsset)
 
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(application, "Generated $assetCount assets with $historyPerAsset records each", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        application,
+                        "Generated $assetCount assets with $historyPerAsset records each",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(application, "Error generating data: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        application,
+                        "Error generating data: ${e.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
     }
-
-    // --- HELPERS ---
 
     private fun mergeTimeIntoDate(dateMillis: Long): Long {
         val calendarDate = Calendar.getInstance().apply { timeInMillis = dateMillis }
@@ -407,7 +448,8 @@ class GoldViewModel(
                 modelClass: Class<T>,
                 extras: CreationExtras
             ): T {
-                val application = checkNotNull(extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY])
+                val application =
+                    checkNotNull(extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY])
 
                 // Manual Dependency Injection
                 val database = AppDatabase.getDatabase(application)
@@ -415,6 +457,85 @@ class GoldViewModel(
                 val prefs = UserPreferences(application)
 
                 return GoldViewModel(application, dao, prefs) as T
+            }
+        }
+    }
+
+    fun updatePricesFromScraper() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(getApplication(), "Updating prices...", Toast.LENGTH_SHORT)
+                        .show()
+                }
+
+                // 1. Scrape the website
+                val scrapedItems = scrapingService.scrapePrices()
+
+                if (scrapedItems.isEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            getApplication(),
+                            "Scraping failed or found no items.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    return@launch
+                }
+
+                // 2. Map Scraped Data to a Map for fast lookup by ID
+                val scrapedMap: Map<String, ScrapedAsset> = scrapedItems.associateBy { it.id }
+
+                // 3. Get all local assets that have a philoroId
+                val localAssets = dao.getAssetsWithPhiloroId()
+                var updateCount = 0
+
+                // 4. Update matching assets
+                for (asset in localAssets) {
+                    val targetId = asset.philoroId
+                    val match = scrapedMap[targetId.toString()]
+
+                    if (match != null) {
+                        // Parse prices safely
+                        val newBuyPrice = match.buyPrice.toDoubleOrNull() ?: 0.0
+                        val newSellPrice = match.sellPrice.toDoubleOrNull() ?: 0.0
+
+                        if (newBuyPrice > 0 && newSellPrice > 0) {
+                            dao.updatePricesByPhiloroId(
+                                philoroId = targetId!!,
+                                sellPrice = newSellPrice, // Map Sell -> Sell
+                                buyPrice = newBuyPrice    // Map Buy -> Buy
+                            )
+                            updateCount++
+                        }
+                    }
+                }
+
+                withContext(Dispatchers.Main) {
+                    if (updateCount > 0) {
+                        Toast.makeText(
+                            getApplication(),
+                            "Updated $updateCount assets successfully!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            getApplication(),
+                            "No matching assets found to update.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        getApplication(),
+                        "Update Error: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
     }
@@ -433,15 +554,24 @@ class GoldViewModel(
                     if (results.isNotEmpty()) {
                         // For demonstration, show the first result in a Toast
                         val first = results.first()
-                        Toast.makeText(application, "Found ${results.size} items. First: ${first.name} (${first.buyPrice})", Toast.LENGTH_LONG).show()
+                        Toast.makeText(
+                            application,
+                            "Found ${results.size} items. First: ${first.name} (${first.buyPrice})",
+                            Toast.LENGTH_LONG
+                        ).show()
                     } else {
-                        Toast.makeText(application, "Scraping finished but no items found. Check Logcat.", Toast.LENGTH_LONG).show()
+                        Toast.makeText(
+                            application,
+                            "Scraping finished but no items found. Check Logcat.",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(application, "Scraping Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(application, "Scraping Error: ${e.message}", Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
         }

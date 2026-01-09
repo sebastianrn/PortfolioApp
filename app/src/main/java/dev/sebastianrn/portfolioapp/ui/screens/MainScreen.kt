@@ -288,20 +288,16 @@ fun MainScreen(
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        "Test Scraping",
+                                        "Update Prices (Scrape)",
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                 },
                                 onClick = {
                                     showMenu = false
-                                    viewModel.testScrapingService() // <--- Call the new function
+                                    viewModel.updatePricesFromScraper()
                                 },
                                 leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Search, // Or any suitable icon
-                                        contentDescription = null,
-                                        tint = GoldStart
-                                    )
+                                    Icon(Icons.Default.Refresh, contentDescription = null)
                                 }
                             )
                         }
@@ -417,10 +413,18 @@ fun MainScreen(
     if (showDialog) {
         AssetSheet(
             onDismiss = { showDialog = false },
-            onSave = { name, type, price, qty, weight, premium ->
-                viewModel.insert(name, type, price, qty, weight, premium)
+            onSave = { asset ->
+                // CHANGE: Use 'insert' instead of 'addAsset' to ensure history is created
+                viewModel.insert(
+                    name = asset.name,
+                    type = asset.type,
+                    price = asset.purchasePrice,
+                    qty = asset.quantity,
+                    weight = asset.weightInGrams,
+                    philoroId = asset.philoroId ?: 1
+                )
                 showDialog = false
-            }
+            },
         )
     }
 
