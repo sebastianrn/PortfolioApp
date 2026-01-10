@@ -189,8 +189,8 @@ fun DetailScreen(
     }
 
     if (showSheet) {
-        UpdatePriceSheet(onDismiss = { showSheet = false }, onSave = { price, date ->
-            viewModel.addDailyRate(coinId, price, date)
+        UpdatePriceSheet(onDismiss = { showSheet = false }, onSave = { sellPrice, buyPrice, date ->
+            viewModel.addDailyRate(coinId, sellPrice, buyPrice, date, true)
             showSheet = false
         })
     }
@@ -198,14 +198,15 @@ fun DetailScreen(
     if (historyRecordToEdit != null) {
         UpdatePriceSheet(
             onDismiss = { historyRecordToEdit = null },
-            initialPrice = historyRecordToEdit!!.price,
+            initialSellPrice = historyRecordToEdit!!.sellPrice,
             initialDate = historyRecordToEdit!!.dateTimestamp,
             isEditMode = true,
-            onSave = { price, date ->
+            onSave = { sellPrice, buyPrice, date ->
                 viewModel.updateHistoryRecord(
                     historyId = historyRecordToEdit!!.historyId,
                     assetId = historyRecordToEdit!!.assetId,
-                    newPrice = price,
+                    newSellPrice = sellPrice,
+                    newBuyPrice = buyPrice,
                     newDate = date,
                     isManual = true
                 )
@@ -456,7 +457,7 @@ fun HistoryItemCard(record: PriceHistory, currency: String, onEditClick: () -> U
                 }
             }
             Text(
-                text = record.price.formatCurrency(),
+                text = record.sellPrice.formatCurrency(),
                 color = GoldStart,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 18.sp
@@ -469,12 +470,14 @@ fun HistoryItemCard(record: PriceHistory, currency: String, onEditClick: () -> U
 @Composable
 fun UpdatePriceSheet(
     onDismiss: () -> Unit,
-    initialPrice: Double? = null,
+    initialSellPrice: Double? = null,
+    initialBuyPrice: Double? = null,
     initialDate: Long? = null,
     isEditMode: Boolean = false,
-    onSave: (Double, Long) -> Unit
+    onSave: (Double, Double, Long) -> Unit
 ) {
-    var price by remember { mutableStateOf(initialPrice?.toString() ?: "") }
+    var sellPrice by remember { mutableStateOf(initialSellPrice?.toString() ?: "") }
+    var buyPrice by remember { mutableStateOf(initialBuyPrice?.toString() ?: "") }
     var selectedDate by remember { mutableLongStateOf(initialDate ?: System.currentTimeMillis()) }
     var showDatePicker by remember { mutableStateOf(false) }
     val sdf = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
@@ -569,16 +572,23 @@ fun UpdatePriceSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             ModernTextField(
-                value = price,
-                onValueChange = { price = it },
-                label = if (isEditMode) "Price" else stringResource(R.string.new_price_label),
+                value = sellPrice,
+                onValueChange = { sellPrice = it },
+                label = if (isEditMode) "Sell Price" else stringResource(R.string.new_sell_price_label),
+                isNumber = true
+            )
+
+            ModernTextField(
+                value = buyPrice,
+                onValueChange = { buyPrice = it },
+                label = if (isEditMode) "Buy Price" else stringResource(R.string.new_buy_price_label),
                 isNumber = true
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { if (price.isNotEmpty()) onSave(price.toDouble(), selectedDate) },
+                onClick = { if (sellPrice.isNotEmpty()) onSave(sellPrice.toDouble(), buyPrice.toDouble(), selectedDate) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = GoldStart,

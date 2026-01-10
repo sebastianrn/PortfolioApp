@@ -70,10 +70,10 @@ interface GoldAssetDao {
     @Query("UPDATE gold_assets SET purchasePrice = purchasePrice * :factor, currentSellPrice = currentSellPrice * :factor")
     suspend fun applyCurrencyFactorToAssets(factor: Double)
 
-    @Query("UPDATE price_history SET price = price * :factor")
+    @Query("UPDATE price_history SET sellPrice = sellPrice * :factor")
     suspend fun applyCurrencyFactorToHistory(factor: Double)
 
-    @Query("UPDATE price_history SET price = price * :factor WHERE assetId = :assetId")
+    @Query("UPDATE price_history SET sellPrice = sellPrice * :factor WHERE assetId = :assetId")
     suspend fun adjustHistoryForAsset(assetId: Int, factor: Double)
 
     @Update

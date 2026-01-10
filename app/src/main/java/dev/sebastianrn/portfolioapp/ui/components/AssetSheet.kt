@@ -200,18 +200,17 @@ fun AssetSheet(
                 onClick = {
                     val q = quantity.toIntOrNull()
                     val p = purchasePrice.toDoubleOrNull()
-                    val c = currentSellPrice.toDoubleOrNull()
-                    val i = philoroId.toIntOrNull()
+                    val i = philoroId.toInt()
 
-                    if (name.isNotBlank() && q != null && p != null && c != null) {
+                    if (name.isNotBlank() && q != null && p != null) {
                         onSave(
                             GoldAsset(
                                 id = asset?.id ?: 0,
                                 name = name,
                                 type = type,
                                 purchasePrice = p,
-                                currentSellPrice = c, // Save as Sell Price
-                                currentBuyPrice = asset?.currentBuyPrice ?: c, // Default to same if new
+                                currentSellPrice = p,
+                                currentBuyPrice = asset?.currentBuyPrice ?: p,
                                 quantity = q,
                                 weightInGrams = selectedOption.grams,
                                 philoroId = i

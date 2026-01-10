@@ -7,13 +7,13 @@ import androidx.room.PrimaryKey
 data class GoldAsset(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
-    val type: AssetType,       // <--- NEW: COIN or BAR
+    val type: AssetType,
     val purchasePrice: Double,
     val currentSellPrice: Double,
     val currentBuyPrice: Double,
     val quantity: Int,
     val weightInGrams: Double,
-    val philoroId: Int? = null
+    val philoroId: Int
 ) {
     val totalCurrentValue: Double
         get() = currentSellPrice * quantity

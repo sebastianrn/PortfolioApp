@@ -29,7 +29,8 @@ class TestDataGenerator(private val dao: GoldAssetDao) {
                 currentSellPrice = basePrice, // Will be updated by history
                 currentBuyPrice = basePrice+10, // Will be updated by history
                 quantity = Random.nextInt(1, 10),
-                weightInGrams = if (i % 2 == 0) 31.1 else 5.81
+                weightInGrams = if (i % 2 == 0) 31.1 else 5.81,
+                philoroId = 1
             )
 
             // 2. Insert Asset and get ID
@@ -47,7 +48,8 @@ class TestDataGenerator(private val dao: GoldAssetDao) {
                     assetId = assetId,
                     // Distribute records back in time
                     dateTimestamp = currentTime - (historyPerAsset - j) * oneDayMillis,
-                    price = recordPrice,
+                    sellPrice = recordPrice,
+                    buyPrice = recordPrice+10,
                     isManual = false
                 )
                 dao.insertHistory(historyRecord)

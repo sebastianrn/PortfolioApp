@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -198,7 +197,7 @@ fun MainScreen(
                     )
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.updateAllPricesFromApi() }) {
+                    IconButton(onClick = { viewModel.updatePricesFromScraper() }) {
                         Icon(
                             Icons.Default.Refresh,
                             "Update Prices",
@@ -415,13 +414,14 @@ fun MainScreen(
             onDismiss = { showDialog = false },
             onSave = { asset ->
                 // CHANGE: Use 'insert' instead of 'addAsset' to ensure history is created
-                viewModel.insert(
+                viewModel.insertAsset(
                     name = asset.name,
                     type = asset.type,
-                    price = asset.purchasePrice,
+                    purchasePrice = asset.purchasePrice,
+                    buyPrice = asset.currentBuyPrice,
                     qty = asset.quantity,
                     weight = asset.weightInGrams,
-                    philoroId = asset.philoroId ?: 1
+                    philoroId = asset.philoroId
                 )
                 showDialog = false
             },

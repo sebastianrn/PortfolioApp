@@ -19,6 +19,7 @@ data class PriceHistory(
     @PrimaryKey(autoGenerate = true) val historyId: Int = 0,
     val assetId: Int,
     val dateTimestamp: Long,
-    val price: Double,
+    val sellPrice: Double,
+    val buyPrice: Double,
     val isManual: Boolean = true
 )

@@ -17,7 +17,6 @@ import dev.sebastianrn.portfolioapp.data.GoldAssetDao
 import dev.sebastianrn.portfolioapp.data.NetworkModule
 import dev.sebastianrn.portfolioapp.data.PhiloroScrapingService
 import dev.sebastianrn.portfolioapp.data.PriceHistory
-import dev.sebastianrn.portfolioapp.data.ScrapedAsset
 import dev.sebastianrn.portfolioapp.data.UserPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -77,7 +76,7 @@ class GoldViewModel(
                 .groupBy { it.dateTimestamp }
                 .map { (timestamp, entriesForDay) ->
                     // 1. Update latest known prices for all assets in these entries
-                    entriesForDay.forEach { latestPrices[it.assetId] = it.price }
+                    entriesForDay.forEach { latestPrices[it.assetId] = it.sellPrice }
 
                     // 2. Calculate the total portfolio value using the latest known price for EVERY asset
                     val totalValue = latestPrices.entries.sumOf { (id, price) ->
@@ -107,8 +106,8 @@ class GoldViewModel(
         dao.getHistoryForAsset(assetId).map { history ->
             if (history.size < 2) return@map 0.0 to 0.0
             // History is usually sorted by date descending in DAO
-            val latest = history[0].price
-            val previous = history[1].price
+            val latest = history[0].sellPrice
+            val previous = history[1].sellPrice
             val diff = latest - previous
             val percent = if (previous != 0.0) (diff / previous) * 100 else 0.0
             diff to percent
@@ -165,10 +164,11 @@ class GoldViewModel(
         }
     }
 
-    fun insert(
+    fun insertAsset(
         name: String,
         type: AssetType,
-        price: Double,
+        purchasePrice: Double,
+        buyPrice: Double,
         qty: Int,
         weight: Double,
         philoroId: Int
@@ -177,21 +177,21 @@ class GoldViewModel(
             val asset = GoldAsset(
                 name = name,
                 type = type,
-                purchasePrice = price,
-                currentSellPrice = price, // Initial sell price (approx. purchase price)
-                currentBuyPrice = price,  // <--- ADD THIS: Set initial Buy Price to Purchase Price
-                quantity = qty, // Ensure Int is converted to Double
-                weightInGrams = weight,   // Ensure this matches your GoldAsset definition
-                philoroId = philoroId          // Optional: Explicitly null for manual entries
+                purchasePrice = purchasePrice,
+                currentSellPrice = purchasePrice,
+                currentBuyPrice = buyPrice,
+                quantity = qty,
+                weightInGrams = weight,
+                philoroId = philoroId
             )
             val id = dao.insert(asset)
-            dao.insertHistory(
-                PriceHistory(
-                    assetId = id.toInt(),
-                    dateTimestamp = System.currentTimeMillis(),
-                    price = price,
-                    isManual = true
-                )
+
+            addDailyRate(
+                assetId = id.toInt(),
+                newSellPrice = purchasePrice,
+                newBuyPrice = buyPrice,
+                System.currentTimeMillis(),
+                true
             )
         }
     }
@@ -203,7 +203,7 @@ class GoldViewModel(
         originalPrice: Double,
         quantity: Int,
         weight: Double,
-        philoroId: Int? = null
+        philoroId: Int
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             val oldAsset = dao.getAsset(id) ?: return@launch
@@ -219,9 +219,9 @@ class GoldViewModel(
                 type = type,
                 purchasePrice = originalPrice,
                 currentSellPrice = newCurrentPrice,
-                quantity = quantity, // Ensure DB gets Double
+                quantity = quantity,
                 weightInGrams = weight,
-                philoroId = philoroId // <--- SAVE THE ID
+                philoroId = philoroId
             )
             dao.update(updatedAsset)
 
@@ -231,7 +231,7 @@ class GoldViewModel(
 
             val firstHistory = dao.getEarliestHistory(id)
             if (firstHistory != null) {
-                dao.updateHistory(firstHistory.copy(price = originalPrice))
+                dao.updateHistory(firstHistory.copy(sellPrice = originalPrice))
             }
         }
     }
@@ -268,7 +268,8 @@ class GoldViewModel(
                         PriceHistory(
                             assetId = asset.id,
                             dateTimestamp = timestamp,
-                            price = finalPrice,
+                            sellPrice = finalPrice,
+                            buyPrice = 0.0,
                             isManual = false
                         )
                     )
@@ -294,7 +295,13 @@ class GoldViewModel(
         }
     }
 
-    fun addDailyRate(assetId: Int, newPrice: Double, selectedDate: Long) {
+    fun addDailyRate(
+        assetId: Int,
+        newSellPrice: Double,
+        newBuyPrice: Double,
+        selectedDate: Long,
+        isManual: Boolean
+    ) {
         val currentTimestamp = System.currentTimeMillis()
         if (selectedDate > currentTimestamp + 60_000) return
 
@@ -305,8 +312,9 @@ class GoldViewModel(
                 PriceHistory(
                     assetId = assetId,
                     dateTimestamp = finalTimestamp,
-                    price = newPrice,
-                    isManual = true
+                    sellPrice = newSellPrice,
+                    buyPrice = newBuyPrice,
+                    isManual = isManual
                 )
             )
 
@@ -318,7 +326,8 @@ class GoldViewModel(
     fun updateHistoryRecord(
         historyId: Int,
         assetId: Int,
-        newPrice: Double,
+        newSellPrice: Double,
+        newBuyPrice: Double,
         newDate: Long,
         isManual: Boolean
     ) {
@@ -327,7 +336,8 @@ class GoldViewModel(
                 historyId = historyId,
                 assetId = assetId,
                 dateTimestamp = newDate,
-                price = newPrice,
+                sellPrice = newSellPrice,
+                buyPrice = newBuyPrice,
                 isManual = isManual
             )
             dao.updateHistory(updatedRecord)
@@ -337,7 +347,7 @@ class GoldViewModel(
             if (firstHistory != null && firstHistory.historyId == historyId) {
                 val asset = dao.getAsset(assetId)
                 if (asset != null) {
-                    dao.update(asset.copy(purchasePrice = newPrice))
+                    dao.update(asset.copy(purchasePrice = newSellPrice))
                 }
             }
 
@@ -350,7 +360,7 @@ class GoldViewModel(
     private suspend fun refreshAssetCurrentPrice(assetId: Int) {
         val latest = dao.getLatestHistory(assetId)
         if (latest != null) {
-            dao.updateCurrentPrice(assetId, latest.price)
+            dao.updateCurrentPrice(assetId, latest.sellPrice)
         }
     }
 
@@ -384,7 +394,7 @@ class GoldViewModel(
                 if (history.isEmpty()) return@map emptyList()
 
                 // 1. Process on background thread
-                val rawPoints = history.reversed().map { it.dateTimestamp to it.price }
+                val rawPoints = history.reversed().map { it.dateTimestamp to it.sellPrice }
 
                 // 2. Downsample: If we have many points, only take a max of 100
                 // to keep chart rendering performant
@@ -465,48 +475,69 @@ class GoldViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(getApplication(), "Updating prices...", Toast.LENGTH_SHORT)
+                    Toast.makeText(getApplication(), "Updating prices via API...", Toast.LENGTH_SHORT)
                         .show()
                 }
 
-                // 1. Scrape the website
-                val scrapedItems = scrapingService.scrapePrices()
+                // 1. Get all local assets that have a philoroId
+                val localAssets = dao.getAssetsWithPhiloroId()
+                val timestamp = System.currentTimeMillis()
+
+                if (localAssets.isEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(getApplication(), "No Philoro assets to update.", Toast.LENGTH_SHORT).show()
+                    }
+                    return@launch
+                }
+
+                // 2. Extract IDs (SKUs)
+                val skus = localAssets.mapNotNull { it.philoroId?.toString() }
+
+                // 3. Fetch from API
+                // Changed from 'scrapePrices()' to 'fetchPrices(skus)'
+                val scrapedItems = scrapingService.fetchPrices(skus)
 
                 if (scrapedItems.isEmpty()) {
                     withContext(Dispatchers.Main) {
                         Toast.makeText(
                             getApplication(),
-                            "Scraping failed or found no items.",
+                            "API returned no data.",
                             Toast.LENGTH_LONG
                         ).show()
                     }
                     return@launch
                 }
 
-                // 2. Map Scraped Data to a Map for fast lookup by ID
-                val scrapedMap: Map<String, ScrapedAsset> = scrapedItems.associateBy { it.id }
+                // 4. Map Scraped Data to a Map for fast lookup
+                val scrapedMap = scrapedItems.associateBy { it.id } // it.id is the SKU
 
-                // 3. Get all local assets that have a philoroId
-                val localAssets = dao.getAssetsWithPhiloroId()
                 var updateCount = 0
 
-                // 4. Update matching assets
+                // 5. Update matching assets
                 for (asset in localAssets) {
-                    val targetId = asset.philoroId
-                    val match = scrapedMap[targetId.toString()]
+                    val targetId = asset.philoroId.toString()
+                    val match = scrapedMap[targetId]
 
                     if (match != null) {
-                        // Parse prices safely
+                        // Parse prices (They are already cleaned strings from our Service)
                         val newBuyPrice = match.buyPrice.toDoubleOrNull() ?: 0.0
                         val newSellPrice = match.sellPrice.toDoubleOrNull() ?: 0.0
 
-                        if (newBuyPrice > 0 && newSellPrice > 0) {
+                        if (newBuyPrice > 0) {
                             dao.updatePricesByPhiloroId(
-                                philoroId = targetId!!,
-                                sellPrice = newSellPrice, // Map Sell -> Sell
-                                buyPrice = newBuyPrice    // Map Buy -> Buy
+                                philoroId = asset.philoroId!!,
+                                sellPrice = newSellPrice,
+                                buyPrice = newBuyPrice
                             )
                             updateCount++
+
+                            addDailyRate(
+                                asset.id,
+                                newSellPrice,
+                                newBuyPrice,
+                                System.currentTimeMillis(),
+                                false
+                            )
                         }
                     }
                 }
@@ -515,13 +546,13 @@ class GoldViewModel(
                     if (updateCount > 0) {
                         Toast.makeText(
                             getApplication(),
-                            "Updated $updateCount assets successfully!",
+                            "Updated $updateCount assets via API!",
                             Toast.LENGTH_SHORT
                         ).show()
                     } else {
                         Toast.makeText(
                             getApplication(),
-                            "No matching assets found to update.",
+                            "Prices retrieved but no local assets matched.",
                             Toast.LENGTH_LONG
                         ).show()
                     }
@@ -535,43 +566,6 @@ class GoldViewModel(
                         "Update Error: ${e.message}",
                         Toast.LENGTH_SHORT
                     ).show()
-                }
-            }
-        }
-    }
-
-    fun testScrapingService() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(application, "Starting Scraping...", Toast.LENGTH_SHORT).show()
-                }
-
-                val scraper = PhiloroScrapingService()
-                val results = scraper.scrapePrices()
-
-                withContext(Dispatchers.Main) {
-                    if (results.isNotEmpty()) {
-                        // For demonstration, show the first result in a Toast
-                        val first = results.first()
-                        Toast.makeText(
-                            application,
-                            "Found ${results.size} items. First: ${first.name} (${first.buyPrice})",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    } else {
-                        Toast.makeText(
-                            application,
-                            "Scraping finished but no items found. Check Logcat.",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(application, "Scraping Error: ${e.message}", Toast.LENGTH_SHORT)
-                        .show()
                 }
             }
         }

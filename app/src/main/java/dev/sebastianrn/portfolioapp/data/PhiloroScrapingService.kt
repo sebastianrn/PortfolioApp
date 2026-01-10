@@ -1,115 +1,101 @@
 package dev.sebastianrn.portfolioapp.data
 
 import android.util.Log
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
+import java.net.URL
+
+data class ApiResponse(
+    @SerializedName("products") val products: List<ApiProduct>
+)
+
+data class ApiProduct(
+    @SerializedName("sku") val sku: String,
+    @SerializedName("name") val name: String,
+    @SerializedName("weight") val weight: String,
+    @SerializedName("prices") val prices: List<ApiPrice>
+)
+
+data class ApiPrice(
+    @SerializedName("type") val type: String,
+    @SerializedName("centAmount") val centAmount: String,
+    @SerializedName("currency") val currency: String
+)
 
 data class ScrapedAsset(
     val id: String,
     val name: String,
-    val imageUrl: String,
     val description: String,
     val weight: String,
-    val buyPrice: String, // Price we pay to buy (User Buys)
-    val sellPrice: String // Price we get if we sell (User Sells)
+    val buyPrice: String,
+    val sellPrice: String
 )
+
 
 class PhiloroScrapingService {
 
     companion object {
-        // Updated URL specifically for Gold Coins as requested
-        private const val TARGET_URL = "https://philoro.ch/preisliste"
-        private const val TAG = "PhiloroScraper"
+        private const val API_BASE_URL = "https://philoro.ch/api/prices/products?country=CH&currency=CHF&skus="
+        private const val TAG = "PhiloroApiService"
     }
 
-    fun scrapePrices(): List<ScrapedAsset> {
+    /**
+     * Fetches current prices for the specific list of Philoro IDs (SKUs).
+     * @param skus List of IDs (e.g., ["1991", "2000"])
+     */
+    fun fetchPrices(skus: List<String>): List<ScrapedAsset> {
+        if (skus.isEmpty()) return emptyList()
+
         val scrapedList = mutableListOf<ScrapedAsset>()
 
         try {
-            Log.d(TAG, "Connecting to $TARGET_URL...")
-            val doc: Document = Jsoup.connect(TARGET_URL)
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                .timeout(20000)
-                .get()
+            // 1. Construct URL with comma-separated SKUs
+            val skuParam = skus.joinToString(",")
+            val fullUrl = "$API_BASE_URL$skuParam"
 
-            // Target the main price table body rows
-            // The HTML structure is <table class="w-full text-left"> -> <tbody> -> <tr>
-            val rows = doc.select("table tbody tr")
+            Log.d(TAG, "Calling API: $fullUrl")
 
-            Log.d(TAG, "Found ${rows.size} table rows. Parsing...")
+            // 2. Fetch JSON
+            val jsonString = URL(fullUrl).readText()
 
-            for (row in rows) {
-                try {
-                    // Get all cells (td) in the row
-                    val cols = row.select("td")
+            // 3. Parse JSON
+            val response = Gson().fromJson(jsonString, ApiResponse::class.java)
 
-                    // A valid product row in this specific table has 7 columns.
-                    // We skip header rows like <tr><td colspan="7">Goldmünzen</td></tr>
-                    if (cols.size < 7) {
-                        continue
-                    }
+            // 4. Map to ScrapedAsset
+            for (product in response.products) {
+                // Find "User Buys" price (In JSON: type="buy" usually means Dealer Sells to User)
+                // Find "User Sells" price (In JSON: type="sell" usually means Dealer Buys from User)
 
-                    // --- 1. ID (Column 0) ---
-                    val id = cols[0].text().trim()
-                    if (id.isEmpty()) continue // Skip if no ID
+                // Note based on your JSON:
+                // "sell" centAmount: "356008" (3560 CHF) -> Lower -> Dealer Buys (User Sells)
+                // "buy" centAmount: "378873" (3788 CHF) -> Higher -> Dealer Sells (User Buys)
 
-                    // --- 2. IMAGE (Column 1) ---
-                    // Look for <img> inside the second column
-                    var imgUrl = cols[1].select("img").attr("src")
-                    if (imgUrl.isNotEmpty() && !imgUrl.startsWith("http")) {
-                        imgUrl = "https://philoro.ch$imgUrl" // Fix relative paths? Usually they are absolute CDN links
-                    }
+                val userSellPriceRaw = product.prices.find { it.type == "sell" }?.centAmount?.toDoubleOrNull() ?: 0.0
+                val userBuyPriceRaw = product.prices.find { it.type == "buy" }?.centAmount?.toDoubleOrNull() ?: 0.0
 
-                    // --- 3. NAME (Column 2) ---
-                    val name = cols[2].text().trim()
+                // Convert Cents to CHF
+                val userSellPrice = userSellPriceRaw / 100.0
+                val userBuyPrice = userBuyPriceRaw / 100.0
 
-                    // --- 4. WEIGHT (Column 4) ---
-                    val weight = cols[4].text().trim()
-
-                    // --- 5. SELL PRICE (User Sells) (Column 5) ---
-                    // This column contains the "Verkaufen" button and price
-                    // Text format: "3.480,23 CHF"
-                    val sellPriceText = cols[5].text()
-                    val sellPrice = extractPrice(sellPriceText)
-
-                    // --- 6. BUY PRICE (User Buys) (Column 6) ---
-                    // This column contains the "Kaufen" button and price
-                    val buyPriceText = cols[6].text()
-                    val buyPrice = extractPrice(buyPriceText)
-
-                    // Only add if we successfully parsed at least one price or name
-                    if (name.isNotEmpty()) {
-                        val asset = ScrapedAsset(
-                            id = id,
-                            name = name,
-                            imageUrl = imgUrl,
-                            description = "Weight: $weight",
-                            weight = weight,
-                            buyPrice = buyPrice,  // Price user pays to Buy
-                            sellPrice = sellPrice // Price user gets to Sell
+                if (userBuyPrice > 0) {
+                    scrapedList.add(
+                        ScrapedAsset(
+                            id = product.sku,
+                            name = product.name,
+                            description = "Weight: ${product.weight}",
+                            weight = product.weight,
+                            buyPrice = userBuyPrice.toString(),
+                            sellPrice = userSellPrice.toString()
                         )
-                        scrapedList.add(asset)
-                        Log.d(TAG, "✅ SCRAPED: $id | $name | Buy: $buyPrice | Sell: $sellPrice")
-                    }
-
-                } catch (e: Exception) {
-                    Log.w(TAG, "Error parsing row: ${e.message}")
+                    )
+                    Log.d(TAG, "✅ API SUCCESS: ${product.name} | Sell: $userSellPrice | Buy: $userBuyPrice")
                 }
             }
 
-            Log.d(TAG, "Successfully scraped ${scrapedList.size} items.")
-
         } catch (e: Exception) {
-            Log.e(TAG, "Error scraping website", e)
+            Log.e(TAG, "API Request failed: ${e.message}", e)
         }
 
         return scrapedList
-    }
-
-    // Helper to clean price strings (e.g., "3.480,23 CHF" -> "3480.23")
-    private fun extractPrice(rawText: String): String {
-        // Regex to find the number pattern like "1.234,56" or "123,45"
-        val match = Regex("([0-9]{1,3}(?:\\.[0-9]{3})*,[0-9]{2})").find(rawText)
-        return match?.value?.replace(".", "")?.replace(",", ".") ?: "N/A"
     }
 }
