@@ -516,8 +516,9 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String, viewModel: G
                     Text(
                         text = stats.totalValue.formatCurrency(),
                         color = GoldStart,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.ExtraBold
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
                     )
                 }
                 PriceChangeIndicator(
@@ -577,7 +578,11 @@ fun PortfolioPerformanceCard(points: List<Pair<Long, Double>>) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.InsertChart, contentDescription = null, tint = GoldStart)
+                Icon(
+                    Icons.Default.InsertChart,
+                    contentDescription = null,
+                    tint = GoldStart
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     stringResource(R.string.performance_title),
@@ -633,9 +638,8 @@ fun AssetItem(asset: GoldAsset, currency: String, onClick: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     asset.name,
-                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
                     "${asset.type.name} • ${asset.quantity} units",
@@ -647,9 +651,8 @@ fun AssetItem(asset: GoldAsset, currency: String, onClick: () -> Unit) {
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     asset.totalCurrentValue.formatCurrency(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 val isProfit = asset.totalProfitOrLoss >= 0
@@ -663,9 +666,8 @@ fun AssetItem(asset: GoldAsset, currency: String, onClick: () -> Unit) {
                     )
                     Text(
                         text = abs(asset.totalProfitOrLoss).formatCurrency(),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = color,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = color
                     )
                 }
             }

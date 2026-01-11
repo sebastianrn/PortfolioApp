@@ -23,13 +23,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.InsertChart
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -65,22 +63,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.GoldAsset
 import dev.sebastianrn.portfolioapp.data.PriceHistory
 import dev.sebastianrn.portfolioapp.ui.components.AssetSheet
 import dev.sebastianrn.portfolioapp.ui.components.ModernTextField
 import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
+import dev.sebastianrn.portfolioapp.ui.components.PriceChangeIndicator
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
-import dev.sebastianrn.portfolioapp.ui.theme.LossRed
-import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen
 import dev.sebastianrn.portfolioapp.util.formatCurrency
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -141,7 +136,7 @@ fun DetailScreen(
         ) {
             // 1. Stats Header
             item {
-                asset?.let { a -> AssetStatsHeader(a, currency) }
+                asset?.let { a -> AssetSummaryCard(a, currency) }
             }
 
             // 2. Performance Chart
@@ -175,7 +170,7 @@ fun DetailScreen(
 
             // 4. History Items
             items(history) { record ->
-                HistoryItemCard(
+                PriceHistoryCard(
                     record = record, currency = currency, onEditClick = {
                         if (record.isManual) {
                             historyRecordToEdit = record
@@ -234,7 +229,7 @@ fun DetailScreen(
 }
 
 @Composable
-fun AssetStatsHeader(asset: GoldAsset, currency: String) {
+fun AssetSummaryCard(asset: GoldAsset, currency: String) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(24.dp),
@@ -287,26 +282,28 @@ fun AssetStatsHeader(asset: GoldAsset, currency: String) {
                     Text(
                         stringResource(R.string.quantity_label),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.labelLarge
                     )
                     Text(
                         "${asset.quantity}",
                         color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         stringResource(R.string.current_value_label),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.labelLarge
                     )
                     Text(
                         asset.totalCurrentValue.formatCurrency(),
                         color = GoldStart,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 24.sp
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
                     )
                 }
             }
@@ -323,48 +320,26 @@ fun AssetStatsHeader(asset: GoldAsset, currency: String) {
                     Text(
                         stringResource(R.string.bought_at_label),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.labelLarge
                     )
                     Text(
                         asset.purchasePrice.formatCurrency(),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp
+                        color = GoldStart,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
                     )
                 }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        stringResource(R.string.total_return),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    val isProfit = asset.totalProfitOrLoss >= 0
-                    val color = if (isProfit) ProfitGreen else LossRed
-                    val totalInvested = asset.purchasePrice * asset.quantity
-                    val percentage =
-                        if (totalInvested > 0) (asset.totalProfitOrLoss / totalInvested) * 100 else 0.0
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = if (isProfit) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                            contentDescription = null,
-                            tint = color,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Text(
-                            text = "${String.format(Locale.US, "%.2f", abs(percentage))}%",
-                            color = color,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
-                    }
-                    Text(
-                        text = abs(asset.totalProfitOrLoss).formatCurrency(),
-                        color = color,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
+                val totalInvested = asset.purchasePrice * asset.quantity
+                val percentage =
+                    if (totalInvested > 0) (asset.totalProfitOrLoss / totalInvested) * 100 else 0.0
+
+                PriceChangeIndicator(
+                    amount = totalInvested,
+                    percent = percentage,
+                    priceTypeString = stringResource(R.string.total_return)
+                )
             }
         }
     }
@@ -382,7 +357,7 @@ fun PerformanceCard(points: List<Pair<Long, Double>>) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    Icons.AutoMirrored.Filled.ShowChart,
+                    Icons.Default.InsertChart,
                     contentDescription = null,
                     tint = GoldStart
                 )
@@ -402,7 +377,7 @@ fun PerformanceCard(points: List<Pair<Long, Double>>) {
 }
 
 @Composable
-fun HistoryItemCard(record: PriceHistory, currency: String, onEditClick: () -> Unit) {
+fun PriceHistoryCard(record: PriceHistory, currency: String, onEditClick: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
@@ -425,8 +400,7 @@ fun HistoryItemCard(record: PriceHistory, currency: String, onEditClick: () -> U
                         Locale.getDefault()
                     ).format(Date(record.dateTimestamp)),
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    style = MaterialTheme.typography.bodyMedium,
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -435,17 +409,19 @@ fun HistoryItemCard(record: PriceHistory, currency: String, onEditClick: () -> U
                             Locale.getDefault()
                         ).format(Date(record.dateTimestamp)),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 14.sp
+                        style = MaterialTheme.typography.bodyMedium,
                     )
                     if (record.isManual) {
-                        Spacer(modifier = Modifier.width(8.dp)); Icon(
+                        Spacer(modifier = Modifier.width(8.dp));
+                        Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "Editable",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                             modifier = Modifier.size(12.dp)
                         )
                     } else {
-                        Spacer(modifier = Modifier.width(8.dp)); Icon(
+                        Spacer(modifier = Modifier.width(8.dp));
+                        Icon(
                             imageVector = Icons.Default.Cloud,
                             contentDescription = "Not Editable",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
@@ -457,8 +433,7 @@ fun HistoryItemCard(record: PriceHistory, currency: String, onEditClick: () -> U
             Text(
                 text = record.sellPrice.formatCurrency(),
                 color = GoldStart,
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 18.sp
+                style = MaterialTheme.typography.bodyMedium,
             )
         }
     }

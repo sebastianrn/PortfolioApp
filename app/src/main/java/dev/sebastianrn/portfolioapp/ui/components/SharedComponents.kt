@@ -101,7 +101,7 @@ fun PriceChangeIndicator(
             Text(
                 text = "${String.format("%.2f", abs(percent))}%",
                 color = color,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -109,7 +109,7 @@ fun PriceChangeIndicator(
         Text(
             text = abs(amount).formatCurrency(),
             color = color,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold
         )
 
