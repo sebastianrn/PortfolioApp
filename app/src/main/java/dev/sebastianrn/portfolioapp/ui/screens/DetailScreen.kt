@@ -44,8 +44,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
@@ -77,7 +75,6 @@ import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import dev.sebastianrn.portfolioapp.ui.theme.LossRed
 import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen
-import dev.sebastianrn.portfolioapp.ui.theme.TextGray
 import dev.sebastianrn.portfolioapp.util.formatCurrency
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 import java.text.SimpleDateFormat
@@ -224,7 +221,8 @@ fun DetailScreen(
                     id = updatedAsset.id,
                     name = updatedAsset.name,
                     type = updatedAsset.type,
-                    originalPrice = updatedAsset.purchasePrice,
+                    purchasePrice = updatedAsset.purchasePrice,
+                    currentSellPrice = updatedAsset.purchasePrice,
                     quantity = updatedAsset.quantity,
                     weight = updatedAsset.weightInGrams,
                     philoroId = updatedAsset.philoroId

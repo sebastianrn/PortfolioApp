@@ -552,12 +552,19 @@ fun AssetItem(asset: GoldAsset, currency: String, onClick: () -> Unit) {
                 val isProfit = asset.totalProfitOrLoss >= 0
                 val color = if (isProfit) ProfitGreen else LossRed
 
-                Text(
-                    text = abs(asset.totalProfitOrLoss).formatCurrency(),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = color,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = if (isProfit) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                        contentDescription = null,
+                        tint = color
+                    )
+                    Text(
+                        text = abs(asset.totalProfitOrLoss).formatCurrency(),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = color,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
@@ -576,7 +583,7 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String, viewModel: G
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
-            Row (
+            Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -618,7 +625,8 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String, viewModel: G
                     Text(
                         text = stats.totalInvested.formatCurrency(),
                         color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
                     )
                 }
                 // Total Return
@@ -639,21 +647,19 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String, viewModel: G
                         Icon(
                             imageVector = if (isProfit) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
                             contentDescription = null,
-                            tint = color,
-                            modifier = Modifier.size(24.dp)
+                            tint = color
                         )
                         Text(
                             text = "${String.format(Locale.GERMAN, "%.2f", abs(percentage))}%",
                             color = color,
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold
                         )
                     }
-
                     Text(
                         text = abs(stats.totalProfit).formatCurrency(),
                         color = color,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
                     )
                 }

@@ -87,34 +87,34 @@ fun PriceChangeIndicator(
     val isPositive = amount >= 0
     val color = if (isPositive) ProfitGreen else LossRed
 
-    Column (horizontalAlignment = Alignment.End) {
+    Column(horizontalAlignment = Alignment.End) {
         Text(
             stringResource(R.string.daily_change),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium
         )
 
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = if (isPositive) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                contentDescription = null,
+                tint = color
+            )
             Text(
                 text = "${String.format("%.2f", abs(percent))}%",
                 color = color,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = if (isPositive) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                    contentDescription = null,
-                    tint = color,
-                    modifier = Modifier.size(24.dp)
-                )
-                Text(
-                    text = "${abs(amount).formatCurrency()}",
-                    color = color,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold
-                )
+        }
 
-            }
+        Text(
+            text = "${abs(amount).formatCurrency()}",
+            color = color,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold
+        )
+
 
     }
 }

@@ -31,7 +31,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Calendar
-import kotlin.math.abs
 
 data class PortfolioSummary(
     val totalValue: Double = 0.0,
@@ -91,12 +90,36 @@ class GoldViewModel(
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     val portfolioChange: StateFlow<Pair<Double, Double>> = portfolioCurve.map { curve ->
-        if (curve.size < 2) return@map 0.0 to 0.0
-        val latest = curve.last().second
-        val previous = curve[curve.size - 2].second
-        val diff = latest - previous
-        val percent = if (previous != 0.0) (diff / previous) * 100 else 0.0
-        diff to percent
+        if (curve.isEmpty()) return@map 0.0 to 0.0
+
+        // 1. Get current values (Latest point)
+        val currentPoint = curve.last()
+        val currentValue = currentPoint.second
+        val currentTimestamp = currentPoint.first
+
+        // 2. Find the "Start of Day" timestamp (Midnight today relative to the current point)
+        val cal = Calendar.getInstance().apply {
+            timeInMillis = currentTimestamp
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val startOfDay = cal.timeInMillis
+
+        // 3. Find the last point recorded BEFORE today started
+        // This effectively finds "Yesterday's Closing Price" (or the last known price before today)
+        val previousPoint = curve.lastOrNull { it.first < startOfDay }
+
+        if (previousPoint != null) {
+            val previousValue = previousPoint.second
+            val diff = currentValue - previousValue
+            val percent = if (previousValue != 0.0) (diff / previousValue) * 100 else 0.0
+            diff to percent
+        } else {
+            // If no history exists before today (e.g. new user), show 0 change
+            0.0 to 0.0
+        }
     }.stateIn(viewModelScope, SharingStarted.Lazily, 0.0 to 0.0)
 
     fun getAssetById(id: Int): Flow<GoldAsset> = dao.getAssetById(id)
@@ -200,7 +223,8 @@ class GoldViewModel(
         id: Int,
         name: String,
         type: AssetType,
-        originalPrice: Double,
+        purchasePrice: Double,
+        currentSellPrice: Double,
         quantity: Int,
         weight: Double,
         philoroId: Int
@@ -208,30 +232,20 @@ class GoldViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val oldAsset = dao.getAsset(id) ?: return@launch
 
-            val oldValueFactor = oldAsset.weightInGrams
-            val newValueFactor = weight
-            val adjustmentFactor = if (oldValueFactor > 0) newValueFactor / oldValueFactor else 1.0
-
-            val newCurrentPrice = oldAsset.currentSellPrice * adjustmentFactor
-
             val updatedAsset = oldAsset.copy(
                 name = name,
                 type = type,
-                purchasePrice = originalPrice,
-                currentSellPrice = newCurrentPrice,
+                purchasePrice = purchasePrice,
+                currentSellPrice = currentSellPrice,
                 quantity = quantity,
                 weightInGrams = weight,
                 philoroId = philoroId
             )
             dao.update(updatedAsset)
 
-            if (abs(adjustmentFactor - 1.0) > 0.0001) {
-                dao.adjustHistoryForAsset(id, adjustmentFactor)
-            }
-
             val firstHistory = dao.getEarliestHistory(id)
             if (firstHistory != null) {
-                dao.updateHistory(firstHistory.copy(sellPrice = originalPrice))
+                dao.updateHistory(firstHistory.copy(sellPrice = purchasePrice))
             }
         }
     }
@@ -378,6 +392,9 @@ class GoldViewModel(
             val backup = Gson().fromJson(jsonString, BackupData::class.java)
             if (backup.assets.isNotEmpty()) {
                 dao.restoreDatabase(backup.assets, backup.history)
+                for (asset in backup.assets) {
+                    refreshAssetCurrentPrice(asset.id)
+                }
                 true
             } else {
                 false

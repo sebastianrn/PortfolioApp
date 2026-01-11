@@ -207,7 +207,7 @@ fun AssetSheet(
                             GoldAsset(
                                 id = asset?.id ?: 0,
                                 name = name,
-                                type = type,
+                                type = selectedOption.type,
                                 purchasePrice = p,
                                 currentSellPrice = p,
                                 currentBuyPrice = asset?.currentBuyPrice ?: p,
