@@ -63,7 +63,7 @@ fun PortfolioChart(
         }
     }
 
-    val dateTimeFormatter = remember { SimpleDateFormat("dd.MM.yy", Locale.getDefault()) }
+    val dateTimeFormatter = remember { SimpleDateFormat("MMM yy", Locale.getDefault()) }
 
     val axisLabelComponent = rememberAxisLabelComponent(
         color = Color.White,

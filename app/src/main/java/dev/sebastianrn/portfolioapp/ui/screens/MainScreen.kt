@@ -540,12 +540,12 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String, viewModel: G
                     Text(
                         stringResource(R.string.invested_capital),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.labelLarge
                     )
                     Text(
                         text = stats.totalInvested.formatCurrency(),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.bodyMedium,
+                        color = GoldStart,
+                        style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold
                     )
                 }

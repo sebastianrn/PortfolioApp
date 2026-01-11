@@ -89,7 +89,7 @@ fun PriceChangeIndicator(
         Text(
             text = priceTypeString,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.labelLarge
         )
 
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -101,7 +101,7 @@ fun PriceChangeIndicator(
             Text(
                 text = "${String.format("%.2f", abs(percent))}%",
                 color = color,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -109,7 +109,7 @@ fun PriceChangeIndicator(
         Text(
             text = abs(amount).formatCurrency(),
             color = color,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Bold
         )
 
