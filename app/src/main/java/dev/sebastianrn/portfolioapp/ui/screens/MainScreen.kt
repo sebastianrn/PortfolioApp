@@ -78,7 +78,7 @@ import dev.sebastianrn.portfolioapp.data.AssetType
 import dev.sebastianrn.portfolioapp.data.GoldAsset
 import dev.sebastianrn.portfolioapp.ui.components.AssetSheet
 import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
-import dev.sebastianrn.portfolioapp.ui.components.PriceChangeIndicator
+import dev.sebastianrn.portfolioapp.ui.components.PricePercentageChangeIndicator
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import dev.sebastianrn.portfolioapp.ui.theme.LossRed
 import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen
@@ -521,7 +521,7 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String, viewModel: G
                         ),
                     )
                 }
-                PriceChangeIndicator(
+                PricePercentageChangeIndicator(
                     amount = dailyChange.first,
                     percent = dailyChange.second,
                     priceTypeString = stringResource(R.string.daily_change)
@@ -557,7 +557,7 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String, viewModel: G
                     0.0
                 }
 
-                PriceChangeIndicator(
+                PricePercentageChangeIndicator(
                     amount = stats.totalProfit,
                     percent = returnPercentage,
                     priceTypeString = stringResource(R.string.total_return)

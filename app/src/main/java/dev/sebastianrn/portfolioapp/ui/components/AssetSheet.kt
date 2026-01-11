@@ -42,6 +42,7 @@ import dev.sebastianrn.portfolioapp.data.AssetType
 import dev.sebastianrn.portfolioapp.data.GoldAsset
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import dev.sebastianrn.portfolioapp.ui.theme.TextGray
+import dev.sebastianrn.portfolioapp.util.formatCurrency
 import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -187,9 +188,10 @@ fun AssetSheet(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
+            Spacer(modifier = Modifier.height(16.dp))
 
             ModernTextField(
-                value = purchasePrice,
+                value = purchasePrice.toDoubleOrNull()?.formatCurrency() ?: purchasePrice,
                 onValueChange = { purchasePrice = it },
                 label = if (isEditMode) "Bought At (Total)" else "Paid Price (Total)",
                 isNumber = true

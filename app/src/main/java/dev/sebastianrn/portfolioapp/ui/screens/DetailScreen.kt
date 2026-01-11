@@ -69,7 +69,7 @@ import dev.sebastianrn.portfolioapp.data.PriceHistory
 import dev.sebastianrn.portfolioapp.ui.components.AssetSheet
 import dev.sebastianrn.portfolioapp.ui.components.ModernTextField
 import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
-import dev.sebastianrn.portfolioapp.ui.components.PriceChangeIndicator
+import dev.sebastianrn.portfolioapp.ui.components.PricePercentageChangeIndicator
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import dev.sebastianrn.portfolioapp.util.formatCurrency
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
@@ -170,7 +170,7 @@ fun DetailScreen(
 
             // 4. History Items
             items(history) { record ->
-                PriceHistoryCard(
+                PriceHistoryItemCard(
                     record = record, currency = currency, onEditClick = {
                         if (record.isManual) {
                             historyRecordToEdit = record
@@ -181,16 +181,17 @@ fun DetailScreen(
     }
 
     if (showSheet) {
-        UpdatePriceSheet(onDismiss = { showSheet = false }, onSave = { sellPrice, buyPrice, date ->
+        EditHistoryRecordBottomSheet(onDismiss = { showSheet = false }, onSave = { sellPrice, buyPrice, date ->
             viewModel.addDailyRate(coinId, sellPrice, buyPrice, date, true)
             showSheet = false
         })
     }
 
     if (historyRecordToEdit != null) {
-        UpdatePriceSheet(
+        EditHistoryRecordBottomSheet(
             onDismiss = { historyRecordToEdit = null },
             initialSellPrice = historyRecordToEdit!!.sellPrice,
+            initialBuyPrice = historyRecordToEdit!!.buyPrice,
             initialDate = historyRecordToEdit!!.dateTimestamp,
             isEditMode = true,
             onSave = { sellPrice, buyPrice, date ->
@@ -335,7 +336,7 @@ fun AssetSummaryCard(asset: GoldAsset, currency: String) {
                 val percentage =
                     if (totalInvested > 0) (asset.totalProfitOrLoss / totalInvested) * 100 else 0.0
 
-                PriceChangeIndicator(
+                PricePercentageChangeIndicator(
                     amount = totalInvested,
                     percent = percentage,
                     priceTypeString = stringResource(R.string.total_return)
@@ -377,7 +378,7 @@ fun PerformanceCard(points: List<Pair<Long, Double>>) {
 }
 
 @Composable
-fun PriceHistoryCard(record: PriceHistory, currency: String, onEditClick: () -> Unit) {
+fun PriceHistoryItemCard(record: PriceHistory, currency: String, onEditClick: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
@@ -441,7 +442,7 @@ fun PriceHistoryCard(record: PriceHistory, currency: String, onEditClick: () -> 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UpdatePriceSheet(
+fun EditHistoryRecordBottomSheet(
     onDismiss: () -> Unit,
     initialSellPrice: Double? = null,
     initialBuyPrice: Double? = null,
@@ -537,7 +538,7 @@ fun UpdatePriceSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             ModernTextField(
-                value = sellPrice,
+                value = sellPrice.toDouble().formatCurrency(),
                 onValueChange = {
                     sellPrice = it
                     isSellError = false
@@ -549,7 +550,7 @@ fun UpdatePriceSheet(
             )
 
             ModernTextField(
-                value = buyPrice,
+                value = buyPrice.toDouble().formatCurrency(),
                 onValueChange = {
                     buyPrice = it
                     isBuyError = false

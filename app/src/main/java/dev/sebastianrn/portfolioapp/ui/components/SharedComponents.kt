@@ -77,7 +77,7 @@ fun ModernTextField(
 }
 
 @Composable
-fun PriceChangeIndicator(
+fun PricePercentageChangeIndicator(
     amount: Double,
     percent: Double,
     priceTypeString: String
