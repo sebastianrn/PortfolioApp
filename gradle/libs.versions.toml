@@ -22,6 +22,7 @@ room = "2.8.4"
 roomTesting = "2.8.4"
 turbine = "1.2.1"
 vico = "2.3.6"
+jsoup = "1.22.1"
 
 [libraries]
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
@@ -60,6 +61,8 @@ turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 vico-compose = { group = "com.patrykandpatrick.vico", name = "compose", version.ref = "vico" }
 vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
 vico-core = { group = "com.patrykandpatrick.vico", name = "core", version.ref = "vico" }
+
+jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

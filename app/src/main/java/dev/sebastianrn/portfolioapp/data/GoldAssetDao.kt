@@ -20,7 +20,7 @@ interface GoldAssetDao {
     @Delete
     suspend fun deleteAsset(asset: GoldAsset)
 
-    @Query("UPDATE gold_assets SET currentPrice = :newPrice WHERE id = :assetId")
+    @Query("UPDATE gold_assets SET currentSellPrice = :newPrice WHERE id = :assetId")
     suspend fun updateCurrentPrice(assetId: Int, newPrice: Double)
 
     @Insert
@@ -38,11 +38,14 @@ interface GoldAssetDao {
     @Query("SELECT * FROM price_history WHERE assetId = :assetId ORDER BY dateTimestamp DESC")
     fun getHistoryForAsset(assetId: Int): Flow<List<PriceHistory>>
 
-    @Query("SELECT SUM(originalPrice * quantity) FROM gold_assets")
+    @Query("SELECT SUM(purchasePrice * quantity) FROM gold_assets")
     fun getTotalInvestment(): Flow<Double?>
 
     @Query("SELECT * FROM price_history ORDER BY dateTimestamp ASC")
     fun getAllHistory(): Flow<List<PriceHistory>>
+
+    @Query("SELECT * FROM gold_assets WHERE philoroId IS NOT NULL AND philoroId != ''")
+    suspend fun getAssetsWithPhiloroId(): List<GoldAsset>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAllAssets(assets: List<GoldAsset>)
@@ -64,17 +67,20 @@ interface GoldAssetDao {
         insertAllHistory(history)
     }
 
-    @Query("UPDATE gold_assets SET originalPrice = originalPrice * :factor, currentPrice = currentPrice * :factor")
+    @Query("UPDATE gold_assets SET purchasePrice = purchasePrice * :factor, currentSellPrice = currentSellPrice * :factor")
     suspend fun applyCurrencyFactorToAssets(factor: Double)
 
-    @Query("UPDATE price_history SET price = price * :factor")
+    @Query("UPDATE price_history SET sellPrice = sellPrice * :factor")
     suspend fun applyCurrencyFactorToHistory(factor: Double)
 
-    @Query("UPDATE price_history SET price = price * :factor WHERE assetId = :assetId")
+    @Query("UPDATE price_history SET sellPrice = sellPrice * :factor WHERE assetId = :assetId")
     suspend fun adjustHistoryForAsset(assetId: Int, factor: Double)
 
     @Update
     suspend fun updateHistory(history: PriceHistory)
+
+    @Query("UPDATE gold_assets SET currentSellPrice = :sellPrice, currentBuyPrice = :buyPrice WHERE philoroId = :philoroId")
+    suspend fun updatePricesByPhiloroId(philoroId: Int, sellPrice: Double, buyPrice: Double)
 
     @Query("SELECT * FROM gold_assets WHERE id = :id")
     suspend fun getAsset(id: Int): GoldAsset?

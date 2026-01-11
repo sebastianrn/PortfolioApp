@@ -114,4 +114,6 @@ dependencies {
 
     // Instrumented Testing (Device/Emulator)
     androidTestImplementation(libs.androidx.room.testing) // Specific Room tester
+
+    implementation(libs.jsoup)
 }

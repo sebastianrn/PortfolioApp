@@ -28,11 +28,9 @@ import com.patrykandpatrick.vico.compose.common.fill
 import com.patrykandpatrick.vico.compose.common.shader.verticalGradient
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
-import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModel
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
-import com.patrykandpatrick.vico.core.cartesian.data.LineCartesianLayerModel
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.core.cartesian.marker.DefaultCartesianMarker
@@ -65,7 +63,7 @@ fun PortfolioChart(
         }
     }
 
-    val dateTimeFormatter = remember { SimpleDateFormat("dd.MM.yy", Locale.getDefault()) }
+    val dateTimeFormatter = remember { SimpleDateFormat("MMM yy", Locale.getDefault()) }
 
     val axisLabelComponent = rememberAxisLabelComponent(
         color = Color.White,
@@ -165,9 +163,8 @@ fun PortfolioChart(
                 guideline = null,
                 itemPlacer = remember {
                     HorizontalAxis.ItemPlacer.aligned(
-                        // If you have 200 points, spacing = 5 is too crowded.
-                        // This shows roughly 6-7 labels across the whole chart.
-                        spacing = { if (points.size > 1) points.size / 6 else 1 },
+                        // FIX: Use maxOf to ensure spacing is at least 1, never 0
+                        spacing = { maxOf(1, points.size / 6) },
                         addExtremeLabelPadding = false
                     )
                 }

@@ -43,7 +43,8 @@
     <string name="current_value_label">Current Value</string>
     <string name="bought_at_label">Bought At</string>
     <string name="update_value_title">Update Value</string>
-    <string name="new_price_label">New Price (CHF)</string>
+    <string name="new_sell_price_label">New Sell Price (CHF)</string>
+    <string name="new_buy_price_label">New Buy Price (CHF)</string>
     <string name="date_label">Date: %1$s</string>
     <string name="ok_action">OK</string>
 
