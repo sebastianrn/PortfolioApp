@@ -28,8 +28,8 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.InsertChart
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
@@ -92,7 +92,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.util.Locale
 import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -491,6 +490,110 @@ fun MainScreen(
 }
 
 @Composable
+fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String, viewModel: GoldViewModel) {
+    val dailyChange by viewModel.portfolioChange.collectAsState()
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(24.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(modifier = Modifier.padding(24.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Total Value
+                Column {
+                    Text(
+                        text = stringResource(R.string.total_portfolio_value),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                    Text(
+                        text = stats.totalValue.formatCurrency(),
+                        color = GoldStart,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+                PriceChangeIndicator(
+                    amount = dailyChange.first,
+                    percent = dailyChange.second,
+                    priceTypeString = stringResource(R.string.daily_change)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Details Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        stringResource(R.string.invested_capital),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = stats.totalInvested.formatCurrency(),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                val returnPercentage = if (stats.totalInvested > 0) {
+                    (stats.totalProfit / stats.totalInvested) * 100
+                } else {
+                    0.0
+                }
+
+                PriceChangeIndicator(
+                    amount = stats.totalProfit,
+                    percent = returnPercentage,
+                    priceTypeString = stringResource(R.string.total_return)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PortfolioPerformanceCard(points: List<Pair<Long, Double>>) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = RoundedCornerShape(24.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.InsertChart, contentDescription = null, tint = GoldStart)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    stringResource(R.string.performance_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            PortfolioChart(points)
+        }
+    }
+}
+
+@Composable
 fun AssetItem(asset: GoldAsset, currency: String, onClick: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -566,131 +669,6 @@ fun AssetItem(asset: GoldAsset, currency: String, onClick: () -> Unit) {
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String, viewModel: GoldViewModel) {
-    val dailyChange by viewModel.portfolioChange.collectAsState()
-
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(24.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column(modifier = Modifier.padding(24.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Total Value
-                Column {
-                    Text(
-                        text = stringResource(R.string.total_portfolio_value),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                    Text(
-                        text = stats.totalValue.formatCurrency(),
-                        color = GoldStart,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                }
-                PriceChangeIndicator(
-                    amount = dailyChange.first,
-                    percent = dailyChange.second
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Details Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        stringResource(R.string.invested_capital),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Text(
-                        text = stats.totalInvested.formatCurrency(),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                // Total Return
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        stringResource(R.string.total_return),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    val isProfit = stats.totalProfit >= 0
-                    val color = if (isProfit) ProfitGreen else LossRed
-
-                    val percentage =
-                        if (stats.totalInvested > 0) (stats.totalProfit / stats.totalInvested) * 100 else 0.0
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = if (isProfit) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                            contentDescription = null,
-                            tint = color
-                        )
-                        Text(
-                            text = "${String.format(Locale.GERMAN, "%.2f", abs(percentage))}%",
-                            color = color,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Text(
-                        text = abs(stats.totalProfit).formatCurrency(),
-                        color = color,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun PortfolioPerformanceCard(points: List<Pair<Long, Double>>) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        shape = RoundedCornerShape(24.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.DateRange, contentDescription = null, tint = GoldStart)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    stringResource(R.string.performance_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            PortfolioChart(points)
         }
     }
 }

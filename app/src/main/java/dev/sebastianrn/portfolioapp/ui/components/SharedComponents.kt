@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -17,11 +16,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import dev.sebastianrn.portfolioapp.ui.theme.LossRed
 import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen
@@ -83,13 +80,14 @@ fun ModernTextField(
 fun PriceChangeIndicator(
     amount: Double,
     percent: Double,
+    priceTypeString: String
 ) {
     val isPositive = amount >= 0
     val color = if (isPositive) ProfitGreen else LossRed
 
     Column(horizontalAlignment = Alignment.End) {
         Text(
-            stringResource(R.string.daily_change),
+            text = priceTypeString,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium
         )
@@ -109,7 +107,7 @@ fun PriceChangeIndicator(
         }
 
         Text(
-            text = "${abs(amount).formatCurrency()}",
+            text = abs(amount).formatCurrency(),
             color = color,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold
