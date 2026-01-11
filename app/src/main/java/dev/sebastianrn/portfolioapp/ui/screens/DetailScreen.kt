@@ -476,6 +476,9 @@ fun UpdatePriceSheet(
     isEditMode: Boolean = false,
     onSave: (Double, Double, Long) -> Unit
 ) {
+
+    var isSellError by remember { mutableStateOf(false) }
+    var isBuyError by remember { mutableStateOf(false) }
     var sellPrice by remember { mutableStateOf(initialSellPrice?.toString() ?: "") }
     var buyPrice by remember { mutableStateOf(initialBuyPrice?.toString() ?: "") }
     var selectedDate by remember { mutableLongStateOf(initialDate ?: System.currentTimeMillis()) }
@@ -537,29 +540,18 @@ fun UpdatePriceSheet(
 
             // Date Picker Field (Styled to match TextFields)
             Box(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
+                ModernTextField(
                     value = sdf.format(Date(selectedDate)),
                     onValueChange = {},
+                    label = stringResource(R.string.date_label, "").replace(": ", ""),
                     readOnly = true,
-                    label = {
-                        Text(
-                            stringResource(R.string.date_label, "").replace(": ", ""),
-                            color = TextGray
-                        )
-                    },
                     trailingIcon = {
-                        Icon(Icons.Default.DateRange, contentDescription = null, tint = GoldStart)
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = GoldStart,
-                        unfocusedBorderColor = TextGray.copy(alpha = 0.5f),
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        cursorColor = GoldStart,
-                        focusedLabelColor = GoldStart,
-                        unfocusedLabelColor = TextGray
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                        Icon(
+                            Icons.Default.DateRange,
+                            contentDescription = null,
+                            tint = GoldStart
+                        )
+                    }
                 )
                 // Invisible box to capture clicks for the Date Picker
                 Box(
@@ -573,22 +565,45 @@ fun UpdatePriceSheet(
 
             ModernTextField(
                 value = sellPrice,
-                onValueChange = { sellPrice = it },
+                onValueChange = {
+                    sellPrice = it
+                    isSellError = false
+                },
                 label = if (isEditMode) "Sell Price" else stringResource(R.string.new_sell_price_label),
-                isNumber = true
+                isNumber = true,
+                isError = isSellError,
+                errorMessage = "Enter a Sell Price"
             )
 
             ModernTextField(
                 value = buyPrice,
-                onValueChange = { buyPrice = it },
+                onValueChange = {
+                    buyPrice = it
+                    isBuyError = false
+                },
                 label = if (isEditMode) "Buy Price" else stringResource(R.string.new_buy_price_label),
-                isNumber = true
+                isNumber = true,
+                isError = isBuyError,
+                errorMessage = "Enter a Buy Price"
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { if (sellPrice.isNotEmpty()) onSave(sellPrice.toDouble(), buyPrice.toDouble(), selectedDate) },
+                onClick = {
+                    // 1. Validate inputs independently
+                    val validSell = sellPrice.toDoubleOrNull()
+                    val validBuy = buyPrice.toDoubleOrNull()
+
+                    // 2. Update error states based on validation results
+                    isSellError = (validSell == null)
+                    isBuyError = (validBuy == null)
+
+                    // 3. Only proceed if BOTH are valid
+                    if (validSell != null && validBuy != null) {
+                        onSave(validSell, validBuy, selectedDate)
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = GoldStart,

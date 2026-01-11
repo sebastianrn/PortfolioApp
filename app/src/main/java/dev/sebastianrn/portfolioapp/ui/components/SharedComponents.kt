@@ -3,6 +3,7 @@ package dev.sebastianrn.portfolioapp.ui.components
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -34,25 +35,48 @@ fun ModernTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
-    isNumber: Boolean = false
+    isNumber: Boolean = false,
+    isError: Boolean = false,
+    errorMessage: String? = null,
+    readOnly: Boolean = false,
+    trailingIcon: @Composable (() -> Unit)? = null
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label, color = TextGray) },
-        singleLine = true,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = GoldStart,
-            unfocusedBorderColor = TextGray.copy(alpha = 0.5f),
-            focusedTextColor = TextWhite,
-            unfocusedTextColor = TextWhite,
-            cursorColor = GoldStart,
-            focusedLabelColor = GoldStart,
-            unfocusedLabelColor = TextGray
-        ),
-        keyboardOptions = if (isNumber) KeyboardOptions(keyboardType = KeyboardType.Number) else KeyboardOptions.Default,
-        modifier = Modifier.fillMaxWidth()
-    )
+    Column(modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = { Text(label) },
+            isError = isError,
+            singleLine = true,
+            readOnly = readOnly,
+            trailingIcon = trailingIcon,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = GoldStart,
+                unfocusedBorderColor = TextGray.copy(alpha = 0.5f),
+                focusedTextColor = TextWhite,
+                unfocusedTextColor = TextWhite,
+                cursorColor = GoldStart,
+                focusedLabelColor = GoldStart,
+                unfocusedLabelColor = TextGray,
+
+                errorBorderColor = LossRed,
+                errorLabelColor = LossRed,
+                errorCursorColor = LossRed,
+                errorTextColor = TextWhite
+            ),
+            keyboardOptions = if (isNumber) KeyboardOptions(keyboardType = KeyboardType.Number) else KeyboardOptions.Default,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        if (isError && !errorMessage.isNullOrBlank()) {
+            Text(
+                text = errorMessage,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+            )
+        }
+    }
 }
 
 @Composable

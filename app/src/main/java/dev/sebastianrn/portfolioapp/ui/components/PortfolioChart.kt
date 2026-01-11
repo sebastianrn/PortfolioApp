@@ -163,8 +163,7 @@ fun PortfolioChart(
                 guideline = null,
                 itemPlacer = remember {
                     HorizontalAxis.ItemPlacer.aligned(
-                        // If you have 200 points, spacing = 5 is too crowded.
-                        // This shows roughly 6-7 labels across the whole chart.
+                        // FIX: Use maxOf to ensure spacing is at least 1, never 0
                         spacing = { maxOf(1, points.size / 6) },
                         addExtremeLabelPadding = false
                     )
