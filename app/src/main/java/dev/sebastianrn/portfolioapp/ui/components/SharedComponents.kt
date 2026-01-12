@@ -25,10 +25,12 @@ import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen
 import dev.sebastianrn.portfolioapp.ui.theme.TextGray
 import dev.sebastianrn.portfolioapp.ui.theme.TextWhite
 import dev.sebastianrn.portfolioapp.util.formatCurrency
+import java.util.Locale
 import kotlin.math.abs
 
 @Composable
-fun ModernTextField(
+fun PortfolioOutlinedTextField(
+    modifier: Modifier = Modifier,
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
@@ -36,9 +38,9 @@ fun ModernTextField(
     isError: Boolean = false,
     errorMessage: String? = null,
     readOnly: Boolean = false,
-    trailingIcon: @Composable (() -> Unit)? = null
+    trailingIcon: @Composable (() -> Unit)? = null,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
@@ -99,7 +101,7 @@ fun PricePercentageChangeIndicator(
                 tint = color
             )
             Text(
-                text = "${String.format("%.2f", abs(percent))}%",
+                text = "${String.format(Locale.getDefault(), "%.2f", abs(percent))}%",
                 color = color,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold

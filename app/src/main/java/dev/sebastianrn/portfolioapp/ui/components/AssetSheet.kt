@@ -13,18 +13,16 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -36,12 +34,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.data.AssetType
 import dev.sebastianrn.portfolioapp.data.GoldAsset
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
-import dev.sebastianrn.portfolioapp.ui.theme.TextGray
 import dev.sebastianrn.portfolioapp.util.formatCurrency
 import kotlin.math.abs
 
@@ -74,23 +70,19 @@ fun AssetSheet(
     }
 
     var name by remember { mutableStateOf(asset?.name ?: "") }
-    var type by remember { mutableStateOf(asset?.type ?: AssetType.COIN) }
     var purchasePrice by remember { mutableStateOf(asset?.purchasePrice?.toString() ?: "") }
-    var currentSellPrice by remember { mutableStateOf(asset?.currentSellPrice?.toString() ?: "") }
-    var currentBuyPrice by remember { mutableStateOf(asset?.currentBuyPrice?.toString() ?: "") }
     var quantity by remember { mutableStateOf(asset?.quantity?.toString() ?: "1") }
     var philoroId by remember { mutableStateOf(asset?.philoroId?.toString() ?: "") }
     var selectedOption by remember { mutableStateOf(initialOption) }
     var expanded by remember { mutableStateOf(false) }
 
     val isEditMode = asset != null
-    val title = if (isEditMode) "Edit Asset" else "Add Investment"
+    val title = if (isEditMode) "Edit Asset" else "Add Asset"
     val buttonText = if (isEditMode) "Update Asset" else "Add to Portfolio"
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        // CHANGED: Use surfaceVariant to stand out from background
         containerColor = MaterialTheme.colorScheme.surfaceVariant,
         contentColor = MaterialTheme.colorScheme.onSurface
     ) {
@@ -113,7 +105,7 @@ fun AssetSheet(
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            ModernTextField(
+            PortfolioOutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
                 label = "Asset Name (e.g. Vreneli)"
@@ -125,24 +117,18 @@ fun AssetSheet(
                 onExpandedChange = { expanded = !expanded },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                OutlinedTextField(
+                PortfolioOutlinedTextField(
                     value = selectedOption.label,
                     onValueChange = {},
+                    label = "Weight / Type",
                     readOnly = true,
-                    label = { Text("Weight / Type", color = TextGray) },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = GoldStart,
-                        unfocusedBorderColor = TextGray.copy(alpha = 0.5f),
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        cursorColor = GoldStart,
-                        focusedLabelColor = GoldStart,
-                        unfocusedLabelColor = TextGray
-                    ),
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth()
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                    },
+                    modifier = Modifier.menuAnchor(
+                        type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                        enabled = true
+                    )
                 )
                 ExposedDropdownMenu(
                     expanded = expanded,
@@ -170,7 +156,7 @@ fun AssetSheet(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Box(modifier = Modifier.weight(1f)) {
-                    ModernTextField(
+                    PortfolioOutlinedTextField(
                         value = quantity,
                         onValueChange = { if (it.all { c -> c.isDigit() }) quantity = it },
                         label = "Qty",
@@ -180,17 +166,15 @@ fun AssetSheet(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            PortfolioOutlinedTextField(
                 value = philoroId,
                 onValueChange = { philoroId = it },
-                label = { Text("Philoro ID (for Scraping)") },
-                placeholder = { Text("e.g. 1991") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
+                label = "Philoro ID (for Scraping)",
+                isNumber = true
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            ModernTextField(
+            PortfolioOutlinedTextField(
                 value = purchasePrice.toDoubleOrNull()?.formatCurrency() ?: purchasePrice,
                 onValueChange = { purchasePrice = it },
                 label = if (isEditMode) "Bought At (Total)" else "Paid Price (Total)",

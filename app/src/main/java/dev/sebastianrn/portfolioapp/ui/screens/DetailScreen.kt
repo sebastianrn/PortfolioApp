@@ -67,7 +67,7 @@ import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.GoldAsset
 import dev.sebastianrn.portfolioapp.data.PriceHistory
 import dev.sebastianrn.portfolioapp.ui.components.AssetSheet
-import dev.sebastianrn.portfolioapp.ui.components.ModernTextField
+import dev.sebastianrn.portfolioapp.ui.components.PortfolioOutlinedTextField
 import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
 import dev.sebastianrn.portfolioapp.ui.components.PricePercentageChangeIndicator
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
@@ -84,7 +84,6 @@ fun DetailScreen(
 ) {
     val asset by viewModel.getAssetById(coinId).collectAsState(initial = null)
     val history by viewModel.getHistoryForAsset(coinId).collectAsState(initial = emptyList())
-    val currency by viewModel.currentCurrency.collectAsState()
 
     var showSheet by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -118,7 +117,8 @@ fun DetailScreen(
                         tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
-            }, colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.background
             )
         )
@@ -136,7 +136,7 @@ fun DetailScreen(
         ) {
             // 1. Stats Header
             item {
-                asset?.let { a -> AssetSummaryCard(a, currency) }
+                asset?.let { a -> AssetSummaryCard(a) }
             }
 
             // 2. Performance Chart
@@ -171,7 +171,8 @@ fun DetailScreen(
             // 4. History Items
             items(history) { record ->
                 PriceHistoryItemCard(
-                    record = record, currency = currency, onEditClick = {
+                    record = record,
+                    onEditClick = {
                         if (record.isManual) {
                             historyRecordToEdit = record
                         }
@@ -230,7 +231,7 @@ fun DetailScreen(
 }
 
 @Composable
-fun AssetSummaryCard(asset: GoldAsset, currency: String) {
+fun AssetSummaryCard(asset: GoldAsset) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(24.dp),
@@ -378,7 +379,7 @@ fun PerformanceCard(points: List<Pair<Long, Double>>) {
 }
 
 @Composable
-fun PriceHistoryItemCard(record: PriceHistory, currency: String, onEditClick: () -> Unit) {
+fun PriceHistoryItemCard(record: PriceHistory, onEditClick: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
@@ -413,7 +414,7 @@ fun PriceHistoryItemCard(record: PriceHistory, currency: String, onEditClick: ()
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     if (record.isManual) {
-                        Spacer(modifier = Modifier.width(8.dp));
+                        Spacer(modifier = Modifier.width(8.dp))
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "Editable",
@@ -421,7 +422,7 @@ fun PriceHistoryItemCard(record: PriceHistory, currency: String, onEditClick: ()
                             modifier = Modifier.size(12.dp)
                         )
                     } else {
-                        Spacer(modifier = Modifier.width(8.dp));
+                        Spacer(modifier = Modifier.width(8.dp))
                         Icon(
                             imageVector = Icons.Default.Cloud,
                             contentDescription = "Not Editable",
@@ -514,7 +515,7 @@ fun EditHistoryRecordBottomSheet(
 
             // Date Picker Field (Styled to match TextFields)
             Box(modifier = Modifier.fillMaxWidth()) {
-                ModernTextField(
+                PortfolioOutlinedTextField(
                     value = sdf.format(Date(selectedDate)),
                     onValueChange = {},
                     label = stringResource(R.string.date_label, "").replace(": ", ""),
@@ -537,7 +538,7 @@ fun EditHistoryRecordBottomSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            ModernTextField(
+            PortfolioOutlinedTextField(
                 value = sellPrice.toDouble().formatCurrency(),
                 onValueChange = {
                     sellPrice = it
@@ -549,7 +550,9 @@ fun EditHistoryRecordBottomSheet(
                 errorMessage = "Enter a Sell Price"
             )
 
-            ModernTextField(
+            Spacer(modifier = Modifier.height(16.dp))
+
+            PortfolioOutlinedTextField(
                 value = buyPrice.toDouble().formatCurrency(),
                 onValueChange = {
                     buyPrice = it
