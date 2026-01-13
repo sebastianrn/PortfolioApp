@@ -1,5 +1,6 @@
 package dev.sebastianrn.portfolioapp.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,6 +52,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -80,23 +82,29 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
-    viewModel: GoldViewModel, coinId: Int, coinName: String, onBackClick: () -> Unit
+    viewModel: GoldViewModel,
+    assetId: Int,
+    onBackClick: () -> Unit
 ) {
-    val asset by viewModel.getAssetById(coinId).collectAsState(initial = null)
-    val history by viewModel.getHistoryForAsset(coinId).collectAsState(initial = emptyList())
+    LaunchedEffect(assetId) {
+        Log.d("DetailScreen", "Attempting to load asset with ID: $assetId")
+    }
+
+    val asset by viewModel.getAssetById(assetId).collectAsState(initial = null)
+    val history by viewModel.getHistoryForAsset(assetId).collectAsState(initial = emptyList())
 
     var showSheet by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
 
     var historyRecordToEdit by remember { mutableStateOf<PriceHistory?>(null) }
 
-    val chartPoints by viewModel.getChartPointsForAsset(coinId).collectAsState()
+    val chartPoints by viewModel.getChartPointsForAsset(assetId).collectAsState()
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background, topBar = {
         CenterAlignedTopAppBar(
             title = {
                 Text(
-                    coinName,
+                    asset?.name ?: "No Name available",
                     color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Bold
                 )
@@ -169,9 +177,9 @@ fun DetailScreen(
             }
 
             // 4. History Items
-            items(history) { record ->
+            items(history, key = { it.historyId }) { record ->
                 PriceHistoryItemCard(
-                    record = record,
+                    historyRecord = record,
                     onEditClick = {
                         if (record.isManual) {
                             historyRecordToEdit = record
@@ -183,7 +191,7 @@ fun DetailScreen(
 
     if (showSheet) {
         EditHistoryRecordBottomSheet(onDismiss = { showSheet = false }, onSave = { sellPrice, buyPrice, date ->
-            viewModel.addDailyRate(coinId, sellPrice, buyPrice, date, true)
+            viewModel.addDailyRate(assetId, sellPrice, buyPrice, date, true)
             showSheet = false
         })
     }
@@ -379,13 +387,13 @@ fun PerformanceCard(points: List<Pair<Long, Double>>) {
 }
 
 @Composable
-fun PriceHistoryItemCard(record: PriceHistory, onEditClick: () -> Unit) {
+fun PriceHistoryItemCard(historyRecord: PriceHistory, onEditClick: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp)
-            .clickable(enabled = record.isManual) { onEditClick() },
+            .clickable(enabled = historyRecord.isManual) { onEditClick() },
         elevation = CardDefaults.cardElevation(1.dp)
     ) {
         Row(
@@ -400,7 +408,7 @@ fun PriceHistoryItemCard(record: PriceHistory, onEditClick: () -> Unit) {
                     SimpleDateFormat(
                         "MMM dd, yyyy",
                         Locale.getDefault()
-                    ).format(Date(record.dateTimestamp)),
+                    ).format(Date(historyRecord.dateTimestamp)),
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.bodyMedium,
                 )
@@ -409,11 +417,11 @@ fun PriceHistoryItemCard(record: PriceHistory, onEditClick: () -> Unit) {
                         SimpleDateFormat(
                             "HH:mm",
                             Locale.getDefault()
-                        ).format(Date(record.dateTimestamp)),
+                        ).format(Date(historyRecord.dateTimestamp)),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    if (record.isManual) {
+                    if (historyRecord.isManual) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Icon(
                             imageVector = Icons.Default.Edit,
@@ -433,7 +441,7 @@ fun PriceHistoryItemCard(record: PriceHistory, onEditClick: () -> Unit) {
                 }
             }
             Text(
-                text = record.sellPrice.formatCurrency(),
+                text = historyRecord.sellPrice.formatCurrency(),
                 color = GoldStart,
                 style = MaterialTheme.typography.bodyMedium,
             )

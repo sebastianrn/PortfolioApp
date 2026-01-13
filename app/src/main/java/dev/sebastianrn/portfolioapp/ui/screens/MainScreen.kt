@@ -26,9 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.InsertChart
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
@@ -48,15 +46,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -99,18 +92,14 @@ import kotlin.math.abs
 fun MainScreen(
     viewModel: GoldViewModel,
     themeViewModel: ThemeViewModel,
-    onCoinClick: (GoldAsset) -> Unit
+    onCoinClick: (Int) -> Unit
 ) {
     val assets by viewModel.allAssets.collectAsState()
     val stats by viewModel.portfolioStats.collectAsState()
     val portfolioPoints by viewModel.portfolioCurve.collectAsState()
     val isDark by themeViewModel.isDarkTheme.collectAsState()
-    val currency by viewModel.currentCurrency.collectAsState()
 
     var showDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
-    var showCurrencyDialog by remember { mutableStateOf(false) }
-    var assetToDelete by remember { mutableStateOf<GoldAsset?>(null) }
     var showMenu by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -228,18 +217,6 @@ fun MainScreen(
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        "Currency: $currency",
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                },
-                                onClick = {
-                                    showMenu = false
-                                    showCurrencyDialog = true
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
                                         "Export Backup",
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -261,28 +238,28 @@ fun MainScreen(
                                     importLauncher.launch(arrayOf("application/json"))
                                 }
                             )
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        "Generate Test Data",
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                },
-                                onClick = {
-                                    showMenu = false
-                                    viewModel.generateTestData(
-                                        assetCount = 12,
-                                        historyPerAsset = 45
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Build,
-                                        contentDescription = null,
-                                        tint = GoldStart
-                                    )
-                                }
-                            )
+//                            DropdownMenuItem(
+//                                text = {
+//                                    Text(
+//                                        "Generate Test Data",
+//                                        color = MaterialTheme.colorScheme.onSurface
+//                                    )
+//                                },
+//                                onClick = {
+//                                    showMenu = false
+//                                    viewModel.generateTestData(
+//                                        assetCount = 12,
+//                                        historyPerAsset = 45
+//                                    )
+//                                },
+//                                leadingIcon = {
+//                                    Icon(
+//                                        imageVector = Icons.Default.Build,
+//                                        contentDescription = null,
+//                                        tint = GoldStart
+//                                    )
+//                                }
+//                            )
                             DropdownMenuItem(
                                 text = {
                                     Text(
@@ -323,7 +300,7 @@ fun MainScreen(
                 contentPadding = PaddingValues(bottom = 80.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                item { PortfolioSummaryCard(stats, currency, viewModel) }
+                item { PortfolioSummaryCard(stats, viewModel) }
 
                 item {
                     if (portfolioPoints.isNotEmpty()) {
@@ -365,43 +342,9 @@ fun MainScreen(
                 }
 
                 items(items = assets, key = { it.id }) { asset ->
-                    @Suppress("DEPRECATION")
-                    val dismissState = rememberSwipeToDismissBoxState(
-                        confirmValueChange = {
-                            if (it == SwipeToDismissBoxValue.EndToStart) {
-                                assetToDelete = asset
-                                showDeleteDialog = true
-                                false
-                            } else {
-                                false
-                            }
-                        }
-                    )
-
-                    SwipeToDismissBox(
-                        state = dismissState,
-                        backgroundContent = {
-                            val color =
-                                if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) LossRed else Color.Transparent
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 16.dp, vertical = 6.dp)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(color)
-                                    .padding(end = 24.dp),
-                                contentAlignment = Alignment.CenterEnd
-                            ) {
-                                Icon(Icons.Default.Delete, "Delete", tint = Color.White)
-                            }
-                        },
-                        enableDismissFromStartToEnd = false,
-                        content = {
-                            AssetItem(
-                                asset,
-                                currency,
-                                onClick = { onCoinClick(asset) })
-                        }
+                    AssetItem(
+                        asset,
+                        onClick = { onCoinClick(asset.id) }
                     )
                 }
             }
@@ -426,71 +369,10 @@ fun MainScreen(
             },
         )
     }
-
-    if (showDeleteDialog && assetToDelete != null) {
-        DeleteConfirmationDialog(
-            asset = assetToDelete!!,
-            onConfirm = {
-                viewModel.deleteAsset(assetToDelete!!)
-                showDeleteDialog = false
-                assetToDelete = null
-            },
-            onDismiss = {
-                showDeleteDialog = false
-                assetToDelete = null
-            }
-        )
-    }
-
-    if (showCurrencyDialog) {
-        val currencies = listOf("CHF", "USD", "EUR", "GBP", "JPY", "CAD", "AUD")
-        AlertDialog(
-            onDismissRequest = { showCurrencyDialog = false },
-            containerColor = MaterialTheme.colorScheme.surface,
-            title = { Text("Select Currency", color = MaterialTheme.colorScheme.onSurface) },
-            text = {
-                Column {
-                    currencies.forEach { code ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    viewModel.setCurrency(code)
-                                    showCurrencyDialog = false
-                                }
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = (code == currency),
-                                onClick = {
-                                    viewModel.setCurrency(code); showCurrencyDialog = false
-                                },
-                                colors = RadioButtonDefaults.colors(selectedColor = GoldStart)
-                            )
-                            Text(
-                                text = code,
-                                modifier = Modifier.padding(start = 8.dp),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showCurrencyDialog = false }) {
-                    Text(
-                        "Cancel",
-                        color = TextGray
-                    )
-                }
-            }
-        )
-    }
 }
 
 @Composable
-fun PortfolioSummaryCard(stats: PortfolioSummary, currency: String, viewModel: GoldViewModel) {
+fun PortfolioSummaryCard(stats: PortfolioSummary, viewModel: GoldViewModel) {
     val dailyChange by viewModel.portfolioChange.collectAsState()
 
     Card(
@@ -599,7 +481,7 @@ fun PortfolioPerformanceCard(points: List<Pair<Long, Double>>) {
 }
 
 @Composable
-fun AssetItem(asset: GoldAsset, currency: String, onClick: () -> Unit) {
+fun AssetItem(asset: GoldAsset, onClick: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         shape = RoundedCornerShape(16.dp),
