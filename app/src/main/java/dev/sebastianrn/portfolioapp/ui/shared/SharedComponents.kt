@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import dev.sebastianrn.portfolioapp.ui.theme.LossRed
 import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen

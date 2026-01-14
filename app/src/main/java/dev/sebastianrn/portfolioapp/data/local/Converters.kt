@@ -1,4 +1,4 @@
-package dev.sebastianrn.portfolioapp.data
+package dev.sebastianrn.portfolioapp.data.local
 
 import androidx.room.TypeConverter
 import dev.sebastianrn.portfolioapp.data.model.AssetType
