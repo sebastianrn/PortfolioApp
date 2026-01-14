@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.sp
 import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.AssetType
 import dev.sebastianrn.portfolioapp.data.GoldAsset
+import dev.sebastianrn.portfolioapp.data.model.PortfolioSummary
 import dev.sebastianrn.portfolioapp.ui.components.AssetSheet
 import dev.sebastianrn.portfolioapp.ui.components.PerformanceChartCard
 import dev.sebastianrn.portfolioapp.ui.components.PricePercentageChangeIndicator
@@ -77,7 +78,6 @@ import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen
 import dev.sebastianrn.portfolioapp.ui.theme.TextGray
 import dev.sebastianrn.portfolioapp.util.formatCurrency
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
-import dev.sebastianrn.portfolioapp.viewmodel.PortfolioSummary
 import dev.sebastianrn.portfolioapp.viewmodel.ThemeViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

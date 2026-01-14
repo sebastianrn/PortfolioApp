@@ -14,11 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.sebastianrn.portfolioapp.data.AppDatabase
-import dev.sebastianrn.portfolioapp.data.NetworkModule
-import dev.sebastianrn.portfolioapp.data.PhiloroScrapingService
 import dev.sebastianrn.portfolioapp.data.UserPreferences
-import dev.sebastianrn.portfolioapp.data.repository.GoldRepository
 import dev.sebastianrn.portfolioapp.ui.navigation.AppNavigation
 import dev.sebastianrn.portfolioapp.ui.theme.PortfolioAppTheme
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
@@ -29,18 +25,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val database = AppDatabase.getDatabase(applicationContext)
+        val appContainer = (application as PortfolioApplication).container
+        val repository = appContainer.repository
         val userPreferences = UserPreferences(applicationContext)
-
-        val apiService = NetworkModule.api
-        val scraper = PhiloroScrapingService()
-
-        // This is the single source of truth for the app's data
-        val repository = GoldRepository(
-            dao = database.goldAssetDao(),
-            apiService = apiService,
-            scraper = scraper
-        )
 
         setContent {
             val themeViewModel: ThemeViewModel = viewModel()

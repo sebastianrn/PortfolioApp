@@ -13,7 +13,9 @@ import dev.sebastianrn.portfolioapp.data.NetworkModule
 import dev.sebastianrn.portfolioapp.data.PhiloroScrapingService
 import dev.sebastianrn.portfolioapp.data.PriceHistory
 import dev.sebastianrn.portfolioapp.data.UserPreferences
+import dev.sebastianrn.portfolioapp.data.model.PortfolioSummary
 import dev.sebastianrn.portfolioapp.data.repository.GoldRepository
+import dev.sebastianrn.portfolioapp.util.mergeTimeIntoDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,12 +28,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Calendar
-
-data class PortfolioSummary(
-    val totalValue: Double = 0.0,
-    val totalProfit: Double = 0.0,
-    val totalInvested: Double = 0.0
-)
 
 class GoldViewModel(
     private val application: Application,
@@ -370,15 +366,6 @@ class GoldViewModel(
         if (latest != null) {
             repository.updateCurrentPrice(assetId, latest.sellPrice)
         }
-    }
-
-    private fun mergeTimeIntoDate(dateMillis: Long): Long {
-        val calendarDate = Calendar.getInstance().apply { timeInMillis = dateMillis }
-        val calendarNow = Calendar.getInstance()
-        calendarDate.set(Calendar.HOUR_OF_DAY, calendarNow.get(Calendar.HOUR_OF_DAY))
-        calendarDate.set(Calendar.MINUTE, calendarNow.get(Calendar.MINUTE))
-        calendarDate.set(Calendar.SECOND, calendarNow.get(Calendar.SECOND))
-        return calendarDate.timeInMillis
     }
 
     fun updatePricesFromScraper() {
