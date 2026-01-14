@@ -72,6 +72,7 @@ import dev.sebastianrn.portfolioapp.ui.shared.PerformanceChartCard
 import dev.sebastianrn.portfolioapp.ui.shared.PortfolioOutlinedTextField
 import dev.sebastianrn.portfolioapp.ui.shared.PricePercentageChangeIndicator
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
+import dev.sebastianrn.portfolioapp.util.cleanCurrencyOrNull
 import dev.sebastianrn.portfolioapp.util.formatCurrency
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 import java.text.SimpleDateFormat
@@ -434,8 +435,8 @@ fun EditHistoryRecordBottomSheet(
 
     var isSellError by remember { mutableStateOf(false) }
     var isBuyError by remember { mutableStateOf(false) }
-    var sellPrice by remember { mutableStateOf(initialSellPrice?.toString() ?: "") }
-    var buyPrice by remember { mutableStateOf(initialBuyPrice?.toString() ?: "") }
+    var sellPrice by remember { mutableStateOf(initialSellPrice!!.formatCurrency()) }
+    var buyPrice by remember { mutableStateOf(initialBuyPrice!!.formatCurrency()) }
     var selectedDate by remember { mutableLongStateOf(initialDate ?: System.currentTimeMillis()) }
     var showDatePicker by remember { mutableStateOf(false) }
     val sdf = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
@@ -519,7 +520,7 @@ fun EditHistoryRecordBottomSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             PortfolioOutlinedTextField(
-                value = sellPrice.toDouble().formatCurrency(),
+                value = sellPrice,
                 onValueChange = {
                     sellPrice = it
                     isSellError = false
@@ -533,7 +534,7 @@ fun EditHistoryRecordBottomSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             PortfolioOutlinedTextField(
-                value = buyPrice.toDouble().formatCurrency(),
+                value = buyPrice,
                 onValueChange = {
                     buyPrice = it
                     isBuyError = false
@@ -549,15 +550,15 @@ fun EditHistoryRecordBottomSheet(
             Button(
                 onClick = {
                     // 1. Validate inputs independently
-                    val validSell = sellPrice.toDoubleOrNull()
-                    val validBuy = buyPrice.toDoubleOrNull()
+                    val validSell = sellPrice.cleanCurrencyOrNull()
+                    val validBuy = buyPrice.cleanCurrencyOrNull()
 
                     // 2. Update error states based on validation results
                     isSellError = (validSell == null)
                     isBuyError = (validBuy == null)
 
                     // 3. Only proceed if BOTH are valid
-                    if (validSell != null && validBuy != null) {
+                    if (validSell != null && validBuy != null && validSell > 0 && validBuy > 0) {
                         onSave(validSell, validBuy, selectedDate)
                     }
                 },
