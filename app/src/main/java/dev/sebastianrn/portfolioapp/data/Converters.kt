@@ -1,6 +1,7 @@
 package dev.sebastianrn.portfolioapp.data
 
 import androidx.room.TypeConverter
+import dev.sebastianrn.portfolioapp.data.model.AssetType
 
 class Converters {
     @TypeConverter

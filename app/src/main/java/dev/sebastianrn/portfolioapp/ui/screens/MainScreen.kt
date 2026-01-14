@@ -66,12 +66,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.sebastianrn.portfolioapp.R
-import dev.sebastianrn.portfolioapp.data.AssetType
-import dev.sebastianrn.portfolioapp.data.GoldAsset
+import dev.sebastianrn.portfolioapp.data.model.AssetType
+import dev.sebastianrn.portfolioapp.data.model.GoldAsset
 import dev.sebastianrn.portfolioapp.data.model.PortfolioSummary
-import dev.sebastianrn.portfolioapp.ui.components.AssetSheet
-import dev.sebastianrn.portfolioapp.ui.components.PerformanceChartCard
-import dev.sebastianrn.portfolioapp.ui.components.PricePercentageChangeIndicator
+import dev.sebastianrn.portfolioapp.ui.shared.AssetSheet
+import dev.sebastianrn.portfolioapp.ui.shared.PerformanceChartCard
+import dev.sebastianrn.portfolioapp.ui.shared.PricePercentageChangeIndicator
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import dev.sebastianrn.portfolioapp.ui.theme.LossRed
 import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen

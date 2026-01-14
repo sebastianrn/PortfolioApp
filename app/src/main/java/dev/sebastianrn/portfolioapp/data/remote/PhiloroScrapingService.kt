@@ -1,4 +1,4 @@
-package dev.sebastianrn.portfolioapp.data
+package dev.sebastianrn.portfolioapp.data.remote
 
 import android.util.Log
 import com.google.gson.Gson

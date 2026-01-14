@@ -1,9 +1,9 @@
 package dev.sebastianrn.portfolioapp.di
 
 import android.content.Context
-import dev.sebastianrn.portfolioapp.data.AppDatabase
-import dev.sebastianrn.portfolioapp.data.NetworkModule
-import dev.sebastianrn.portfolioapp.data.PhiloroScrapingService
+import dev.sebastianrn.portfolioapp.data.local.AppDatabase
+import dev.sebastianrn.portfolioapp.data.remote.NetworkModule
+import dev.sebastianrn.portfolioapp.data.remote.PhiloroScrapingService
 import dev.sebastianrn.portfolioapp.data.repository.GoldRepository
 
 class AppContainer(context: Context) {

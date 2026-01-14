@@ -4,12 +4,11 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import dev.sebastianrn.portfolioapp.data.local.AppDatabase
+import dev.sebastianrn.portfolioapp.data.local.GoldAssetDao
 import dev.sebastianrn.portfolioapp.util.TestDataGenerator
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith

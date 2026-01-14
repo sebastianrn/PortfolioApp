@@ -1,10 +1,10 @@
 package dev.sebastianrn.portfolioapp.data.repository
 
-import dev.sebastianrn.portfolioapp.data.GoldApiService
-import dev.sebastianrn.portfolioapp.data.GoldAsset
-import dev.sebastianrn.portfolioapp.data.GoldAssetDao
-import dev.sebastianrn.portfolioapp.data.PhiloroScrapingService
-import dev.sebastianrn.portfolioapp.data.PriceHistory
+import dev.sebastianrn.portfolioapp.data.remote.GoldApiService
+import dev.sebastianrn.portfolioapp.data.model.GoldAsset
+import dev.sebastianrn.portfolioapp.data.local.GoldAssetDao
+import dev.sebastianrn.portfolioapp.data.remote.PhiloroScrapingService
+import dev.sebastianrn.portfolioapp.data.model.PriceHistory
 import kotlinx.coroutines.flow.Flow
 
 class GoldRepository(
