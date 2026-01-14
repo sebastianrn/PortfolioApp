@@ -28,7 +28,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.InsertChart
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -69,8 +68,8 @@ import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.GoldAsset
 import dev.sebastianrn.portfolioapp.data.PriceHistory
 import dev.sebastianrn.portfolioapp.ui.components.AssetSheet
+import dev.sebastianrn.portfolioapp.ui.components.PerformanceChartCard
 import dev.sebastianrn.portfolioapp.ui.components.PortfolioOutlinedTextField
-import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
 import dev.sebastianrn.portfolioapp.ui.components.PricePercentageChangeIndicator
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import dev.sebastianrn.portfolioapp.util.formatCurrency
@@ -149,9 +148,11 @@ fun DetailScreen(
 
             // 2. Performance Chart
             item {
-                if (chartPoints.isNotEmpty()) {
-                    PerformanceCard(chartPoints) // PerformanceCard now gets pre-processed data
-                }
+                PerformanceChartCard(
+                    title = stringResource(R.string.performance_title),
+                    chartPoints,
+                    fallbackText = stringResource(R.string.empty_price_history_list)
+                )
             }
 
             // 3. History Title
@@ -190,10 +191,12 @@ fun DetailScreen(
     }
 
     if (showSheet) {
-        EditHistoryRecordBottomSheet(onDismiss = { showSheet = false }, onSave = { sellPrice, buyPrice, date ->
-            viewModel.addDailyRate(assetId, sellPrice, buyPrice, date, true)
-            showSheet = false
-        })
+        EditHistoryRecordBottomSheet(
+            onDismiss = { showSheet = false },
+            onSave = { sellPrice, buyPrice, date ->
+                viewModel.addDailyRate(assetId, sellPrice, buyPrice, date, true)
+                showSheet = false
+            })
     }
 
     if (historyRecordToEdit != null) {
@@ -351,37 +354,6 @@ fun AssetSummaryCard(asset: GoldAsset) {
                     priceTypeString = stringResource(R.string.total_return)
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun PerformanceCard(points: List<Pair<Long, Double>>) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        shape = RoundedCornerShape(24.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Default.InsertChart,
-                    contentDescription = null,
-                    tint = GoldStart
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    stringResource(R.string.performance_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            PortfolioChart(points)
         }
     }
 }

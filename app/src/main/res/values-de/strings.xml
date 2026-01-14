@@ -47,6 +47,7 @@
     <string name="new_buy_price_label">Neuer Kaufpreis (CHF)</string>
     <string name="date_label">Datum: %1$s</string>
     <string name="ok_action">OK</string>
+    <string name="empty_price_history_list">Keine Preishistorie verfügbar</string>
 
     <!-- Asset Types -->
     <string name="type_coin">Münze</string>

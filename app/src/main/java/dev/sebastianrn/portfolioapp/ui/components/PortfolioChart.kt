@@ -3,12 +3,9 @@ package dev.sebastianrn.portfolioapp.ui.components
 import android.text.Layout
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -179,9 +176,6 @@ fun PortfolioChart(
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessVeryLow
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp)
+        )
     )
 }

@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.InsertChart
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
@@ -70,7 +69,7 @@ import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.AssetType
 import dev.sebastianrn.portfolioapp.data.GoldAsset
 import dev.sebastianrn.portfolioapp.ui.components.AssetSheet
-import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
+import dev.sebastianrn.portfolioapp.ui.components.PerformanceChartCard
 import dev.sebastianrn.portfolioapp.ui.components.PricePercentageChangeIndicator
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import dev.sebastianrn.portfolioapp.ui.theme.LossRed
@@ -303,22 +302,11 @@ fun MainScreen(
                 item { PortfolioSummaryCard(stats, viewModel) }
 
                 item {
-                    if (portfolioPoints.isNotEmpty()) {
-                        PortfolioPerformanceCard(portfolioPoints)
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(150.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                stringResource(R.string.empty_assets_list),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    PerformanceChartCard(
+                        title = stringResource(R.string.performance_title),
+                        portfolioPoints,
+                        fallbackText = stringResource(R.string.empty_assets_list)
+                    )
                 }
 
                 item {
@@ -445,37 +433,6 @@ fun PortfolioSummaryCard(stats: PortfolioSummary, viewModel: GoldViewModel) {
                     priceTypeString = stringResource(R.string.total_return)
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun PortfolioPerformanceCard(points: List<Pair<Long, Double>>) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        shape = RoundedCornerShape(24.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Default.InsertChart,
-                    contentDescription = null,
-                    tint = GoldStart
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    stringResource(R.string.performance_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            PortfolioChart(points)
         }
     }
 }
