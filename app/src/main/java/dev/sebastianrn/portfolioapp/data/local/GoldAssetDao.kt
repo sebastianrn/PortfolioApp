@@ -1,4 +1,4 @@
-package dev.sebastianrn.portfolioapp.data
+package dev.sebastianrn.portfolioapp.data.local
 
 import androidx.room.Dao
 import androidx.room.Delete
@@ -7,6 +7,8 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import dev.sebastianrn.portfolioapp.data.model.GoldAsset
+import dev.sebastianrn.portfolioapp.data.model.PriceHistory
 import kotlinx.coroutines.flow.Flow
 
 @Dao

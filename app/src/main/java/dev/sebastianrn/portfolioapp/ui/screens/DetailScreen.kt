@@ -1,5 +1,6 @@
 package dev.sebastianrn.portfolioapp.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,7 +28,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.InsertChart
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -51,6 +51,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -64,13 +65,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.R
-import dev.sebastianrn.portfolioapp.data.GoldAsset
-import dev.sebastianrn.portfolioapp.data.PriceHistory
-import dev.sebastianrn.portfolioapp.ui.components.AssetSheet
-import dev.sebastianrn.portfolioapp.ui.components.PortfolioOutlinedTextField
-import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
-import dev.sebastianrn.portfolioapp.ui.components.PricePercentageChangeIndicator
+import dev.sebastianrn.portfolioapp.data.model.GoldAsset
+import dev.sebastianrn.portfolioapp.data.model.PriceHistory
+import dev.sebastianrn.portfolioapp.ui.shared.AssetSheet
+import dev.sebastianrn.portfolioapp.ui.shared.PerformanceChartCard
+import dev.sebastianrn.portfolioapp.ui.shared.PortfolioOutlinedTextField
+import dev.sebastianrn.portfolioapp.ui.shared.PricePercentageChangeIndicator
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
+import dev.sebastianrn.portfolioapp.util.cleanCurrencyOrNull
 import dev.sebastianrn.portfolioapp.util.formatCurrency
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 import java.text.SimpleDateFormat
@@ -80,23 +82,29 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
-    viewModel: GoldViewModel, coinId: Int, coinName: String, onBackClick: () -> Unit
+    viewModel: GoldViewModel,
+    assetId: Int,
+    onBackClick: () -> Unit
 ) {
-    val asset by viewModel.getAssetById(coinId).collectAsState(initial = null)
-    val history by viewModel.getHistoryForAsset(coinId).collectAsState(initial = emptyList())
+    LaunchedEffect(assetId) {
+        Log.d("DetailScreen", "Attempting to load asset with ID: $assetId")
+    }
+
+    val asset by viewModel.getAssetById(assetId).collectAsState(initial = null)
+    val history by viewModel.getHistoryForAsset(assetId).collectAsState(initial = emptyList())
 
     var showSheet by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
 
     var historyRecordToEdit by remember { mutableStateOf<PriceHistory?>(null) }
 
-    val chartPoints by viewModel.getChartPointsForAsset(coinId).collectAsState()
+    val chartPoints by viewModel.getChartPointsForAsset(assetId).collectAsState()
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background, topBar = {
         CenterAlignedTopAppBar(
             title = {
                 Text(
-                    coinName,
+                    asset?.name ?: "No Name available",
                     color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Bold
                 )
@@ -141,9 +149,11 @@ fun DetailScreen(
 
             // 2. Performance Chart
             item {
-                if (chartPoints.isNotEmpty()) {
-                    PerformanceCard(chartPoints) // PerformanceCard now gets pre-processed data
-                }
+                PerformanceChartCard(
+                    title = stringResource(R.string.performance_title),
+                    chartPoints,
+                    fallbackText = stringResource(R.string.empty_price_history_list)
+                )
             }
 
             // 3. History Title
@@ -169,9 +179,9 @@ fun DetailScreen(
             }
 
             // 4. History Items
-            items(history) { record ->
+            items(history, key = { it.historyId }) { record ->
                 PriceHistoryItemCard(
-                    record = record,
+                    historyRecord = record,
                     onEditClick = {
                         if (record.isManual) {
                             historyRecordToEdit = record
@@ -182,10 +192,12 @@ fun DetailScreen(
     }
 
     if (showSheet) {
-        EditHistoryRecordBottomSheet(onDismiss = { showSheet = false }, onSave = { sellPrice, buyPrice, date ->
-            viewModel.addDailyRate(coinId, sellPrice, buyPrice, date, true)
-            showSheet = false
-        })
+        EditHistoryRecordBottomSheet(
+            onDismiss = { showSheet = false },
+            onSave = { sellPrice, buyPrice, date ->
+                viewModel.addDailyRate(assetId, sellPrice, buyPrice, date, true)
+                showSheet = false
+            })
     }
 
     if (historyRecordToEdit != null) {
@@ -348,44 +360,13 @@ fun AssetSummaryCard(asset: GoldAsset) {
 }
 
 @Composable
-fun PerformanceCard(points: List<Pair<Long, Double>>) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        shape = RoundedCornerShape(24.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Default.InsertChart,
-                    contentDescription = null,
-                    tint = GoldStart
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    stringResource(R.string.performance_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            PortfolioChart(points)
-        }
-    }
-}
-
-@Composable
-fun PriceHistoryItemCard(record: PriceHistory, onEditClick: () -> Unit) {
+fun PriceHistoryItemCard(historyRecord: PriceHistory, onEditClick: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp)
-            .clickable(enabled = record.isManual) { onEditClick() },
+            .clickable(enabled = historyRecord.isManual) { onEditClick() },
         elevation = CardDefaults.cardElevation(1.dp)
     ) {
         Row(
@@ -400,7 +381,7 @@ fun PriceHistoryItemCard(record: PriceHistory, onEditClick: () -> Unit) {
                     SimpleDateFormat(
                         "MMM dd, yyyy",
                         Locale.getDefault()
-                    ).format(Date(record.dateTimestamp)),
+                    ).format(Date(historyRecord.dateTimestamp)),
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.bodyMedium,
                 )
@@ -409,11 +390,11 @@ fun PriceHistoryItemCard(record: PriceHistory, onEditClick: () -> Unit) {
                         SimpleDateFormat(
                             "HH:mm",
                             Locale.getDefault()
-                        ).format(Date(record.dateTimestamp)),
+                        ).format(Date(historyRecord.dateTimestamp)),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    if (record.isManual) {
+                    if (historyRecord.isManual) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Icon(
                             imageVector = Icons.Default.Edit,
@@ -433,7 +414,7 @@ fun PriceHistoryItemCard(record: PriceHistory, onEditClick: () -> Unit) {
                 }
             }
             Text(
-                text = record.sellPrice.formatCurrency(),
+                text = historyRecord.sellPrice.formatCurrency(),
                 color = GoldStart,
                 style = MaterialTheme.typography.bodyMedium,
             )
@@ -454,8 +435,8 @@ fun EditHistoryRecordBottomSheet(
 
     var isSellError by remember { mutableStateOf(false) }
     var isBuyError by remember { mutableStateOf(false) }
-    var sellPrice by remember { mutableStateOf(initialSellPrice?.toString() ?: "") }
-    var buyPrice by remember { mutableStateOf(initialBuyPrice?.toString() ?: "") }
+    var sellPrice by remember { mutableStateOf(initialSellPrice!!.formatCurrency()) }
+    var buyPrice by remember { mutableStateOf(initialBuyPrice!!.formatCurrency()) }
     var selectedDate by remember { mutableLongStateOf(initialDate ?: System.currentTimeMillis()) }
     var showDatePicker by remember { mutableStateOf(false) }
     val sdf = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
@@ -539,7 +520,7 @@ fun EditHistoryRecordBottomSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             PortfolioOutlinedTextField(
-                value = sellPrice.toDouble().formatCurrency(),
+                value = sellPrice,
                 onValueChange = {
                     sellPrice = it
                     isSellError = false
@@ -553,7 +534,7 @@ fun EditHistoryRecordBottomSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             PortfolioOutlinedTextField(
-                value = buyPrice.toDouble().formatCurrency(),
+                value = buyPrice,
                 onValueChange = {
                     buyPrice = it
                     isBuyError = false
@@ -569,15 +550,15 @@ fun EditHistoryRecordBottomSheet(
             Button(
                 onClick = {
                     // 1. Validate inputs independently
-                    val validSell = sellPrice.toDoubleOrNull()
-                    val validBuy = buyPrice.toDoubleOrNull()
+                    val validSell = sellPrice.cleanCurrencyOrNull()
+                    val validBuy = buyPrice.cleanCurrencyOrNull()
 
                     // 2. Update error states based on validation results
                     isSellError = (validSell == null)
                     isBuyError = (validBuy == null)
 
                     // 3. Only proceed if BOTH are valid
-                    if (validSell != null && validBuy != null) {
+                    if (validSell != null && validBuy != null && validSell > 0 && validBuy > 0) {
                         onSave(validSell, validBuy, selectedDate)
                     }
                 },

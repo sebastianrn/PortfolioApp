@@ -1,4 +1,4 @@
-package dev.sebastianrn.portfolioapp.data
+package dev.sebastianrn.portfolioapp.data.model
 
 data class BackupData(
     val version: Int = 1,

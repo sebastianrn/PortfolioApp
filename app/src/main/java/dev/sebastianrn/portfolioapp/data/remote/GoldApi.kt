@@ -1,4 +1,4 @@
-package dev.sebastianrn.portfolioapp.data
+package dev.sebastianrn.portfolioapp.data.remote
 
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory

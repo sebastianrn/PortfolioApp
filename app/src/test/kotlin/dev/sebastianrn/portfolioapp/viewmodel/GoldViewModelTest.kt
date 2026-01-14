@@ -1,12 +1,8 @@
 package dev.sebastianrn.portfolioapp.viewmodel
 
 import android.app.Application
-import app.cash.turbine.test
-import dev.sebastianrn.portfolioapp.data.AssetType
-import dev.sebastianrn.portfolioapp.data.GoldAsset
-import dev.sebastianrn.portfolioapp.data.GoldAssetDao
-import dev.sebastianrn.portfolioapp.data.PriceHistory
 import dev.sebastianrn.portfolioapp.data.UserPreferences
+import dev.sebastianrn.portfolioapp.data.local.GoldAssetDao
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -15,12 +11,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.assertEquals
 import org.junit.Before
-import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class GoldViewModelTest {

@@ -1,4 +1,4 @@
-package dev.sebastianrn.portfolioapp.data
+package dev.sebastianrn.portfolioapp.data.model
 
 import androidx.room.Entity
 import androidx.room.ForeignKey

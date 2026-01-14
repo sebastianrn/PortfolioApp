@@ -1,9 +1,9 @@
 package dev.sebastianrn.portfolioapp.util
 
-import dev.sebastianrn.portfolioapp.data.AssetType
-import dev.sebastianrn.portfolioapp.data.GoldAsset
-import dev.sebastianrn.portfolioapp.data.GoldAssetDao
-import dev.sebastianrn.portfolioapp.data.PriceHistory
+import dev.sebastianrn.portfolioapp.data.model.AssetType
+import dev.sebastianrn.portfolioapp.data.model.GoldAsset
+import dev.sebastianrn.portfolioapp.data.local.GoldAssetDao
+import dev.sebastianrn.portfolioapp.data.model.PriceHistory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.random.Random

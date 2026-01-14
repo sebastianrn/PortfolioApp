@@ -47,17 +47,32 @@ import kotlin.math.roundToInt
 fun PortfolioChart(
     points: List<Pair<Long, Double>>
 ) {
-
     if (points.isEmpty()) return
 
-    val modelProducer = remember{CartesianChartModelProducer()}
+    // Process points to ensure only one data point per day (take the last one)
+    val processedPoints = remember(points) {
+        if (points.isEmpty()) return@remember emptyList()
 
-    LaunchedEffect(points) {
+        // Group by date (ignoring time) and take the last entry for each day
+        val calendar = java.util.Calendar.getInstance()
+        points.groupBy { (timestamp, _) ->
+            calendar.timeInMillis = timestamp
+            // Create a key using year, month, and day
+            "${calendar.get(java.util.Calendar.YEAR)}-${calendar.get(java.util.Calendar.MONTH)}-${calendar.get(java.util.Calendar.DAY_OF_MONTH)}"
+        }.map { (_, dayPoints) ->
+            // Take the last point of each day (sorted by timestamp)
+            dayPoints.maxByOrNull { it.first }!!
+        }.sortedBy { it.first } // Sort by timestamp ascending
+    }
+
+    val modelProducer = remember { CartesianChartModelProducer() }
+
+    LaunchedEffect(processedPoints) {
         modelProducer.runTransaction {
             lineSeries {
                 series(
-                    x = points.indices.map { it.toFloat() },
-                    y = points.map { it.second }
+                    x = processedPoints.indices.map { it.toFloat() },
+                    y = processedPoints.map { it.second }
                 )
             }
         }
@@ -65,35 +80,39 @@ fun PortfolioChart(
 
     val dateTimeFormatter = remember { SimpleDateFormat("MMM yy", Locale.getDefault()) }
 
+    // Enhanced axis labels with better visibility
     val axisLabelComponent = rememberAxisLabelComponent(
-        color = Color.White,
-        textSize = 12.sp
+        color = Color.White.copy(alpha = 0.85f),
+        textSize = 11.sp
     )
 
+    // Larger indicator for better visibility (thicker stroke gives glow effect)
     val indicatorComponent = rememberLineComponent(
         fill = fill(GoldStart),
-        thickness = 14.dp,
-        strokeThickness = 8.dp,
+        thickness = 16.dp,
+        strokeFill = fill(GoldStart.copy(alpha = 0.3f)),
+        strokeThickness = 10.dp
     )
 
+    // More visible guideline with gold tint
     val guidelineComponent = rememberLineComponent(
-        fill = fill(GoldStart),
-        thickness = 1.5.dp
+        fill = fill(GoldStart.copy(alpha = 0.6f)),
+        thickness = 2.dp
     )
 
+    // Enhanced label component
     val labelComponent = rememberTextComponent(
         color = GoldStart,
-        textSize = 12.sp,
+        textSize = 13.sp,
         lineCount = 2,
         textAlignment = Layout.Alignment.ALIGN_CENTER
     )
 
     val yAxisFormatter = { value: Double ->
-        if (value < 1000) {
-            value.toInt().toString()
-        } else {
-            val thousands = (value / 1000.0).roundToInt()
-            "${thousands}k"
+        when {
+            value >= 1_000_000 -> "${(value / 1_000_000).roundToInt()}M"
+            value >= 1_000 -> "${(value / 1_000).roundToInt()}k"
+            else -> value.toInt().toString()
         }
     }
 
@@ -108,8 +127,8 @@ fun PortfolioChart(
 
     val getFormattedDate = { value: Double ->
         val index = value.toInt()
-        if (index in points.indices) {
-            dateTimeFormatter.format(Date(points[index].first))
+        if (index in processedPoints.indices) {
+            dateTimeFormatter.format(Date(processedPoints[index].first))
         } else {
             "–"
         }
@@ -119,11 +138,10 @@ fun PortfolioChart(
         label = labelComponent,
         labelPosition = DefaultCartesianMarker.LabelPosition.Top,
         indicator = { indicatorComponent },
-        indicatorSize = 12.dp,
+        indicatorSize = 14.dp,
         guideline = guidelineComponent,
         valueFormatter = { _, targets ->
-            val lineTarget =
-                targets.firstOrNull() as? LineCartesianLayerMarkerTarget
+            val lineTarget = targets.firstOrNull() as? LineCartesianLayerMarkerTarget
             val entry = lineTarget?.points?.firstOrNull()?.entry
             if (entry != null) {
                 val dateStr = getFormattedDate(entry.x)
@@ -135,6 +153,14 @@ fun PortfolioChart(
         }
     )
 
+    // Enhanced gradient with 4 color stops for richer depth
+    val gradientColors = arrayOf(
+        GoldStart.copy(alpha = 0.7f),
+        GoldStart.copy(alpha = 0.5f),
+        GoldStart.copy(alpha = 0.25f),
+        Color.Transparent
+    )
+
     CartesianChartHost(
         chart = rememberCartesianChart(
             rememberLineCartesianLayer(
@@ -144,9 +170,7 @@ fun PortfolioChart(
                         fill = LineCartesianLayer.LineFill.single(fill(GoldStart)),
                         areaFill = LineCartesianLayer.AreaFill.single(
                             fill(
-                                ShaderProvider.verticalGradient(
-                                    arrayOf(GoldStart.copy(alpha = 0.5f), Color.Transparent)
-                                )
+                                ShaderProvider.verticalGradient(gradientColors)
                             )
                         )
                     )
@@ -155,22 +179,29 @@ fun PortfolioChart(
             startAxis = VerticalAxis.rememberStart(
                 valueFormatter = yAxisValueFormatter,
                 label = axisLabelComponent,
-                guideline = null
+                guideline = rememberLineComponent(
+                    fill = fill(Color.White.copy(alpha = 0.15f)),
+                    thickness = 0.5.dp
+                )
             ),
             bottomAxis = HorizontalAxis.rememberBottom(
                 valueFormatter = { _, value, _ -> getFormattedDate(value) },
                 label = axisLabelComponent,
                 guideline = null,
-                itemPlacer = remember {
+                itemPlacer = remember(processedPoints) {
                     HorizontalAxis.ItemPlacer.aligned(
-                        // FIX: Use maxOf to ensure spacing is at least 1, never 0
-                        spacing = { maxOf(1, points.size / 6) },
-                        addExtremeLabelPadding = false
+                        spacing = { maxOf(1, processedPoints.size / 6) },
+                        addExtremeLabelPadding = true
                     )
                 }
             ),
             layerPadding = {
-                cartesianLayerPadding(0.dp, 0.dp)
+                cartesianLayerPadding(
+                    scalableStart = 8.dp,
+                    scalableEnd = 8.dp,
+                    unscalableStart = 4.dp,
+                    unscalableEnd = 4.dp
+                )
             },
             marker = marker
         ),
@@ -180,8 +211,9 @@ fun PortfolioChart(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessVeryLow
         ),
+        animateIn = true,
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp)
+            .height(230.dp) // Slightly taller for better data visibility
     )
 }
