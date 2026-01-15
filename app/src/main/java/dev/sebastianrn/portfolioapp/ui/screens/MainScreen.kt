@@ -50,7 +50,6 @@ fun MainScreen(
     val stats by viewModel.portfolioStats.collectAsState()
     val portfolioPoints by viewModel.portfolioCurve.collectAsState()
     val isDark by themeViewModel.isDarkTheme.collectAsState()
-    val currency by viewModel.currentCurrency.collectAsState()
     val dailyChange by viewModel.portfolioChange.collectAsState()
 
     var showDialog by remember { mutableStateOf(false) }

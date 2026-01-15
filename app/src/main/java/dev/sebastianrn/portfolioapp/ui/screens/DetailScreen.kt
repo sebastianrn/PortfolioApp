@@ -561,7 +561,7 @@ fun ExpressivePriceHistoryCard(
 
             Text(
                 text = record.sellPrice.formatCurrency(),
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = ExpressivePrimaryStart
             )
