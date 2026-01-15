@@ -42,7 +42,10 @@ class MainActivity : ComponentActivity() {
                 }
             )
 
-            PortfolioAppTheme(darkTheme = isDarkTheme) {
+            PortfolioAppTheme(
+                darkTheme = isDarkTheme,
+                expressiveMode = true
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
@@ -17,75 +16,20 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import dev.sebastianrn.portfolioapp.ui.theme.LossRed
 import dev.sebastianrn.portfolioapp.ui.theme.ProfitGreen
-import dev.sebastianrn.portfolioapp.ui.theme.TextGray
-import dev.sebastianrn.portfolioapp.ui.theme.TextWhite
 import dev.sebastianrn.portfolioapp.util.formatCurrency
 import java.util.Locale
 import kotlin.math.abs
-
-@Composable
-fun PortfolioOutlinedTextField(
-    modifier: Modifier = Modifier,
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    isNumber: Boolean = false,
-    isError: Boolean = false,
-    errorMessage: String? = null,
-    readOnly: Boolean = false,
-    trailingIcon: @Composable (() -> Unit)? = null,
-) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            label = { Text(label) },
-            isError = isError,
-            singleLine = true,
-            readOnly = readOnly,
-            trailingIcon = trailingIcon,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = GoldStart,
-                unfocusedBorderColor = TextGray.copy(alpha = 0.5f),
-                focusedTextColor = TextWhite,
-                unfocusedTextColor = TextWhite,
-                cursorColor = GoldStart,
-                focusedLabelColor = GoldStart,
-                unfocusedLabelColor = TextGray,
-
-                errorBorderColor = LossRed,
-                errorLabelColor = LossRed,
-                errorCursorColor = LossRed,
-                errorTextColor = TextWhite
-            ),
-            keyboardOptions = if (isNumber) KeyboardOptions(keyboardType = KeyboardType.Number) else KeyboardOptions.Default,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        if (isError && !errorMessage.isNullOrBlank()) {
-            Text(
-                text = errorMessage,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-            )
-        }
-    }
-}
 
 @Composable
 fun PricePercentageChangeIndicator(

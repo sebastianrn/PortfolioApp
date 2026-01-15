@@ -31,12 +31,31 @@ private val LightColorScheme = lightColorScheme(
     onSurfaceVariant = TextDarkGray
 )
 
+// Add this new color scheme
+private val ExpressiveColorScheme = darkColorScheme(
+    primary = ExpressivePrimaryStart,
+    secondary = ExpressiveSecondary,
+    tertiary = ExpressiveTertiary,
+    error = ExpressiveError,
+    background = ExpressiveSurfaceContainer,
+    surface = ExpressiveSurfaceHigh,
+    surfaceVariant = ExpressiveSurfaceContainer,
+    onBackground = ExpressiveOnSurface,
+    onSurface = ExpressiveOnSurface,
+    onSurfaceVariant = ExpressiveOnSurface.copy(alpha = 0.7f)
+)
+
 @Composable
 fun PortfolioAppTheme(
     darkTheme: Boolean = true, // We will pass this dynamically
+    expressiveMode: Boolean = true, // Add this parameter
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = when {
+        expressiveMode -> ExpressiveColorScheme
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
+    }
 
     val view = LocalView.current
     if (!view.isInEditMode) {

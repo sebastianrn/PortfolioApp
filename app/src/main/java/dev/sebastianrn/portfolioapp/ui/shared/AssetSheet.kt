@@ -1,5 +1,6 @@
 package dev.sebastianrn.portfolioapp.ui.shared
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -32,18 +34,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.data.model.AssetType
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
-import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
-import dev.sebastianrn.portfolioapp.util.formatCurrency
 import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AssetSheet(
+fun ExpressiveAssetSheet(
     asset: GoldAsset? = null,
     onDismiss: () -> Unit,
     onSave: (GoldAsset) -> Unit
@@ -83,33 +84,51 @@ fun AssetSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        contentColor = MaterialTheme.colorScheme.onSurface
+        containerColor = ExpressiveColors.SurfaceHigh,
+        contentColor = ExpressiveColors.OnSurface
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .padding(
-                    bottom = WindowInsets.navigationBars.asPaddingValues()
-                        .calculateBottomPadding() + 24.dp
-                )
+                .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp)
                 .imePadding()
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                title,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
+            // Header with gradient
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                ExpressiveColors.PrimaryStart.copy(alpha = 0.15f),
+                                Color.Transparent
+                            )
+                        ),
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                    .padding(20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = ExpressiveColors.OnSurface
+                )
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
-            PortfolioOutlinedTextField(
+            ExpressiveOutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = "Asset Name (e.g. Vreneli)"
+                label = "Asset Name",
+                placeholder = "e.g. Vreneli, Krugerrand"
             )
+
             Spacer(modifier = Modifier.height(16.dp))
 
             ExposedDropdownMenuBox(
@@ -117,7 +136,7 @@ fun AssetSheet(
                 onExpandedChange = { expanded = !expanded },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                PortfolioOutlinedTextField(
+                ExpressiveOutlinedTextField(
                     value = selectedOption.label,
                     onValueChange = {},
                     label = "Weight / Type",
@@ -133,22 +152,25 @@ fun AssetSheet(
                 ExposedDropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
-                    // Match the sheet container color for consistency
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = ExpressiveColors.SurfaceContainer
                 ) {
                     options.forEach { option ->
                         DropdownMenuItem(
                             text = {
                                 Text(
                                     option.label,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = ExpressiveColors.OnSurface
                                 )
                             },
-                            onClick = { selectedOption = option; expanded = false }
+                            onClick = {
+                                selectedOption = option
+                                expanded = false
+                            }
                         )
                     }
                 }
             }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             Row(
@@ -156,37 +178,40 @@ fun AssetSheet(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Box(modifier = Modifier.weight(1f)) {
-                    PortfolioOutlinedTextField(
+                    ExpressiveOutlinedTextField(
                         value = quantity,
                         onValueChange = { if (it.all { c -> c.isDigit() }) quantity = it },
-                        label = "Qty",
+                        label = "Quantity",
+                        isNumber = true
+                    )
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    ExpressiveOutlinedTextField(
+                        value = philoroId,
+                        onValueChange = { philoroId = it },
+                        label = "Philoro ID",
                         isNumber = true
                     )
                 }
             }
+
             Spacer(modifier = Modifier.height(16.dp))
 
-            PortfolioOutlinedTextField(
-                value = philoroId,
-                onValueChange = { philoroId = it },
-                label = "Philoro ID (for Scraping)",
-                isNumber = true
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-
-            PortfolioOutlinedTextField(
-                value = purchasePrice.toDoubleOrNull()?.formatCurrency() ?: purchasePrice,
+            ExpressiveOutlinedTextField(
+                value = purchasePrice,
                 onValueChange = { purchasePrice = it },
-                label = if (isEditMode) "Bought At (Total)" else "Paid Price (Total)",
-                isNumber = true
+                label = if (isEditMode) "Purchase Price (Total)" else "Paid Price (Total)",
+                isNumber = true,
+                suffix = "CHF"
             )
+
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = {
                     val q = quantity.toIntOrNull()
                     val p = purchasePrice.toDoubleOrNull()
-                    val i = philoroId.toInt()
+                    val i = philoroId.toIntOrNull() ?: 0
 
                     if (name.isNotBlank() && q != null && p != null) {
                         onSave(
@@ -204,13 +229,20 @@ fun AssetSheet(
                         )
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = GoldStart,
+                    containerColor = ExpressiveColors.PrimaryStart,
                     contentColor = Color.Black
                 )
             ) {
-                Text(buttonText, fontWeight = FontWeight.Bold)
+                Text(
+                    buttonText,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }

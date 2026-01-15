@@ -1,78 +1,41 @@
 package dev.sebastianrn.portfolioapp.ui.screens
 
-import android.util.Log
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.sebastianrn.portfolioapp.R
-import dev.sebastianrn.portfolioapp.data.model.GoldAsset
 import dev.sebastianrn.portfolioapp.data.model.PriceHistory
-import dev.sebastianrn.portfolioapp.ui.shared.AssetSheet
-import dev.sebastianrn.portfolioapp.ui.shared.PerformanceChartCard
-import dev.sebastianrn.portfolioapp.ui.shared.PortfolioOutlinedTextField
-import dev.sebastianrn.portfolioapp.ui.shared.PricePercentageChangeIndicator
-import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
-import dev.sebastianrn.portfolioapp.util.cleanCurrencyOrNull
+import dev.sebastianrn.portfolioapp.data.model.GoldAsset
+import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
+import dev.sebastianrn.portfolioapp.ui.shared.ExpressiveAssetSheet
+import dev.sebastianrn.portfolioapp.ui.shared.ExpressiveEditHistorySheet
+import dev.sebastianrn.portfolioapp.ui.theme.ExpressiveError
+import dev.sebastianrn.portfolioapp.ui.theme.ExpressiveOnSurface
+import dev.sebastianrn.portfolioapp.ui.theme.ExpressivePrimaryStart
+import dev.sebastianrn.portfolioapp.ui.theme.ExpressiveSecondary
+import dev.sebastianrn.portfolioapp.ui.theme.ExpressiveSurfaceContainer
+import dev.sebastianrn.portfolioapp.ui.theme.ExpressiveSurfaceHigh
+import dev.sebastianrn.portfolioapp.ui.theme.ExpressiveTertiary
 import dev.sebastianrn.portfolioapp.util.formatCurrency
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 import java.text.SimpleDateFormat
@@ -86,122 +49,119 @@ fun DetailScreen(
     assetId: Int,
     onBackClick: () -> Unit
 ) {
-    LaunchedEffect(assetId) {
-        Log.d("DetailScreen", "Attempting to load asset with ID: $assetId")
-    }
-
     val asset by viewModel.getAssetById(assetId).collectAsState(initial = null)
     val history by viewModel.getHistoryForAsset(assetId).collectAsState(initial = emptyList())
+    val chartPoints by viewModel.getChartPointsForAsset(assetId).collectAsState()
 
     var showSheet by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
-
     var historyRecordToEdit by remember { mutableStateOf<PriceHistory?>(null) }
 
-    val chartPoints by viewModel.getChartPointsForAsset(assetId).collectAsState()
+    // Shimmer animation
+    val infiniteTransition = rememberInfiniteTransition(label = "shimmer")
+    val shimmerAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.6f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "shimmer"
+    )
 
-    Scaffold(containerColor = MaterialTheme.colorScheme.background, topBar = {
-        CenterAlignedTopAppBar(
-            title = {
-                Text(
-                    asset?.name ?: "No Name available",
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.Bold
-                )
-            }, navigationIcon = {
-                IconButton(onClick = onBackClick) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-            }, actions = {
-                // Edit Asset Button
-                IconButton(onClick = { showEditDialog = true }) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit Asset",
-                        tint = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.background
+    Scaffold(
+        containerColor = ExpressiveSurfaceContainer,
+        topBar = {
+            ExpressiveDetailTopBar(
+                title = asset?.name ?: "No name available",
+                onBackClick = onBackClick,
+                onEditClick = { showEditDialog = true }
             )
-        )
-    }, floatingActionButton = {
-        FloatingActionButton(
-            onClick = { showSheet = true },
-            containerColor = GoldStart,
-            contentColor = Color.Black
-        ) {
-            Icon(Icons.Default.Add, contentDescription = "Update Value")
-        }
-    }) { padding ->
-        LazyColumn(
-            modifier = Modifier.padding(padding), contentPadding = PaddingValues(bottom = 80.dp)
-        ) {
-            // 1. Stats Header
-            item {
-                asset?.let { a -> AssetSummaryCard(a) }
-            }
-
-            // 2. Performance Chart
-            item {
-                PerformanceChartCard(
-                    title = stringResource(R.string.performance_title),
-                    chartPoints,
-                    fallbackText = stringResource(R.string.empty_price_history_list)
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showSheet = true },
+                containerColor = ExpressivePrimaryStart,
+                contentColor = Color.Black,
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(
+                    Icons.Filled.Add,
+                    contentDescription = "Add Price Record",
+                    modifier = Modifier.size(28.dp)
                 )
             }
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            item {
+                asset?.let { a ->
+                    ExpressiveAssetSummaryCard(a, shimmerAlpha)
+                }
+            }
 
-            // 3. History Title
+            item {
+                if (chartPoints.isNotEmpty()) {
+                    ExpressivePerformanceCard(chartPoints)
+                }
+            }
+
             item {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp)
+                    modifier = Modifier.padding(top = 8.dp)
                 ) {
                     Icon(
-                        Icons.Default.DateRange,
+                        Icons.Filled.History,
                         contentDescription = null,
-                        tint = GoldStart,
-                        modifier = Modifier.size(20.dp)
+                        tint = ExpressivePrimaryStart,
+                        modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.price_history_title),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = ExpressiveOnSurface
                     )
                 }
             }
 
-            // 4. History Items
-            items(history, key = { it.historyId }) { record ->
-                PriceHistoryItemCard(
-                    historyRecord = record,
+            items(history) { record ->
+                ExpressivePriceHistoryCard(
+                    record = record,
                     onEditClick = {
                         if (record.isManual) {
                             historyRecordToEdit = record
                         }
-                    })
+                    }
+                )
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(80.dp))
             }
         }
     }
 
     if (showSheet) {
-        EditHistoryRecordBottomSheet(
+        ExpressiveEditHistorySheet(
             onDismiss = { showSheet = false },
             onSave = { sellPrice, buyPrice, date ->
                 viewModel.addDailyRate(assetId, sellPrice, buyPrice, date, true)
                 showSheet = false
-            })
+            }
+        )
     }
 
     if (historyRecordToEdit != null) {
-        EditHistoryRecordBottomSheet(
+        ExpressiveEditHistorySheet(
             onDismiss = { historyRecordToEdit = null },
             initialSellPrice = historyRecordToEdit!!.sellPrice,
             initialBuyPrice = historyRecordToEdit!!.buyPrice,
@@ -217,15 +177,15 @@ fun DetailScreen(
                     isManual = true
                 )
                 historyRecordToEdit = null
-            })
+            }
+        )
     }
 
     if (showEditDialog && asset != null) {
-        AssetSheet(
+        ExpressiveAssetSheet(
             asset = asset,
             onDismiss = { showEditDialog = false },
             onSave = { updatedAsset ->
-                // FIX: Unpack the object properties
                 viewModel.updateAsset(
                     id = updatedAsset.id,
                     name = updatedAsset.name,
@@ -242,337 +202,365 @@ fun DetailScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AssetSummaryCard(asset: GoldAsset) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(24.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column(modifier = Modifier.padding(24.dp)) {
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        asset.type.name,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(8.dp, 4.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        "${asset.weightInGrams}g",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(8.dp, 4.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        stringResource(R.string.quantity_label),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                    Text(
-                        "${asset.quantity}",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Bold
-                        ),
-                    )
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        stringResource(R.string.current_value_label),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                    Text(
-                        asset.totalCurrentValue.formatCurrency(),
-                        color = GoldStart,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Bold
-                        ),
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        stringResource(R.string.bought_at_label),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                    Text(
-                        asset.purchasePrice.formatCurrency(),
-                        color = GoldStart,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Bold
-                        ),
-                    )
-                }
-
-                val totalInvested = asset.purchasePrice * asset.quantity
-                val percentage =
-                    if (totalInvested > 0) (asset.totalProfitOrLoss / totalInvested) * 100 else 0.0
-
-                PricePercentageChangeIndicator(
-                    amount = totalInvested,
-                    percent = percentage,
-                    priceTypeString = stringResource(R.string.total_return)
+fun ExpressiveDetailTopBar(
+    title: String,
+    onBackClick: () -> Unit,
+    onEditClick: () -> Unit
+) {
+    TopAppBar(
+        title = {
+            Text(
+                title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back"
                 )
             }
-        }
-    }
+        },
+        actions = {
+            IconButton(onClick = onEditClick) {
+                Icon(
+                    Icons.Filled.Edit,
+                    contentDescription = "Edit Asset"
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = ExpressiveSurfaceHigh,
+            titleContentColor = ExpressiveOnSurface,
+            navigationIconContentColor = ExpressiveOnSurface,
+            actionIconContentColor = ExpressiveOnSurface
+        )
+    )
 }
 
 @Composable
-fun PriceHistoryItemCard(historyRecord: PriceHistory, onEditClick: () -> Unit) {
+fun ExpressiveAssetSummaryCard(
+    asset: GoldAsset,
+    shimmerAlpha: Float
+) {
+    val isPositive = asset.totalProfitOrLoss >= 0
+    val totalInvested = asset.purchasePrice * asset.quantity
+    val percentage = if (totalInvested > 0) {
+        (asset.totalProfitOrLoss / totalInvested) * 100
+    } else 0.0
+
+    val scale by animateFloatAsState(
+        targetValue = 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "scale"
+    )
+
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
-            .clickable(enabled = historyRecord.isManual) { onEditClick() },
-        elevation = CardDefaults.cardElevation(1.dp)
+            .scale(scale),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = ExpressiveSurfaceHigh
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
-        Row(
+        Box(
             modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    SimpleDateFormat(
-                        "MMM dd, yyyy",
-                        Locale.getDefault()
-                    ).format(Date(historyRecord.dateTimestamp)),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        SimpleDateFormat(
-                            "HH:mm",
-                            Locale.getDefault()
-                        ).format(Date(historyRecord.dateTimestamp)),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    if (historyRecord.isManual) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Editable",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                            modifier = Modifier.size(12.dp)
+                .fillMaxWidth()
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            ExpressivePrimaryStart.copy(alpha = 0.15f),
+                            Color.Transparent
                         )
-                    } else {
-                        Spacer(modifier = Modifier.width(8.dp))
+                    )
+                )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+            ) {
+                // Asset Type Badges
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = ExpressivePrimaryStart.copy(alpha = 0.2f)
+                    ) {
+                        Text(
+                            text = asset.type.name,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = ExpressivePrimaryStart
+                        )
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = ExpressiveSecondary.copy(alpha = 0.2f)
+                    ) {
+                        Text(
+                            text = "${asset.weightInGrams}g",
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = ExpressiveSecondary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Value Display
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = stringResource(R.string.current_value_label),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = ExpressiveOnSurface.copy(alpha = 0.7f)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = asset.totalCurrentValue.formatCurrency(),
+                            style = MaterialTheme.typography.displaySmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = ExpressiveOnSurface,
+                            fontSize = 36.sp
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .scale(1f + shimmerAlpha * 0.1f)
+                            .clip(CircleShape)
+                            .background(
+                                if (isPositive)
+                                    ExpressiveTertiary.copy(alpha = shimmerAlpha)
+                                else
+                                    ExpressiveError.copy(alpha = shimmerAlpha)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Icon(
-                            imageVector = Icons.Default.Cloud,
-                            contentDescription = "Not Editable",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                            modifier = Modifier.size(12.dp)
+                            if (isPositive) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Performance Chip
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = if (isPositive)
+                        ExpressiveTertiary.copy(alpha = 0.2f)
+                    else
+                        ExpressiveError.copy(alpha = 0.2f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            if (isPositive) Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward,
+                            contentDescription = null,
+                            tint = if (isPositive) ExpressiveTertiary else ExpressiveError,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "${if (isPositive) "+" else ""}${String.format("%.2f", percentage)}%",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isPositive) ExpressiveTertiary else ExpressiveError
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.total_return),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = ExpressiveOnSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+                HorizontalDivider(color = ExpressiveOnSurface.copy(alpha = 0.1f))
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Details Grid
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text(
+                            text = stringResource(R.string.quantity_label),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = ExpressiveOnSurface.copy(alpha = 0.6f)
+                        )
+                        Text(
+                            text = "${asset.quantity}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = ExpressiveOnSurface
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = stringResource(R.string.bought_at_label),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = ExpressiveOnSurface.copy(alpha = 0.6f)
+                        )
+                        Text(
+                            text = asset.purchasePrice.formatCurrency(),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = ExpressivePrimaryStart
                         )
                     }
                 }
             }
-            Text(
-                text = historyRecord.sellPrice.formatCurrency(),
-                color = GoldStart,
-                style = MaterialTheme.typography.bodyMedium,
-            )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditHistoryRecordBottomSheet(
-    onDismiss: () -> Unit,
-    initialSellPrice: Double? = null,
-    initialBuyPrice: Double? = null,
-    initialDate: Long? = null,
-    isEditMode: Boolean = false,
-    onSave: (Double, Double, Long) -> Unit
-) {
-
-    var isSellError by remember { mutableStateOf(false) }
-    var isBuyError by remember { mutableStateOf(false) }
-    var sellPrice by remember { mutableStateOf(initialSellPrice!!.formatCurrency()) }
-    var buyPrice by remember { mutableStateOf(initialBuyPrice!!.formatCurrency()) }
-    var selectedDate by remember { mutableLongStateOf(initialDate ?: System.currentTimeMillis()) }
-    var showDatePicker by remember { mutableStateOf(false) }
-    val sdf = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
-
-    // Use the same sheet state strategy as AssetSheet
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    if (showDatePicker) {
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = selectedDate,
-            selectableDates = object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean =
-                    utcTimeMillis <= System.currentTimeMillis()
-            })
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let {
-                        selectedDate = it
-                    }; showDatePicker = false
-                }) { Text(stringResource(R.string.ok_action)) }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    showDatePicker = false
-                }) { Text(stringResource(R.string.cancel_action)) }
-            }) { DatePicker(state = datePickerState) }
-    }
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        // Match AssetSheet colors
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        contentColor = MaterialTheme.colorScheme.onSurface
+fun ExpressivePerformanceCard(points: List<Pair<Long, Double>>) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(280.dp),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = ExpressiveSurfaceHigh
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                // Handle navigation bars and keyboard like AssetSheet
-                .padding(
-                    bottom = WindowInsets.navigationBars.asPaddingValues()
-                        .calculateBottomPadding() + 24.dp
-                )
-                .imePadding()
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .padding(20.dp)
         ) {
-            Text(
-                text = if (isEditMode) "Edit Record" else stringResource(R.string.update_value_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Date Picker Field (Styled to match TextFields)
-            Box(modifier = Modifier.fillMaxWidth()) {
-                PortfolioOutlinedTextField(
-                    value = sdf.format(Date(selectedDate)),
-                    onValueChange = {},
-                    label = stringResource(R.string.date_label, "").replace(": ", ""),
-                    readOnly = true,
-                    trailingIcon = {
-                        Icon(
-                            Icons.Default.DateRange,
-                            contentDescription = null,
-                            tint = GoldStart
-                        )
-                    }
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Filled.ShowChart,
+                    contentDescription = null,
+                    tint = ExpressivePrimaryStart,
+                    modifier = Modifier.size(24.dp)
                 )
-                // Invisible box to capture clicks for the Date Picker
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.performance_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = ExpressiveOnSurface
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                PortfolioChart(points = points)
+            }
+        }
+    }
+}
+
+@Composable
+fun ExpressivePriceHistoryCard(
+    record: PriceHistory,
+    onEditClick: () -> Unit
+) {
+    val sdf = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
+    val timeSdf = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+
+    Card(
+        onClick = if (record.isManual) onEditClick else { {} },
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = ExpressiveSurfaceHigh
+        ),
+        enabled = record.isManual
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Box(
                     modifier = Modifier
-                        .matchParentSize()
-                        .clickable { showDatePicker = true }
-                )
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (record.isManual)
+                                ExpressivePrimaryStart.copy(alpha = 0.2f)
+                            else
+                                ExpressiveSecondary.copy(alpha = 0.2f)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        if (record.isManual) Icons.Filled.Edit else Icons.Filled.Cloud,
+                        contentDescription = null,
+                        tint = if (record.isManual)
+                            ExpressivePrimaryStart
+                        else
+                            ExpressiveSecondary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Column {
+                    Text(
+                        text = sdf.format(Date(record.dateTimestamp)),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = ExpressiveOnSurface
+                    )
+                    Text(
+                        text = timeSdf.format(Date(record.dateTimestamp)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = ExpressiveOnSurface.copy(alpha = 0.6f)
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            PortfolioOutlinedTextField(
-                value = sellPrice,
-                onValueChange = {
-                    sellPrice = it
-                    isSellError = false
-                },
-                label = if (isEditMode) "Sell Price" else stringResource(R.string.new_sell_price_label),
-                isNumber = true,
-                isError = isSellError,
-                errorMessage = "Enter a Sell Price"
+            Text(
+                text = record.sellPrice.formatCurrency(),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = ExpressivePrimaryStart
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            PortfolioOutlinedTextField(
-                value = buyPrice,
-                onValueChange = {
-                    buyPrice = it
-                    isBuyError = false
-                },
-                label = if (isEditMode) "Buy Price" else stringResource(R.string.new_buy_price_label),
-                isNumber = true,
-                isError = isBuyError,
-                errorMessage = "Enter a Buy Price"
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = {
-                    // 1. Validate inputs independently
-                    val validSell = sellPrice.cleanCurrencyOrNull()
-                    val validBuy = buyPrice.cleanCurrencyOrNull()
-
-                    // 2. Update error states based on validation results
-                    isSellError = (validSell == null)
-                    isBuyError = (validBuy == null)
-
-                    // 3. Only proceed if BOTH are valid
-                    if (validSell != null && validBuy != null && validSell > 0 && validBuy > 0) {
-                        onSave(validSell, validBuy, selectedDate)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = GoldStart,
-                    contentColor = Color.Black
-                )
-            ) {
-                Text(
-                    text = if (isEditMode) "Update" else stringResource(R.string.save_action),
-                    fontWeight = FontWeight.Bold
-                )
-            }
         }
     }
 }
