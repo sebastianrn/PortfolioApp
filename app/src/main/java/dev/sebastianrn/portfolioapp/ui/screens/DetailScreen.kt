@@ -448,7 +448,7 @@ fun ExpressivePerformanceCard(points: List<Pair<Long, Double>>) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(280.dp),
+            .height(320.dp),
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
             containerColor = ExpressiveSurfaceHigh
@@ -481,7 +481,11 @@ fun ExpressivePerformanceCard(points: List<Pair<Long, Double>>) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Box(modifier = Modifier.fillMaxSize()) {
-                PortfolioChart(points = points)
+                PortfolioChart(
+                    points = points,
+                    showTimeRangeSelector = true,
+                    goldColor = ExpressivePrimaryStart
+                )
             }
         }
     }

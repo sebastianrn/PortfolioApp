@@ -3,13 +3,26 @@ package dev.sebastianrn.portfolioapp.ui.components
 import android.text.Layout
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
@@ -39,70 +52,151 @@ import com.patrykandpatrick.vico.core.common.shader.ShaderProvider
 import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 
+// Time range enum
+enum class TimeRange(val label: String, val days: Int) {
+    ONE_WEEK("1W", 7),
+    ONE_MONTH("1M", 30),
+    THREE_MONTHS("3M", 90),
+    SIX_MONTHS("6M", 180),
+    ONE_YEAR("1Y", 365),
+    ALL("ALL", Int.MAX_VALUE)
+}
+
 @Composable
 fun PortfolioChart(
-    points: List<Pair<Long, Double>>
+    points: List<Pair<Long, Double>>,
+    showTimeRangeSelector: Boolean = true,
+    goldColor: Color = Color(0xFFFFD700)
 ) {
     if (points.isEmpty()) return
 
-    // Process points to ensure only one data point per day (take the last one)
-    val processedPoints = remember(points) {
+    // State for selected time range
+    var selectedRange by remember { mutableStateOf(TimeRange.ONE_MONTH) }
+
+    // Filter points based on selected time range
+    val filteredPoints = remember(points, selectedRange) {
         if (points.isEmpty()) return@remember emptyList()
 
-        // Group by date (ignoring time) and take the last entry for each day
-        val calendar = java.util.Calendar.getInstance()
-        points.groupBy { (timestamp, _) ->
+        val cutoffTime = if (selectedRange == TimeRange.ALL) {
+            0L
+        } else {
+            System.currentTimeMillis() - (selectedRange.days * 24 * 60 * 60 * 1000L)
+        }
+
+        val filtered = points.filter { it.first >= cutoffTime }
+
+        // Process to ensure only one data point per day (take the last one)
+        val calendar = Calendar.getInstance()
+        filtered.groupBy { (timestamp, _) ->
             calendar.timeInMillis = timestamp
-            // Create a key using year, month, and day
-            "${calendar.get(java.util.Calendar.YEAR)}-${calendar.get(java.util.Calendar.MONTH)}-${calendar.get(java.util.Calendar.DAY_OF_MONTH)}"
+            "${calendar.get(Calendar.YEAR)}-${calendar.get(Calendar.MONTH)}-${calendar.get(Calendar.DAY_OF_MONTH)}"
         }.map { (_, dayPoints) ->
-            // Take the last point of each day (sorted by timestamp)
             dayPoints.maxByOrNull { it.first }!!
-        }.sortedBy { it.first } // Sort by timestamp ascending
+        }.sortedBy { it.first }
     }
 
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Time Range Selector
+        if (showTimeRangeSelector && points.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TimeRange.entries.forEach { range ->
+                    TimeRangeChip(
+                        label = range.label,
+                        selected = selectedRange == range,
+                        onClick = { selectedRange = range },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
+        // Chart
+        if (filteredPoints.isNotEmpty()) {
+            EnhancedVicoChart(
+                points = filteredPoints,
+                timeRange = selectedRange,
+                goldColor = goldColor
+            )
+        } else {
+            // Empty state
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentAlignment = androidx.compose.ui.Alignment.Center
+            ) {
+                Text(
+                    "No data available for this period",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = goldColor.copy(alpha = 0.5f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EnhancedVicoChart(
+    points: List<Pair<Long, Double>>,
+    timeRange: TimeRange,
+    goldColor: Color
+) {
     val modelProducer = remember { CartesianChartModelProducer() }
 
-    LaunchedEffect(processedPoints) {
+    LaunchedEffect(points) {
         modelProducer.runTransaction {
             lineSeries {
                 series(
-                    x = processedPoints.indices.map { it.toFloat() },
-                    y = processedPoints.map { it.second }
+                    x = points.indices.map { it.toFloat() },
+                    y = points.map { it.second }
                 )
             }
         }
     }
 
-    val dateTimeFormatter = remember { SimpleDateFormat("MMM yy", Locale.getDefault()) }
+    // Date formatter based on time range
+    val dateFormatter = remember(timeRange) {
+        when (timeRange) {
+            TimeRange.ONE_WEEK -> SimpleDateFormat("EEE", Locale.getDefault()) // Mon, Tue
+            TimeRange.ONE_MONTH -> SimpleDateFormat("MMM dd", Locale.getDefault()) // Jan 15
+            TimeRange.THREE_MONTHS, TimeRange.SIX_MONTHS -> SimpleDateFormat("MMM dd", Locale.getDefault())
+            TimeRange.ONE_YEAR, TimeRange.ALL -> SimpleDateFormat("MMM yy", Locale.getDefault()) // Jan 25
+        }
+    }
 
-    // Enhanced axis labels with better visibility
+    // Enhanced axis labels
     val axisLabelComponent = rememberAxisLabelComponent(
         color = Color.White.copy(alpha = 0.85f),
         textSize = 11.sp
     )
 
-    // Larger indicator for better visibility (thicker stroke gives glow effect)
+    // Larger indicator with glow
     val indicatorComponent = rememberLineComponent(
-        fill = fill(GoldStart),
+        fill = fill(goldColor),
         thickness = 16.dp,
-        strokeFill = fill(GoldStart.copy(alpha = 0.3f)),
+        strokeFill = fill(goldColor.copy(alpha = 0.3f)),
         strokeThickness = 10.dp
     )
 
-    // More visible guideline with gold tint
+    // Visible guideline
     val guidelineComponent = rememberLineComponent(
-        fill = fill(GoldStart.copy(alpha = 0.6f)),
+        fill = fill(goldColor.copy(alpha = 0.6f)),
         thickness = 2.dp
     )
 
-    // Enhanced label component
+    // Enhanced label
     val labelComponent = rememberTextComponent(
-        color = GoldStart,
+        color = goldColor,
         textSize = 13.sp,
         lineCount = 2,
         textAlignment = Layout.Alignment.ALIGN_CENTER
@@ -127,8 +221,8 @@ fun PortfolioChart(
 
     val getFormattedDate = { value: Double ->
         val index = value.toInt()
-        if (index in processedPoints.indices) {
-            dateTimeFormatter.format(Date(processedPoints[index].first))
+        if (index in points.indices) {
+            dateFormatter.format(Date(points[index].first))
         } else {
             "–"
         }
@@ -153,11 +247,11 @@ fun PortfolioChart(
         }
     )
 
-    // Enhanced gradient with 4 color stops for richer depth
+    // Enhanced 4-color gradient
     val gradientColors = arrayOf(
-        GoldStart.copy(alpha = 0.7f),
-        GoldStart.copy(alpha = 0.5f),
-        GoldStart.copy(alpha = 0.25f),
+        goldColor.copy(alpha = 0.7f),
+        goldColor.copy(alpha = 0.5f),
+        goldColor.copy(alpha = 0.25f),
         Color.Transparent
     )
 
@@ -166,8 +260,8 @@ fun PortfolioChart(
             rememberLineCartesianLayer(
                 rangeProvider = remember { CartesianLayerRangeProvider.fixed(minX = 0.0) },
                 lineProvider = LineCartesianLayer.LineProvider.series(
-                    LineCartesianLayer.rememberLine(
-                        fill = LineCartesianLayer.LineFill.single(fill(GoldStart)),
+                    LineCartesianLayer.Line(
+                        fill = LineCartesianLayer.LineFill.single(fill(goldColor)),
                         areaFill = LineCartesianLayer.AreaFill.single(
                             fill(
                                 ShaderProvider.verticalGradient(gradientColors)
@@ -188,9 +282,15 @@ fun PortfolioChart(
                 valueFormatter = { _, value, _ -> getFormattedDate(value) },
                 label = axisLabelComponent,
                 guideline = null,
-                itemPlacer = remember(processedPoints) {
+                itemPlacer = remember(points, timeRange) {
+                    // Adjust spacing based on data points
+                    val spacing = when {
+                        points.size <= 7 -> 1 // Show all labels for week view
+                        points.size <= 30 -> maxOf(1, points.size / 6)
+                        else -> maxOf(1, points.size / 5)
+                    }
                     HorizontalAxis.ItemPlacer.aligned(
-                        spacing = { maxOf(1, processedPoints.size / 6) },
+                        spacing = { spacing },
                         addExtremeLabelPadding = true
                     )
                 }
@@ -214,6 +314,36 @@ fun PortfolioChart(
         animateIn = true,
         modifier = Modifier
             .fillMaxWidth()
-            .height(230.dp) // Slightly taller for better data visibility
+            .height(230.dp)
     )
+}
+
+@Composable
+private fun TimeRangeChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val goldColor = Color(0xFFFFD700)
+    val backgroundColor = Color(0xFF1A1A1A)
+
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = if (selected) goldColor else backgroundColor,
+        modifier = modifier
+    ) {
+        Box(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+            contentAlignment = androidx.compose.ui.Alignment.Center
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                color = if (selected) Color.Black else Color.White.copy(alpha = 0.7f)
+            )
+        }
+    }
 }

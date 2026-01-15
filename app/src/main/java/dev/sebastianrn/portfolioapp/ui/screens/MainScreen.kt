@@ -74,6 +74,7 @@ fun MainScreen(
             ExpressiveTopBar(
                 isDark = isDark,
                 onThemeToggle = { themeViewModel.toggleTheme() },
+                viewModel = viewModel,
                 onMenuClick = { showMenu = true }
             )
         },

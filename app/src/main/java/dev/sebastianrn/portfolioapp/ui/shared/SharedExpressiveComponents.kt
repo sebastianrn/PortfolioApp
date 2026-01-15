@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Paid
 import androidx.compose.material.icons.outlined.TrendingUp
@@ -95,6 +96,7 @@ import dev.sebastianrn.portfolioapp.data.model.AssetType
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
 import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
 import dev.sebastianrn.portfolioapp.util.formatCurrency
+import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -185,6 +187,7 @@ fun ExpressiveOutlinedTextField(
 @Composable
 fun ExpressiveTopBar(
     isDark: Boolean,
+    viewModel: GoldViewModel,
     onThemeToggle: () -> Unit,
     onMenuClick: () -> Unit
 ) {
@@ -228,10 +231,11 @@ fun ExpressiveTopBar(
             }
         },
         actions = {
-            IconButton(onClick = onThemeToggle) {
+            IconButton(onClick = { viewModel.updatePricesFromScraper() }) {
                 Icon(
-                    if (isDark) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                    contentDescription = "Toggle Theme"
+                    Icons.Default.Refresh,
+                    "Update Prices",
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
             IconButton(onClick = onMenuClick) {
@@ -318,7 +322,7 @@ fun ExpressivePortfolioHeader(
                     // Animated pulse indicator
                     Box(
                         modifier = Modifier
-                            .size(60.dp)
+                            .size(40.dp)
                             .scale(1f + shimmerAlpha * 0.1f)
                             .clip(CircleShape)
                             .background(
@@ -386,12 +390,10 @@ fun ExpressivePortfolioHeader(
 fun ExpressiveChartCard(
     points: List<Pair<Long, Double>>
 ) {
-    var selectedRange by remember { mutableStateOf("1W") }
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(280.dp),
+            .height(320.dp),
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
             containerColor = ExpressiveColors.SurfaceHigh
@@ -403,31 +405,23 @@ fun ExpressiveChartCard(
                 .fillMaxSize()
                 .padding(20.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.performance_title),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = ExpressiveColors.OnSurface
-                )
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TimeRangeChip("1W", selectedRange == "1W") { selectedRange = "1W" }
-                    TimeRangeChip("1M", selectedRange == "1M") { selectedRange = "1M" }
-                    TimeRangeChip("1Y", selectedRange == "1Y") { selectedRange = "1Y" }
-                }
-            }
+            Text(
+                text = stringResource(R.string.performance_title),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = ExpressiveColors.OnSurface
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Your actual chart component
+            // Enhanced chart with built-in time range selector
             Box(modifier = Modifier.fillMaxSize()) {
                 if (points.isNotEmpty()) {
-                    PortfolioChart(points = points)
+                    PortfolioChart(
+                        points = points,
+                        showTimeRangeSelector = true,
+                        goldColor = ExpressiveColors.PrimaryStart
+                    )
                 } else {
                     Box(
                         modifier = Modifier
