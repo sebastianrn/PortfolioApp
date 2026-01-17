@@ -47,7 +47,7 @@ import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 
 @Composable
-fun ExpressiveOutlinedTextField(
+fun PortfolioOutlinedTextField(
     modifier: Modifier = Modifier,
     value: String,
     onValueChange: (String) -> Unit,
@@ -113,7 +113,7 @@ fun ExpressiveOutlinedTextField(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExpressiveTopBar(
+fun PortfolioTopBar(
     viewModel: GoldViewModel,
     onMenuClick: () -> Unit
 ) {
@@ -149,7 +149,7 @@ fun ExpressiveTopBar(
                         fontWeight = FontWeight.ExtraBold
                     )
                     Text(
-                        "Expressive Dashboard",
+                        "Portfolio Dashboard",
                         style = MaterialTheme.typography.bodySmall,
                         color = ExpressiveColors.PrimaryStart
                     )

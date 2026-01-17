@@ -34,7 +34,7 @@ import dev.sebastianrn.portfolioapp.ui.shared.ExpressiveAssetSheet
 import dev.sebastianrn.portfolioapp.ui.shared.ExpressiveChartCard
 import dev.sebastianrn.portfolioapp.ui.shared.ExpressiveColors
 import dev.sebastianrn.portfolioapp.ui.shared.ExpressivePortfolioHeader
-import dev.sebastianrn.portfolioapp.ui.shared.ExpressiveTopBar
+import dev.sebastianrn.portfolioapp.ui.shared.PortfolioTopBar
 import dev.sebastianrn.portfolioapp.ui.shared.QuickStatsRow
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 
@@ -67,7 +67,7 @@ fun MainScreen(
     Scaffold(
         containerColor = ExpressiveColors.SurfaceContainer,
         topBar = {
-            ExpressiveTopBar(
+            PortfolioTopBar(
                 viewModel = viewModel,
                 onMenuClick = { showMenu = true }
             )

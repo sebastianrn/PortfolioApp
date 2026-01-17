@@ -122,7 +122,7 @@ fun ExpressiveAssetSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            ExpressiveOutlinedTextField(
+            PortfolioOutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
                 label = "Asset Name",
@@ -136,7 +136,7 @@ fun ExpressiveAssetSheet(
                 onExpandedChange = { expanded = !expanded },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                ExpressiveOutlinedTextField(
+                PortfolioOutlinedTextField(
                     value = selectedOption.label,
                     onValueChange = {},
                     label = "Weight / Type",
@@ -178,14 +178,14 @@ fun ExpressiveAssetSheet(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Box(modifier = Modifier.weight(1f)) {
-                    ExpressiveOutlinedTextField(
+                    PortfolioOutlinedTextField(
                         value = quantity,
                         onValueChange = { if (it.all { c -> c.isDigit() }) quantity = it },
                         label = "Quantity"
                     )
                 }
                 Box(modifier = Modifier.weight(1f)) {
-                    ExpressiveOutlinedTextField(
+                    PortfolioOutlinedTextField(
                         value = philoroId,
                         onValueChange = { philoroId = it },
                         label = "Philoro ID"
@@ -195,7 +195,7 @@ fun ExpressiveAssetSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            ExpressiveOutlinedTextField(
+            PortfolioOutlinedTextField(
                 value = purchasePrice,
                 onValueChange = { purchasePrice = it },
                 label = if (isEditMode) "Purchase Price (Total)" else "Paid Price (Total)",

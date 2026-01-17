@@ -321,7 +321,7 @@ fun ExpressiveEditHistorySheet(
 
             // Date Picker Field
             Box(modifier = Modifier.fillMaxWidth()) {
-                ExpressiveOutlinedTextField(
+                PortfolioOutlinedTextField(
                     value = sdf.format(Date(selectedDate)),
                     onValueChange = {},
                     label = "Date",
@@ -343,7 +343,7 @@ fun ExpressiveEditHistorySheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            ExpressiveOutlinedTextField(
+            PortfolioOutlinedTextField(
                 value = sellPrice,
                 onValueChange = {
                     sellPrice = it
@@ -357,7 +357,7 @@ fun ExpressiveEditHistorySheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            ExpressiveOutlinedTextField(
+            PortfolioOutlinedTextField(
                 value = buyPrice,
                 onValueChange = {
                     buyPrice = it
