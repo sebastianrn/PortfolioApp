@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
+import dev.sebastianrn.portfolioapp.util.formatCurrency
 import java.text.NumberFormat
 import java.util.Locale
 import kotlin.math.abs
@@ -302,14 +303,9 @@ fun PortfolioChartCard(
 @Composable
 fun QuickStatsRow(
     totalInvested: Double,
-    assetCount: Int,
-    bestPerformer: GoldAsset?
+    totalValue: Double
 ) {
-    val bestPerformancePercent = bestPerformer?.let {
-        if (it.purchasePrice > 0) {
-            ((it.currentSellPrice - it.purchasePrice) / it.purchasePrice) * 100
-        } else 0.0
-    } ?: 0.0
+    val overallProfitLoss = totalValue - totalInvested
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -317,22 +313,15 @@ fun QuickStatsRow(
     ) {
         QuickStatCard(
             icon = Icons.Outlined.TrendingUp,
-            label = "Best Performer",
-            value = if (bestPerformer != null) "+${String.format("%.1f", bestPerformancePercent)}%" else "N/A",
+            label = "Total Profit",
+            value = overallProfitLoss.formatCurrency(),
             color = ExpressiveColors.TertiaryAccent,
-            modifier = Modifier.weight(1f)
-        )
-        QuickStatCard(
-            icon = Icons.Outlined.AccountBalanceWallet,
-            label = "Assets",
-            value = "$assetCount",
-            color = ExpressiveColors.PrimaryStart,
             modifier = Modifier.weight(1f)
         )
         QuickStatCard(
             icon = Icons.Outlined.Paid,
             label = "Invested",
-            value = totalInvested.toString(),
+            value = totalInvested.formatCurrency(),
             color = ExpressiveColors.SecondaryGradient,
             modifier = Modifier.weight(1f)
         )

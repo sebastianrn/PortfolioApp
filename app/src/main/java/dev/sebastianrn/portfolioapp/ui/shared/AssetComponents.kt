@@ -215,7 +215,7 @@ fun HoldingDetailRow(label: String, value: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExpressiveEditHistorySheet(
+fun EditHistorySheet(
     onDismiss: () -> Unit,
     initialSellPrice: Double? = null,
     initialBuyPrice: Double? = null,

@@ -44,7 +44,7 @@ import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExpressiveAssetSheet(
+fun AssetSheet(
     asset: GoldAsset? = null,
     onDismiss: () -> Unit,
     onSave: (GoldAsset) -> Unit

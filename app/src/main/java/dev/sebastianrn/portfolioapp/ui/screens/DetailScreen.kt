@@ -27,8 +27,8 @@ import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.model.PriceHistory
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
 import dev.sebastianrn.portfolioapp.ui.shared.PortfolioChart
-import dev.sebastianrn.portfolioapp.ui.shared.ExpressiveAssetSheet
-import dev.sebastianrn.portfolioapp.ui.shared.ExpressiveEditHistorySheet
+import dev.sebastianrn.portfolioapp.ui.shared.AssetSheet
+import dev.sebastianrn.portfolioapp.ui.shared.EditHistorySheet
 import dev.sebastianrn.portfolioapp.ui.theme.ExpressiveError
 import dev.sebastianrn.portfolioapp.ui.theme.ExpressiveOnSurface
 import dev.sebastianrn.portfolioapp.ui.theme.ExpressivePrimaryStart
@@ -134,7 +134,7 @@ fun DetailScreen(
             }
 
             items(history) { record ->
-                ExpressivePriceHistoryCard(
+                PriceHistoryCard(
                     record = record,
                     onEditClick = {
                         if (record.isManual) {
@@ -151,7 +151,7 @@ fun DetailScreen(
     }
 
     if (showSheet) {
-        ExpressiveEditHistorySheet(
+        EditHistorySheet(
             onDismiss = { showSheet = false },
             onSave = { sellPrice, buyPrice, date ->
                 viewModel.addDailyRate(assetId, sellPrice, buyPrice, date, true)
@@ -161,7 +161,7 @@ fun DetailScreen(
     }
 
     if (historyRecordToEdit != null) {
-        ExpressiveEditHistorySheet(
+        EditHistorySheet(
             onDismiss = { historyRecordToEdit = null },
             initialSellPrice = historyRecordToEdit!!.sellPrice,
             initialBuyPrice = historyRecordToEdit!!.buyPrice,
@@ -182,7 +182,7 @@ fun DetailScreen(
     }
 
     if (showEditDialog && asset != null) {
-        ExpressiveAssetSheet(
+        AssetSheet(
             asset = asset,
             onDismiss = { showEditDialog = false },
             onSave = { updatedAsset ->
@@ -492,7 +492,7 @@ fun ExpressivePerformanceCard(points: List<Pair<Long, Double>>) {
 }
 
 @Composable
-fun ExpressivePriceHistoryCard(
+fun PriceHistoryCard(
     record: PriceHistory,
     onEditClick: () -> Unit
 ) {

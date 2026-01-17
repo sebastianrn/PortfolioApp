@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.ui.shared.AnimatedFloatingActionButton
 import dev.sebastianrn.portfolioapp.ui.shared.AnimatedHoldingCard
-import dev.sebastianrn.portfolioapp.ui.shared.ExpressiveAssetSheet
+import dev.sebastianrn.portfolioapp.ui.shared.AssetSheet
 import dev.sebastianrn.portfolioapp.ui.shared.PortfolioChartCard
 import dev.sebastianrn.portfolioapp.ui.shared.ExpressiveColors
 import dev.sebastianrn.portfolioapp.ui.shared.PortfolioHeader
@@ -104,8 +104,7 @@ fun MainScreen(
             item {
                 QuickStatsRow(
                     totalInvested = stats.totalInvested,
-                    assetCount = assets.size,
-                    bestPerformer = assets.maxByOrNull { it.totalProfitOrLoss }
+                    totalValue = stats.totalValue
                 )
             }
 
@@ -130,7 +129,7 @@ fun MainScreen(
 
     // Keep your existing dialogs
     if (showDialog) {
-        ExpressiveAssetSheet(
+        AssetSheet(
             onDismiss = { showDialog = false },
             onSave = { asset ->
                 viewModel.insertAsset(

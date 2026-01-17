@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -135,9 +136,9 @@ fun PortfolioTopBar(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        Icons.Filled.AccountBalance,
-                        contentDescription = null,
-                        tint = Color.Black,
+                        painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                        contentDescription = "App Icon",
+                        tint = Color.Black, // Keeps the icon black against the gradient
                         modifier = Modifier.size(24.dp)
                     )
                 }
