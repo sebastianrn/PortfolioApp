@@ -1,4 +1,4 @@
-package dev.sebastianrn.portfolioapp.ui.components
+package dev.sebastianrn.portfolioapp.ui.shared
 
 import android.text.Layout
 import androidx.compose.animation.core.Spring
@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -30,7 +31,6 @@ import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLabelCompone
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
 import com.patrykandpatrick.vico.compose.cartesian.cartesianLayerPadding
-import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLine
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.marker.rememberDefaultCartesianMarker
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
@@ -49,7 +49,6 @@ import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.core.cartesian.marker.DefaultCartesianMarker
 import com.patrykandpatrick.vico.core.cartesian.marker.LineCartesianLayerMarkerTarget
 import com.patrykandpatrick.vico.core.common.shader.ShaderProvider
-import dev.sebastianrn.portfolioapp.ui.theme.GoldStart
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -61,7 +60,6 @@ import kotlin.math.roundToInt
 enum class TimeRange(val label: String, val days: Int) {
     ONE_WEEK("1W", 7),
     ONE_MONTH("1M", 30),
-    THREE_MONTHS("3M", 90),
     SIX_MONTHS("6M", 180),
     ONE_YEAR("1Y", 365),
     ALL("ALL", Int.MAX_VALUE)
@@ -133,7 +131,7 @@ fun PortfolioChart(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp),
-                contentAlignment = androidx.compose.ui.Alignment.Center
+                contentAlignment = Alignment.Center
             ) {
                 Text(
                     "No data available for this period",
@@ -164,12 +162,43 @@ private fun EnhancedVicoChart(
         }
     }
 
+    // Calculate dynamic Y-axis range based on the data points
+    val yAxisRange = remember(points, timeRange) {
+        if (points.isEmpty()) {
+            0.0 to 100.0
+        } else {
+            val values = points.map { it.second }
+            val minValue = values.minOrNull() ?: 0.0
+            val maxValue = values.maxOrNull() ?: 100.0
+            val range = maxValue - minValue
+
+            // Add padding: 5% below min and 5% above max for better visualization
+            // For shorter time ranges, use tighter padding to emphasize value changes
+            val paddingFactor = when (timeRange) {
+                TimeRange.ONE_WEEK -> 0.10  // 10% padding for weekly view (more zoomed in)
+                TimeRange.ONE_MONTH -> 0.08 // 8% padding for monthly view
+                TimeRange.SIX_MONTHS -> 0.05 // 5% padding
+                TimeRange.ONE_YEAR, TimeRange.ALL -> 0.03 // 3% padding for longer views
+            }
+
+            val padding = range * paddingFactor
+            // Ensure minimum range of at least 1% of the average value to avoid flat lines
+            val minRange = ((minValue + maxValue) / 2) * 0.01
+            val adjustedPadding = maxOf(padding, minRange / 2)
+
+            val adjustedMin = maxOf(0.0, minValue - adjustedPadding) // Y-axis min shouldn't go below 0
+            val adjustedMax = maxValue + adjustedPadding
+
+            adjustedMin to adjustedMax
+        }
+    }
+
     // Date formatter based on time range
     val dateFormatter = remember(timeRange) {
         when (timeRange) {
             TimeRange.ONE_WEEK -> SimpleDateFormat("EEE", Locale.getDefault()) // Mon, Tue
             TimeRange.ONE_MONTH -> SimpleDateFormat("MMM dd", Locale.getDefault()) // Jan 15
-            TimeRange.THREE_MONTHS, TimeRange.SIX_MONTHS -> SimpleDateFormat("MMM dd", Locale.getDefault())
+            TimeRange.SIX_MONTHS -> SimpleDateFormat("MMM dd", Locale.getDefault())
             TimeRange.ONE_YEAR, TimeRange.ALL -> SimpleDateFormat("MMM yy", Locale.getDefault()) // Jan 25
         }
     }
@@ -258,7 +287,13 @@ private fun EnhancedVicoChart(
     CartesianChartHost(
         chart = rememberCartesianChart(
             rememberLineCartesianLayer(
-                rangeProvider = remember { CartesianLayerRangeProvider.fixed(minX = 0.0) },
+                rangeProvider = remember(yAxisRange) { 
+                    CartesianLayerRangeProvider.fixed(
+                        minX = 0.0,
+                        minY = yAxisRange.first,
+                        maxY = yAxisRange.second
+                    ) 
+                },
                 lineProvider = LineCartesianLayer.LineProvider.series(
                     LineCartesianLayer.Line(
                         fill = LineCartesianLayer.LineFill.single(fill(goldColor)),
@@ -336,7 +371,7 @@ private fun TimeRangeChip(
     ) {
         Box(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
-            contentAlignment = androidx.compose.ui.Alignment.Center
+            contentAlignment = Alignment.Center
         ) {
             Text(
                 text = label,

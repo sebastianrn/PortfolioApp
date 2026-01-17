@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.model.PriceHistory
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
-import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
+import dev.sebastianrn.portfolioapp.ui.shared.PortfolioChart
 import dev.sebastianrn.portfolioapp.ui.shared.ExpressiveAssetSheet
 import dev.sebastianrn.portfolioapp.ui.shared.ExpressiveEditHistorySheet
 import dev.sebastianrn.portfolioapp.ui.theme.ExpressiveError
