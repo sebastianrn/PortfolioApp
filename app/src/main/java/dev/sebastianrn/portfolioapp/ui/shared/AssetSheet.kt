@@ -181,16 +181,14 @@ fun ExpressiveAssetSheet(
                     ExpressiveOutlinedTextField(
                         value = quantity,
                         onValueChange = { if (it.all { c -> c.isDigit() }) quantity = it },
-                        label = "Quantity",
-                        isNumber = true
+                        label = "Quantity"
                     )
                 }
                 Box(modifier = Modifier.weight(1f)) {
                     ExpressiveOutlinedTextField(
                         value = philoroId,
                         onValueChange = { philoroId = it },
-                        label = "Philoro ID",
-                        isNumber = true
+                        label = "Philoro ID"
                     )
                 }
             }
@@ -201,7 +199,6 @@ fun ExpressiveAssetSheet(
                 value = purchasePrice,
                 onValueChange = { purchasePrice = it },
                 label = if (isEditMode) "Purchase Price (Total)" else "Paid Price (Total)",
-                isNumber = true,
                 suffix = "CHF"
             )
 

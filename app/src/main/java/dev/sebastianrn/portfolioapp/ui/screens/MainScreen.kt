@@ -37,19 +37,16 @@ import dev.sebastianrn.portfolioapp.ui.shared.ExpressivePortfolioHeader
 import dev.sebastianrn.portfolioapp.ui.shared.ExpressiveTopBar
 import dev.sebastianrn.portfolioapp.ui.shared.QuickStatsRow
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
-import dev.sebastianrn.portfolioapp.viewmodel.ThemeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     viewModel: GoldViewModel,
-    themeViewModel: ThemeViewModel,
     onCoinClick: (Int) -> Unit
 ) {
     val assets by viewModel.allAssets.collectAsState()
     val stats by viewModel.portfolioStats.collectAsState()
     val portfolioPoints by viewModel.portfolioCurve.collectAsState()
-    val isDark by themeViewModel.isDarkTheme.collectAsState()
     val dailyChange by viewModel.portfolioChange.collectAsState()
 
     var showDialog by remember { mutableStateOf(false) }
@@ -71,8 +68,6 @@ fun MainScreen(
         containerColor = ExpressiveColors.SurfaceContainer,
         topBar = {
             ExpressiveTopBar(
-                isDark = isDark,
-                onThemeToggle = { themeViewModel.toggleTheme() },
                 viewModel = viewModel,
                 onMenuClick = { showMenu = true }
             )
