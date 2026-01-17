@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -50,16 +52,21 @@ import java.util.Locale
 import kotlin.math.abs
 
 // ============================================
-// EXPRESSIVE PORTFOLIO HEADER
+// PORTFOLIO HEADER
 // ============================================
 @Composable
-fun ExpressivePortfolioHeader(
+fun PortfolioHeader(
     totalValue: Double,
+    totalInvested: Double,
     dailyChange: Double,
     dailyChangePercent: Double,
     shimmerAlpha: Float
 ) {
     val isPositive = dailyChange >= 0
+    val totalProfit = totalValue - totalInvested
+    val totalProfitPercent = if (totalInvested > 0) (totalProfit / totalInvested) * 100 else 0.0
+    val isTotalPositive = totalProfit >= 0
+
     val scale by animateFloatAsState(
         targetValue = 1f,
         animationSpec = spring(
@@ -143,38 +150,80 @@ fun ExpressivePortfolioHeader(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Daily change chip
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = if (isPositive)
-                        ExpressiveColors.TertiaryAccent.copy(alpha = 0.2f)
-                    else
-                        ExpressiveColors.ErrorAccent.copy(alpha = 0.2f),
-                    modifier = Modifier.animateContentSize()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    // Daily change chip
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (isPositive)
+                            ExpressiveColors.TertiaryAccent.copy(alpha = 0.2f)
+                        else
+                            ExpressiveColors.ErrorAccent.copy(alpha = 0.2f),
+                        modifier = Modifier.animateContentSize()
                     ) {
-                        Icon(
-                            if (isPositive) Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward,
-                            contentDescription = null,
-                            tint = if (isPositive) ExpressiveColors.TertiaryAccent else ExpressiveColors.ErrorAccent,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "CHF ${NumberFormat.getInstance(Locale.GERMAN).format(abs(dailyChange))} (${String.format("%.2f", abs(dailyChangePercent))}%)",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isPositive) ExpressiveColors.TertiaryAccent else ExpressiveColors.ErrorAccent
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "today",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = ExpressiveColors.OnSurface.copy(alpha = 0.6f)
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                if (isPositive) Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward,
+                                contentDescription = null,
+                                tint = if (isPositive) ExpressiveColors.TertiaryAccent else ExpressiveColors.ErrorAccent,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "CHF ${NumberFormat.getInstance(Locale.GERMAN).format(abs(dailyChange))} (${String.format("%.2f", abs(dailyChangePercent))}%)",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isPositive) ExpressiveColors.TertiaryAccent else ExpressiveColors.ErrorAccent
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "today",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = ExpressiveColors.OnSurface.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+
+                    // Total Profit/Loss chip
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (isTotalPositive)
+                            ExpressiveColors.TertiaryAccent.copy(alpha = 0.2f)
+                        else
+                            ExpressiveColors.ErrorAccent.copy(alpha = 0.2f),
+                        modifier = Modifier.animateContentSize()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                if (isTotalPositive) Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward,
+                                contentDescription = null,
+                                tint = if (isTotalPositive) ExpressiveColors.TertiaryAccent else ExpressiveColors.ErrorAccent,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "CHF ${NumberFormat.getInstance(Locale.GERMAN).format(abs(totalProfit))} (${String.format("%.2f", abs(totalProfitPercent))}%)",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isTotalPositive) ExpressiveColors.TertiaryAccent else ExpressiveColors.ErrorAccent
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "total",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = ExpressiveColors.OnSurface.copy(alpha = 0.6f)
+                            )
+                        }
                     }
                 }
             }
@@ -183,10 +232,10 @@ fun ExpressivePortfolioHeader(
 }
 
 // ============================================
-// EXPRESSIVE CHART CARD
+// PORTFOLIO CHART CARD
 // ============================================
 @Composable
-fun ExpressiveChartCard(
+fun PortfolioChartCard(
     points: List<Pair<Long, Double>>
 ) {
     Card(

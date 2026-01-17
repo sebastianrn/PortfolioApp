@@ -31,9 +31,9 @@ import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.ui.shared.AnimatedFloatingActionButton
 import dev.sebastianrn.portfolioapp.ui.shared.AnimatedHoldingCard
 import dev.sebastianrn.portfolioapp.ui.shared.ExpressiveAssetSheet
-import dev.sebastianrn.portfolioapp.ui.shared.ExpressiveChartCard
+import dev.sebastianrn.portfolioapp.ui.shared.PortfolioChartCard
 import dev.sebastianrn.portfolioapp.ui.shared.ExpressiveColors
-import dev.sebastianrn.portfolioapp.ui.shared.ExpressivePortfolioHeader
+import dev.sebastianrn.portfolioapp.ui.shared.PortfolioHeader
 import dev.sebastianrn.portfolioapp.ui.shared.PortfolioTopBar
 import dev.sebastianrn.portfolioapp.ui.shared.QuickStatsRow
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
@@ -86,8 +86,9 @@ fun MainScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             item {
-                ExpressivePortfolioHeader(
+                PortfolioHeader(
                     totalValue = stats.totalValue,
+                    totalInvested = stats.totalInvested,
                     dailyChange = dailyChange.first,
                     dailyChangePercent = dailyChange.second,
                     shimmerAlpha = shimmerAlpha
@@ -95,7 +96,7 @@ fun MainScreen(
             }
 
             item {
-                ExpressiveChartCard(
+                PortfolioChartCard(
                     points = portfolioPoints
                 )
             }
