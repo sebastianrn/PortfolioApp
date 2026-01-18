@@ -1,5 +1,6 @@
 package dev.sebastianrn.portfolioapp.ui.screens
 
+import EditHistorySheet
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -26,9 +27,8 @@ import androidx.compose.ui.unit.sp
 import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.model.PriceHistory
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
-import dev.sebastianrn.portfolioapp.ui.shared.PortfolioChart
-import dev.sebastianrn.portfolioapp.ui.shared.AssetSheet
-import dev.sebastianrn.portfolioapp.ui.shared.EditHistorySheet
+import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
+import dev.sebastianrn.portfolioapp.ui.components.AssetSheet
 import dev.sebastianrn.portfolioapp.ui.theme.ExpressiveError
 import dev.sebastianrn.portfolioapp.ui.theme.ExpressiveOnSurface
 import dev.sebastianrn.portfolioapp.ui.theme.ExpressivePrimaryStart

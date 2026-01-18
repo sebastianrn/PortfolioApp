@@ -1,4 +1,4 @@
-package dev.sebastianrn.portfolioapp.ui.shared
+package dev.sebastianrn.portfolioapp.ui.components
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,9 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.outlined.AccountBalanceWallet
-import androidx.compose.material.icons.outlined.Paid
-import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -40,21 +36,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.sebastianrn.portfolioapp.R
-import dev.sebastianrn.portfolioapp.data.model.GoldAsset
-import dev.sebastianrn.portfolioapp.util.formatCurrency
 import java.text.NumberFormat
 import java.util.Locale
 import kotlin.math.abs
 
-// ============================================
-// PORTFOLIO HEADER
-// ============================================
 @Composable
 fun PortfolioHeader(
     totalValue: Double,
@@ -227,149 +217,6 @@ fun PortfolioHeader(
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-// ============================================
-// PORTFOLIO CHART CARD
-// ============================================
-@Composable
-fun PortfolioChartCard(
-    points: List<Pair<Long, Double>>
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(320.dp),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = ExpressiveColors.SurfaceHigh
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.performance_title),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = ExpressiveColors.OnSurface
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Enhanced chart with built-in time range selector
-            Box(modifier = Modifier.fillMaxSize()) {
-                if (points.isNotEmpty()) {
-                    PortfolioChart(
-                        points = points,
-                        showTimeRangeSelector = true,
-                        goldColor = ExpressiveColors.PrimaryStart
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        ExpressiveColors.PrimaryStart.copy(alpha = 0.1f),
-                                        Color.Transparent
-                                    )
-                                ),
-                                shape = RoundedCornerShape(16.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            stringResource(R.string.empty_assets_list),
-                            color = ExpressiveColors.OnSurface.copy(alpha = 0.5f)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-// ============================================
-// QUICK STATS ROW
-// ============================================
-@Composable
-fun QuickStatsRow(
-    totalInvested: Double,
-    totalValue: Double
-) {
-    val overallProfitLoss = totalValue - totalInvested
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        QuickStatCard(
-            icon = Icons.Outlined.TrendingUp,
-            label = "Total Profit",
-            value = overallProfitLoss.formatCurrency(),
-            color = ExpressiveColors.TertiaryAccent,
-            modifier = Modifier.weight(1f)
-        )
-        QuickStatCard(
-            icon = Icons.Outlined.Paid,
-            label = "Invested",
-            value = totalInvested.formatCurrency(),
-            color = ExpressiveColors.SecondaryGradient,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-// ============================================
-// QUICK STAT CARD
-// ============================================
-@Composable
-fun QuickStatCard(
-    icon: ImageVector,
-    label: String,
-    value: String,
-    color: Color,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.height(100.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = ExpressiveColors.SurfaceHigh
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(24.dp)
-            )
-            Column {
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = ExpressiveColors.OnSurface
-                )
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = ExpressiveColors.OnSurface.copy(alpha = 0.6f)
-                )
             }
         }
     }

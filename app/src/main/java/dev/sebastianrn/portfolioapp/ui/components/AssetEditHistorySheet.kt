@@ -1,17 +1,7 @@
-package dev.sebastianrn.portfolioapp.ui.shared
-
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -20,27 +10,21 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -53,165 +37,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.R
-import dev.sebastianrn.portfolioapp.data.model.AssetType
-import dev.sebastianrn.portfolioapp.data.model.GoldAsset
-import dev.sebastianrn.portfolioapp.util.formatCurrency
+import dev.sebastianrn.portfolioapp.ui.components.ExpressiveColors
+import dev.sebastianrn.portfolioapp.ui.components.PortfolioOutlinedTextField
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
-// ============================================
-// ANIMATED HOLDING CARD
-// ============================================
-@Composable
-fun AnimatedHoldingCard(
-    asset: GoldAsset,
-    onClick: () -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val isPositive = asset.totalProfitOrLoss >= 0
-    val changePercent = if (asset.purchasePrice > 0) {
-        (asset.totalProfitOrLoss / (asset.purchasePrice * asset.quantity)) * 100
-    } else 0.0
-
-    Card(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .animateContentSize(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = ExpressiveColors.SurfaceHigh
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (asset.type == AssetType.COIN)
-                                    ExpressiveColors.PrimaryStart.copy(alpha = 0.2f)
-                                else
-                                    ExpressiveColors.SecondaryGradient.copy(alpha = 0.2f)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = asset.name.take(2).uppercase(),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = if (asset.type == AssetType.COIN)
-                                ExpressiveColors.PrimaryStart
-                            else
-                                ExpressiveColors.SecondaryGradient
-                        )
-                    }
-
-                    Column {
-                        Text(
-                            text = asset.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = ExpressiveColors.OnSurface
-                        )
-                        Text(
-                            text = "${asset.type.name} • ${asset.quantity} units",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = ExpressiveColors.OnSurface.copy(alpha = 0.6f)
-                        )
-                    }
-                }
-
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = asset.totalCurrentValue.formatCurrency(),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = ExpressiveColors.OnSurface
-                    )
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (isPositive)
-                            ExpressiveColors.TertiaryAccent.copy(alpha = 0.2f)
-                        else
-                            ExpressiveColors.ErrorAccent.copy(alpha = 0.2f)
-                    ) {
-                        Text(
-                            text = "${if (isPositive) "+" else ""}${String.format("%.2f", changePercent)}%",
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isPositive) ExpressiveColors.TertiaryAccent else ExpressiveColors.ErrorAccent
-                        )
-                    }
-                }
-            }
-
-            AnimatedVisibility(
-                visible = expanded,
-                enter = fadeIn() + scaleIn(),
-                exit = fadeOut() + scaleOut()
-            ) {
-                Column(
-                    modifier = Modifier.padding(top = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    HorizontalDivider(color = ExpressiveColors.OnSurface.copy(alpha = 0.1f))
-                    Spacer(modifier = Modifier.height(8.dp))
-                    HoldingDetailRow("Quantity", "${asset.quantity} units")
-                    HoldingDetailRow("Weight", "${asset.weightInGrams}g")
-                    HoldingDetailRow("Purchase Price", asset.purchasePrice.formatCurrency())
-                    HoldingDetailRow("Current Price", asset.currentSellPrice.formatCurrency())
-                    HoldingDetailRow("Total Return", asset.totalProfitOrLoss.formatCurrency())
-                }
-            }
-        }
-    }
-}
-
-// ============================================
-// HOLDING DETAIL ROW
-// ============================================
-@Composable
-fun HoldingDetailRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = ExpressiveColors.OnSurface.copy(alpha = 0.6f)
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = ExpressiveColors.OnSurface
-        )
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -223,7 +59,7 @@ fun EditHistorySheet(
     isEditMode: Boolean = false,
     onSave: (Double, Double, Long) -> Unit
 ) {
-    var isSellError by remember { mutableStateOf(false) }
+    var isSellError: Boolean by remember { mutableStateOf(false) }
     var isBuyError by remember { mutableStateOf(false) }
     var sellPrice by remember { mutableStateOf(initialSellPrice?.toString() ?: "") }
     var buyPrice by remember { mutableStateOf(initialBuyPrice?.toString() ?: "") }

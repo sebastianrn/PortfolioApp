@@ -1,5 +1,9 @@
 package dev.sebastianrn.portfolioapp.ui.screens
 
+import AnimatedFloatingActionButton
+import PortfolioChartCard
+import PortfolioTopBar
+import QuickStatsRow
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -28,14 +32,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.R
-import dev.sebastianrn.portfolioapp.ui.shared.AnimatedFloatingActionButton
-import dev.sebastianrn.portfolioapp.ui.shared.AnimatedHoldingCard
-import dev.sebastianrn.portfolioapp.ui.shared.AssetSheet
-import dev.sebastianrn.portfolioapp.ui.shared.PortfolioChartCard
-import dev.sebastianrn.portfolioapp.ui.shared.ExpressiveColors
-import dev.sebastianrn.portfolioapp.ui.shared.PortfolioHeader
-import dev.sebastianrn.portfolioapp.ui.shared.PortfolioTopBar
-import dev.sebastianrn.portfolioapp.ui.shared.QuickStatsRow
+import dev.sebastianrn.portfolioapp.ui.components.AnimatedHoldingCard
+import dev.sebastianrn.portfolioapp.ui.components.AssetSheet
+import dev.sebastianrn.portfolioapp.ui.components.ExpressiveColors
+import dev.sebastianrn.portfolioapp.ui.components.PortfolioHeader
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

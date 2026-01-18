@@ -1,4 +1,4 @@
-package dev.sebastianrn.portfolioapp.ui.shared
+package dev.sebastianrn.portfolioapp.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

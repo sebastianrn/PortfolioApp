@@ -1,4 +1,4 @@
-package dev.sebastianrn.portfolioapp.ui.shared
+package dev.sebastianrn.portfolioapp.ui.components
 
 import android.text.Layout
 import androidx.compose.animation.core.Spring
