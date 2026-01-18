@@ -84,8 +84,8 @@ fun AssetSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = ExpressiveColors.SurfaceHigh,
-        contentColor = ExpressiveColors.OnSurface
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface
     ) {
         Column(
             modifier = Modifier
@@ -103,7 +103,7 @@ fun AssetSheet(
                     .background(
                         Brush.linearGradient(
                             colors = listOf(
-                                ExpressiveColors.PrimaryStart.copy(alpha = 0.15f),
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                                 Color.Transparent
                             )
                         ),
@@ -116,7 +116,7 @@ fun AssetSheet(
                     title,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.ExtraBold,
-                    color = ExpressiveColors.OnSurface
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -152,14 +152,14 @@ fun AssetSheet(
                 ExposedDropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
-                    containerColor = ExpressiveColors.SurfaceContainer
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
                 ) {
                     options.forEach { option ->
                         DropdownMenuItem(
                             text = {
                                 Text(
                                     option.label,
-                                    color = ExpressiveColors.OnSurface
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             },
                             onClick = {
@@ -231,7 +231,7 @@ fun AssetSheet(
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = ExpressiveColors.PrimaryStart,
+                    containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = Color.Black
                 )
             ) {

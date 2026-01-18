@@ -1,9 +1,6 @@
 package dev.sebastianrn.portfolioapp.ui.screens
 
 import AnimatedFloatingActionButton
-import PortfolioChartCard
-import PortfolioTopBar
-import QuickStatsRow
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -34,8 +31,10 @@ import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.ui.components.AnimatedHoldingCard
 import dev.sebastianrn.portfolioapp.ui.components.AssetSheet
-import dev.sebastianrn.portfolioapp.ui.components.ExpressiveColors
+import dev.sebastianrn.portfolioapp.ui.components.PortfolioChartCard
 import dev.sebastianrn.portfolioapp.ui.components.PortfolioHeader
+import dev.sebastianrn.portfolioapp.ui.components.PortfolioTopBar
+import dev.sebastianrn.portfolioapp.ui.components.QuickStatsRow
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,7 +64,7 @@ fun MainScreen(
     )
 
     Scaffold(
-        containerColor = ExpressiveColors.SurfaceContainer,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             PortfolioTopBar(
                 viewModel = viewModel,
@@ -113,7 +112,7 @@ fun MainScreen(
                     text = stringResource(R.string.your_assets),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = ExpressiveColors.OnSurface,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(top = 8.dp)
                 )
             }
@@ -150,7 +149,7 @@ fun MainScreen(
     DropdownMenu(
         expanded = showMenu,
         onDismissRequest = { showMenu = false },
-        containerColor = ExpressiveColors.SurfaceHigh
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         // Your existing menu items
     }

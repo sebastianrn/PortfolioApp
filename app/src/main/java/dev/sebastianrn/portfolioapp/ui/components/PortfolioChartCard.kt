@@ -1,3 +1,5 @@
+package dev.sebastianrn.portfolioapp.ui.components
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,8 +22,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.R
-import dev.sebastianrn.portfolioapp.ui.components.ExpressiveColors
-import dev.sebastianrn.portfolioapp.ui.components.PortfolioChart
 
 @Composable
 fun PortfolioChartCard(
@@ -33,7 +33,7 @@ fun PortfolioChartCard(
             .height(320.dp),
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
-            containerColor = ExpressiveColors.SurfaceHigh
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
@@ -46,7 +46,7 @@ fun PortfolioChartCard(
                 text = stringResource(R.string.performance_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = ExpressiveColors.OnSurface
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -57,7 +57,7 @@ fun PortfolioChartCard(
                     PortfolioChart(
                         points = points,
                         showTimeRangeSelector = true,
-                        goldColor = ExpressiveColors.PrimaryStart
+                        goldColor = MaterialTheme.colorScheme.primary
                     )
                 } else {
                     Box(
@@ -66,7 +66,7 @@ fun PortfolioChartCard(
                             .background(
                                 Brush.verticalGradient(
                                     colors = listOf(
-                                        ExpressiveColors.PrimaryStart.copy(alpha = 0.1f),
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                                         Color.Transparent
                                     )
                                 ),
@@ -76,7 +76,7 @@ fun PortfolioChartCard(
                     ) {
                         Text(
                             stringResource(R.string.empty_assets_list),
-                            color = ExpressiveColors.OnSurface.copy(alpha = 0.5f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                         )
                     }
                 }

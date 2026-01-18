@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -20,7 +21,6 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import dev.sebastianrn.portfolioapp.ui.components.ExpressiveColors
 
 @Composable
 fun AnimatedFloatingActionButton(
@@ -38,7 +38,7 @@ fun AnimatedFloatingActionButton(
 
     FloatingActionButton(
         onClick = onClick,
-        containerColor = ExpressiveColors.PrimaryStart,
+        containerColor = MaterialTheme.colorScheme.primary,
         contentColor = Color.Black,
         shape = RoundedCornerShape(16.dp)
     ) {
@@ -56,7 +56,7 @@ fun AnimatedFloatingActionButton(
                         Brush.sweepGradient(
                             colors = listOf(
                                 Color.Transparent,
-                                ExpressiveColors.SecondaryGradient.copy(alpha = 0.3f),
+                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f),
                                 Color.Transparent
                             )
                         ),

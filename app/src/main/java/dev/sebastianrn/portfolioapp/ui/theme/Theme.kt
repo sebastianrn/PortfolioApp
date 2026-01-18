@@ -9,29 +9,26 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// Map Dark Colors to M3 Slots
 private val DarkColorScheme = darkColorScheme(
     primary = GoldStart,
     background = PremiumBlack,
-    surface = Charcoal,          // Card Background
-    surfaceVariant = SurfaceGray,// Secondary Cards
+    surface = Charcoal,
+    surfaceVariant = SurfaceGray,
     onBackground = TextWhite,
     onSurface = TextWhite,
     onSurfaceVariant = TextGray
 )
 
-// Map Light Colors to M3 Slots
 private val LightColorScheme = lightColorScheme(
     primary = GoldStart,
     background = LuxuryCream,
-    surface = PearlWhite,        // Card Background
-    surfaceVariant = SoftBeige,  // Secondary Cards
+    surface = PearlWhite,
+    surfaceVariant = SoftBeige,
     onBackground = TextBlack,
     onSurface = TextBlack,
     onSurfaceVariant = TextDarkGray
 )
 
-// Add this new color scheme
 private val ExpressiveColorScheme = darkColorScheme(
     primary = ExpressivePrimaryStart,
     secondary = ExpressiveSecondary,
@@ -47,8 +44,8 @@ private val ExpressiveColorScheme = darkColorScheme(
 
 @Composable
 fun PortfolioAppTheme(
-    darkTheme: Boolean = true, // We will pass this dynamically
-    expressiveMode: Boolean = true, // Add this parameter
+    darkTheme: Boolean = true,
+    expressiveMode: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

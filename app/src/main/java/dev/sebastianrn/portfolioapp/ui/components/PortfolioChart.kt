@@ -69,7 +69,7 @@ enum class TimeRange(val label: String, val days: Int) {
 fun PortfolioChart(
     points: List<Pair<Long, Double>>,
     showTimeRangeSelector: Boolean = true,
-    goldColor: Color = Color(0xFFFFD700)
+    goldColor: Color = MaterialTheme.colorScheme.primary
 ) {
     if (points.isEmpty()) return
 
@@ -150,6 +150,7 @@ private fun EnhancedVicoChart(
     goldColor: Color
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
+    val onSurface = MaterialTheme.colorScheme.onSurface
 
     LaunchedEffect(points) {
         modelProducer.runTransaction {
@@ -205,7 +206,7 @@ private fun EnhancedVicoChart(
 
     // Enhanced axis labels
     val axisLabelComponent = rememberAxisLabelComponent(
-        color = Color.White.copy(alpha = 0.85f),
+        color = onSurface.copy(alpha = 0.85f),
         textSize = 11.sp
     )
 
@@ -309,7 +310,7 @@ private fun EnhancedVicoChart(
                 valueFormatter = yAxisValueFormatter,
                 label = axisLabelComponent,
                 guideline = rememberLineComponent(
-                    fill = fill(Color.White.copy(alpha = 0.15f)),
+                    fill = fill(onSurface.copy(alpha = 0.15f)),
                     thickness = 0.5.dp
                 )
             ),
@@ -360,8 +361,8 @@ private fun TimeRangeChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val goldColor = Color(0xFFFFD700)
-    val backgroundColor = Color(0xFF1A1A1A)
+    val goldColor = MaterialTheme.colorScheme.primary
+    val backgroundColor = MaterialTheme.colorScheme.background
 
     Surface(
         onClick = onClick,
@@ -377,7 +378,7 @@ private fun TimeRangeChip(
                 text = label,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (selected) Color.Black else Color.White.copy(alpha = 0.7f)
+                color = if (selected) Color.Black else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
             )
         }
     }

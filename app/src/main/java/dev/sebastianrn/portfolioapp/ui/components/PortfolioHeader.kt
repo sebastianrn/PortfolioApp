@@ -73,7 +73,7 @@ fun PortfolioHeader(
             .scale(scale),
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
-            containerColor = ExpressiveColors.SurfaceHigh
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
@@ -83,7 +83,7 @@ fun PortfolioHeader(
                 .background(
                     Brush.linearGradient(
                         colors = listOf(
-                            ExpressiveColors.PrimaryStart.copy(alpha = 0.15f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                             Color.Transparent
                         )
                     )
@@ -103,7 +103,7 @@ fun PortfolioHeader(
                         Text(
                             text = stringResource(R.string.total_portfolio_value),
                             style = MaterialTheme.typography.titleMedium,
-                            color = ExpressiveColors.OnSurface.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                             fontWeight = FontWeight.Medium
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -111,7 +111,7 @@ fun PortfolioHeader(
                             text = "CHF ${NumberFormat.getInstance(Locale.GERMAN).format(totalValue)}",
                             style = MaterialTheme.typography.displaySmall,
                             fontWeight = FontWeight.ExtraBold,
-                            color = ExpressiveColors.OnSurface,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 40.sp
                         )
                     }
@@ -124,9 +124,9 @@ fun PortfolioHeader(
                             .clip(CircleShape)
                             .background(
                                 if (isPositive)
-                                    ExpressiveColors.TertiaryAccent.copy(alpha = shimmerAlpha)
+                                    MaterialTheme.colorScheme.tertiary.copy(alpha = shimmerAlpha)
                                 else
-                                    ExpressiveColors.ErrorAccent.copy(alpha = shimmerAlpha)
+                                    MaterialTheme.colorScheme.error.copy(alpha = shimmerAlpha)
                             ),
                         contentAlignment = Alignment.Center
                     ) {
@@ -151,9 +151,9 @@ fun PortfolioHeader(
                     Surface(
                         shape = RoundedCornerShape(16.dp),
                         color = if (isPositive)
-                            ExpressiveColors.TertiaryAccent.copy(alpha = 0.2f)
+                            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
                         else
-                            ExpressiveColors.ErrorAccent.copy(alpha = 0.2f),
+                            MaterialTheme.colorScheme.error.copy(alpha = 0.2f),
                         modifier = Modifier.animateContentSize()
                     ) {
                         Row(
@@ -163,7 +163,7 @@ fun PortfolioHeader(
                             Icon(
                                 if (isPositive) Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward,
                                 contentDescription = null,
-                                tint = if (isPositive) ExpressiveColors.TertiaryAccent else ExpressiveColors.ErrorAccent,
+                                tint = if (isPositive) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -171,13 +171,13 @@ fun PortfolioHeader(
                                 text = "CHF ${NumberFormat.getInstance(Locale.GERMAN).format(abs(dailyChange))} (${String.format("%.2f", abs(dailyChangePercent))}%)",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isPositive) ExpressiveColors.TertiaryAccent else ExpressiveColors.ErrorAccent
+                                color = if (isPositive) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "today",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = ExpressiveColors.OnSurface.copy(alpha = 0.6f)
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                             )
                         }
                     }
@@ -186,9 +186,9 @@ fun PortfolioHeader(
                     Surface(
                         shape = RoundedCornerShape(16.dp),
                         color = if (isTotalPositive)
-                            ExpressiveColors.TertiaryAccent.copy(alpha = 0.2f)
+                            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
                         else
-                            ExpressiveColors.ErrorAccent.copy(alpha = 0.2f),
+                            MaterialTheme.colorScheme.error.copy(alpha = 0.2f),
                         modifier = Modifier.animateContentSize()
                     ) {
                         Row(
@@ -198,7 +198,7 @@ fun PortfolioHeader(
                             Icon(
                                 if (isTotalPositive) Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward,
                                 contentDescription = null,
-                                tint = if (isTotalPositive) ExpressiveColors.TertiaryAccent else ExpressiveColors.ErrorAccent,
+                                tint = if (isTotalPositive) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -206,13 +206,13 @@ fun PortfolioHeader(
                                 text = "CHF ${NumberFormat.getInstance(Locale.GERMAN).format(abs(totalProfit))} (${String.format("%.2f", abs(totalProfitPercent))}%)",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isTotalPositive) ExpressiveColors.TertiaryAccent else ExpressiveColors.ErrorAccent
+                                color = if (isTotalPositive) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "total",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = ExpressiveColors.OnSurface.copy(alpha = 0.6f)
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                             )
                         }
                     }

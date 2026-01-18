@@ -1,3 +1,5 @@
+package dev.sebastianrn.portfolioapp.ui.components
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,7 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import dev.sebastianrn.portfolioapp.ui.components.ExpressiveColors
 import dev.sebastianrn.portfolioapp.util.formatCurrency
 
 @Composable
@@ -39,14 +40,14 @@ fun QuickStatsRow(
             icon = Icons.Outlined.TrendingUp,
             label = "Total Profit",
             value = overallProfitLoss.formatCurrency(),
-            color = ExpressiveColors.TertiaryAccent,
+            color = MaterialTheme.colorScheme.tertiary,
             modifier = Modifier.weight(1f)
         )
         QuickStatCard(
             icon = Icons.Outlined.Paid,
             label = "Invested",
             value = totalInvested.formatCurrency(),
-            color = ExpressiveColors.SecondaryGradient,
+            color = MaterialTheme.colorScheme.secondary,
             modifier = Modifier.weight(1f)
         )
     }
@@ -64,7 +65,7 @@ fun QuickStatCard(
         modifier = modifier.height(100.dp),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = ExpressiveColors.SurfaceHigh
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Column(
@@ -84,12 +85,12 @@ fun QuickStatCard(
                     text = value,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = ExpressiveColors.OnSurface
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = label,
                     style = MaterialTheme.typography.bodySmall,
-                    color = ExpressiveColors.OnSurface.copy(alpha = 0.6f)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
             }
         }

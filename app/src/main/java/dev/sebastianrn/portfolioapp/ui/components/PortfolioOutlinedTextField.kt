@@ -38,27 +38,27 @@ fun PortfolioOutlinedTextField(
                 )
             },
             placeholder = if (placeholder.isNotEmpty()) {
-                { Text(placeholder, color = ExpressiveColors.OnSurface.copy(alpha = 0.4f)) }
+                { Text(placeholder, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) }
             } else null,
             isError = isError,
             singleLine = true,
             readOnly = readOnly,
             trailingIcon = trailingIcon,
             suffix = if (suffix != null) {
-                { Text(suffix, color = ExpressiveColors.OnSurface.copy(alpha = 0.6f)) }
+                { Text(suffix, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)) }
             } else null,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = ExpressiveColors.PrimaryStart,
-                unfocusedBorderColor = ExpressiveColors.OnSurface.copy(alpha = 0.3f),
-                focusedTextColor = ExpressiveColors.OnSurface,
-                unfocusedTextColor = ExpressiveColors.OnSurface,
-                cursorColor = ExpressiveColors.PrimaryStart,
-                focusedLabelColor = ExpressiveColors.PrimaryStart,
-                unfocusedLabelColor = ExpressiveColors.OnSurface.copy(alpha = 0.6f),
-                errorBorderColor = ExpressiveColors.ErrorAccent,
-                errorLabelColor = ExpressiveColors.ErrorAccent,
-                errorCursorColor = ExpressiveColors.ErrorAccent,
-                errorTextColor = ExpressiveColors.OnSurface
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = MaterialTheme.colorScheme.primary,
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                errorBorderColor = MaterialTheme.colorScheme.error,
+                errorLabelColor = MaterialTheme.colorScheme.error,
+                errorCursorColor = MaterialTheme.colorScheme.error,
+                errorTextColor = MaterialTheme.colorScheme.onSurface
             ),
             shape = RoundedCornerShape(16.dp),
             textStyle = MaterialTheme.typography.bodyLarge.copy(
@@ -70,7 +70,7 @@ fun PortfolioOutlinedTextField(
         if (isError && !errorMessage.isNullOrBlank()) {
             Text(
                 text = errorMessage,
-                color = ExpressiveColors.ErrorAccent,
+                color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(start = 16.dp, top = 4.dp)
             )

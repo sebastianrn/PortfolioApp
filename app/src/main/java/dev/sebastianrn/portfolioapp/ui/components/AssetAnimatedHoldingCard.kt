@@ -57,7 +57,7 @@ fun AnimatedHoldingCard(
             .animateContentSize(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = ExpressiveColors.SurfaceHigh
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Column(
@@ -80,9 +80,9 @@ fun AnimatedHoldingCard(
                             .clip(CircleShape)
                             .background(
                                 if (asset.type == AssetType.COIN)
-                                    ExpressiveColors.PrimaryStart.copy(alpha = 0.2f)
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                                 else
-                                    ExpressiveColors.SecondaryGradient.copy(alpha = 0.2f)
+                                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)
                             ),
                         contentAlignment = Alignment.Center
                     ) {
@@ -91,9 +91,9 @@ fun AnimatedHoldingCard(
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = if (asset.type == AssetType.COIN)
-                                ExpressiveColors.PrimaryStart
+                                MaterialTheme.colorScheme.primary
                             else
-                                ExpressiveColors.SecondaryGradient
+                                MaterialTheme.colorScheme.secondary
                         )
                     }
 
@@ -102,12 +102,12 @@ fun AnimatedHoldingCard(
                             text = asset.name,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = ExpressiveColors.OnSurface
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "${asset.type.name} • ${asset.quantity} units",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = ExpressiveColors.OnSurface.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     }
                 }
@@ -117,21 +117,21 @@ fun AnimatedHoldingCard(
                         text = asset.totalCurrentValue.formatCurrency(),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = ExpressiveColors.OnSurface
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Surface(
                         shape = RoundedCornerShape(8.dp),
                         color = if (isPositive)
-                            ExpressiveColors.TertiaryAccent.copy(alpha = 0.2f)
+                            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
                         else
-                            ExpressiveColors.ErrorAccent.copy(alpha = 0.2f)
+                            MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
                     ) {
                         Text(
                             text = "${if (isPositive) "+" else ""}${String.format("%.2f", changePercent)}%",
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
-                            color = if (isPositive) ExpressiveColors.TertiaryAccent else ExpressiveColors.ErrorAccent
+                            color = if (isPositive) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
                         )
                     }
                 }
@@ -146,7 +146,7 @@ fun AnimatedHoldingCard(
                     modifier = Modifier.padding(top = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    HorizontalDivider(color = ExpressiveColors.OnSurface.copy(alpha = 0.1f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
                     Spacer(modifier = Modifier.height(8.dp))
                     HoldingDetailRow("Quantity", "${asset.quantity} units")
                     HoldingDetailRow("Weight", "${asset.weightInGrams}g")

@@ -1,3 +1,5 @@
+package dev.sebastianrn.portfolioapp.ui.components
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -43,8 +45,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.R
-import dev.sebastianrn.portfolioapp.ui.components.ExpressiveColors
-import dev.sebastianrn.portfolioapp.ui.components.PortfolioOutlinedTextField
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -86,7 +86,7 @@ fun EditHistorySheet(
                 }) {
                     Text(
                         stringResource(R.string.ok_action),
-                        color = ExpressiveColors.PrimaryStart
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             },
@@ -94,21 +94,21 @@ fun EditHistorySheet(
                 TextButton(onClick = { showDatePicker = false }) {
                     Text(
                         stringResource(R.string.cancel_action),
-                        color = ExpressiveColors.OnSurface.copy(alpha = 0.6f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 }
             },
             colors = DatePickerDefaults.colors(
-                containerColor = ExpressiveColors.SurfaceHigh
+                containerColor = MaterialTheme.colorScheme.surface
             )
         ) {
             DatePicker(
                 state = datePickerState,
                 colors = DatePickerDefaults.colors(
-                    containerColor = ExpressiveColors.SurfaceHigh,
-                    selectedDayContainerColor = ExpressiveColors.PrimaryStart,
-                    todayContentColor = ExpressiveColors.PrimaryStart,
-                    todayDateBorderColor = ExpressiveColors.PrimaryStart
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    selectedDayContainerColor = MaterialTheme.colorScheme.primary,
+                    todayContentColor = MaterialTheme.colorScheme.primary,
+                    todayDateBorderColor = MaterialTheme.colorScheme.primary
                 )
             )
         }
@@ -117,8 +117,8 @@ fun EditHistorySheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = ExpressiveColors.SurfaceHigh,
-        contentColor = ExpressiveColors.OnSurface
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface
     ) {
         Column(
             modifier = Modifier
@@ -136,7 +136,7 @@ fun EditHistorySheet(
                     .background(
                         Brush.linearGradient(
                             colors = listOf(
-                                ExpressiveColors.PrimaryStart.copy(alpha = 0.15f),
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                                 Color.Transparent
                             )
                         ),
@@ -149,7 +149,7 @@ fun EditHistorySheet(
                     text = if (isEditMode) "Edit Record" else stringResource(R.string.update_value_title),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.ExtraBold,
-                    color = ExpressiveColors.OnSurface
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -166,7 +166,7 @@ fun EditHistorySheet(
                         Icon(
                             Icons.Filled.DateRange,
                             contentDescription = null,
-                            tint = ExpressiveColors.PrimaryStart
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 )
@@ -224,7 +224,7 @@ fun EditHistorySheet(
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = ExpressiveColors.PrimaryStart,
+                    containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = Color.Black
                 )
             ) {

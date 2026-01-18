@@ -1,3 +1,5 @@
+package dev.sebastianrn.portfolioapp.ui.components
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,7 +29,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.R
-import dev.sebastianrn.portfolioapp.ui.components.ExpressiveColors
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,8 +47,8 @@ fun PortfolioTopBar(
                         .background(
                             Brush.linearGradient(
                                 colors = listOf(
-                                    ExpressiveColors.PrimaryStart,
-                                    ExpressiveColors.SecondaryGradient
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.secondary
                                 )
                             )
                         ),
@@ -70,7 +71,7 @@ fun PortfolioTopBar(
                     Text(
                         "Portfolio Dashboard",
                         style = MaterialTheme.typography.bodySmall,
-                        color = ExpressiveColors.PrimaryStart
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -88,9 +89,9 @@ fun PortfolioTopBar(
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = ExpressiveColors.SurfaceHigh,
-            titleContentColor = ExpressiveColors.OnSurface,
-            actionIconContentColor = ExpressiveColors.OnSurface
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            actionIconContentColor = MaterialTheme.colorScheme.onSurface
         )
     )
 }
