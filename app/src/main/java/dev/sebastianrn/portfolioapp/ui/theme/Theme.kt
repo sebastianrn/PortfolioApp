@@ -72,8 +72,8 @@ fun PortfolioAppTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = ModernTypography,
-        shapes = ModernShapes,
+        typography = Typography,
+        shapes = Shapes,
         content = content
     )
 }

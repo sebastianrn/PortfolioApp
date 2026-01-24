@@ -3,16 +3,11 @@ package dev.sebastianrn.portfolioapp.ui.components
 import android.text.Layout
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,7 +18,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
@@ -49,21 +43,10 @@ import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.core.cartesian.marker.DefaultCartesianMarker
 import com.patrykandpatrick.vico.core.cartesian.marker.LineCartesianLayerMarkerTarget
 import com.patrykandpatrick.vico.core.common.shader.ShaderProvider
-import java.text.NumberFormat
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
-import kotlin.math.roundToInt
-
-// Time range enum
-enum class TimeRange(val label: String, val days: Int) {
-    ONE_WEEK("1W", 7),
-    ONE_MONTH("1M", 30),
-    SIX_MONTHS("6M", 180),
-    ONE_YEAR("1Y", 365),
-    ALL("ALL", Int.MAX_VALUE)
-}
+import dev.sebastianrn.portfolioapp.ui.components.chart.ChartDataProcessor
+import dev.sebastianrn.portfolioapp.ui.components.chart.ChartFormatters
+import dev.sebastianrn.portfolioapp.ui.components.chart.TimeRange
+import dev.sebastianrn.portfolioapp.ui.components.chart.TimeRangeSelector
 
 @Composable
 fun PortfolioChart(
@@ -73,81 +56,37 @@ fun PortfolioChart(
 ) {
     if (points.isEmpty()) return
 
-    // State for selected time range
     var selectedRange by remember { mutableStateOf(TimeRange.ONE_MONTH) }
 
-    // Filter points based on selected time range
     val filteredPoints = remember(points, selectedRange) {
-        if (points.isEmpty()) return@remember emptyList()
-
-        val cutoffTime = if (selectedRange == TimeRange.ALL) {
-            0L
-        } else {
-            System.currentTimeMillis() - (selectedRange.days * 24 * 60 * 60 * 1000L)
-        }
-
-        val filtered = points.filter { it.first >= cutoffTime }
-
-        // Process to ensure only one data point per day (take the last one)
-        val calendar = Calendar.getInstance()
-        filtered.groupBy { (timestamp, _) ->
-            calendar.timeInMillis = timestamp
-            "${calendar.get(Calendar.YEAR)}-${calendar.get(Calendar.MONTH)}-${calendar.get(Calendar.DAY_OF_MONTH)}"
-        }.map { (_, dayPoints) ->
-            dayPoints.maxByOrNull { it.first }!!
-        }.sortedBy { it.first }
+        ChartDataProcessor.filterPointsByTimeRange(points, selectedRange)
     }
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        // Time Range Selector
         if (showTimeRangeSelector && points.isNotEmpty()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 12.dp, start = 12.dp, end = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                TimeRange.entries.forEach { range ->
-                    TimeRangeChip(
-                        label = range.label,
-                        selected = selectedRange == range,
-                        onClick = { selectedRange = range },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
+            TimeRangeSelector(
+                selectedRange = selectedRange,
+                onRangeSelected = { selectedRange = it }
+            )
         }
 
-        // Chart
         if (filteredPoints.isNotEmpty()) {
-            EnhancedVicoChart(
+            VicoLineChart(
                 points = filteredPoints,
                 timeRange = selectedRange,
-                goldColor = goldColor
+                chartColor = goldColor
             )
         } else {
-            // Empty state
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    "No data available for this period",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = goldColor.copy(alpha = 0.5f)
-                )
-            }
+            EmptyChartState(color = goldColor)
         }
     }
 }
 
 @Composable
-private fun EnhancedVicoChart(
+private fun VicoLineChart(
     points: List<Pair<Long, Double>>,
     timeRange: TimeRange,
-    goldColor: Color
+    chartColor: Color
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
     val onSurface = MaterialTheme.colorScheme.onSurface
@@ -163,145 +102,57 @@ private fun EnhancedVicoChart(
         }
     }
 
-    // Calculate dynamic Y-axis range based on the data points
     val yAxisRange = remember(points, timeRange) {
-        if (points.isEmpty()) {
-            0.0 to 100.0
-        } else {
-            val values = points.map { it.second }
-            val minValue = values.minOrNull() ?: 0.0
-            val maxValue = values.maxOrNull() ?: 100.0
-            val range = maxValue - minValue
-
-            // Add padding: 5% below min and 5% above max for better visualization
-            // For shorter time ranges, use tighter padding to emphasize value changes
-            val paddingFactor = when (timeRange) {
-                TimeRange.ONE_WEEK -> 0.10  // 10% padding for weekly view (more zoomed in)
-                TimeRange.ONE_MONTH -> 0.08 // 8% padding for monthly view
-                TimeRange.SIX_MONTHS -> 0.05 // 5% padding
-                TimeRange.ONE_YEAR, TimeRange.ALL -> 0.03 // 3% padding for longer views
-            }
-
-            val padding = range * paddingFactor
-            // Ensure minimum range of at least 1% of the average value to avoid flat lines
-            val minRange = ((minValue + maxValue) / 2) * 0.01
-            val adjustedPadding = maxOf(padding, minRange / 2)
-
-            val adjustedMin = maxOf(0.0, minValue - adjustedPadding) // Y-axis min shouldn't go below 0
-            val adjustedMax = maxValue + adjustedPadding
-
-            adjustedMin to adjustedMax
-        }
+        ChartDataProcessor.calculateYAxisRange(points, timeRange)
     }
 
-    // Date formatter based on time range
     val dateFormatter = remember(timeRange) {
-        when (timeRange) {
-            TimeRange.ONE_WEEK -> SimpleDateFormat("EEE", Locale.getDefault()) // Mon, Tue
-            TimeRange.ONE_MONTH -> SimpleDateFormat("MMM dd", Locale.getDefault()) // Jan 15
-            TimeRange.SIX_MONTHS -> SimpleDateFormat("MMM dd", Locale.getDefault())
-            TimeRange.ONE_YEAR, TimeRange.ALL -> SimpleDateFormat("MMM yy", Locale.getDefault()) // Jan 25
-        }
+        ChartDataProcessor.getDateFormatter(timeRange)
     }
 
-    // Enhanced axis labels
     val axisLabelComponent = rememberAxisLabelComponent(
         color = onSurface.copy(alpha = 0.85f),
         textSize = 11.sp
     )
 
-    // Larger indicator with glow
-    val indicatorComponent = rememberLineComponent(
-        fill = fill(goldColor),
-        thickness = 16.dp,
-        strokeFill = fill(goldColor.copy(alpha = 0.3f)),
-        strokeThickness = 10.dp
-    )
-
-    // Visible guideline
-    val guidelineComponent = rememberLineComponent(
-        fill = fill(goldColor.copy(alpha = 0.6f)),
-        thickness = 2.dp
-    )
-
-    // Enhanced label
-    val labelComponent = rememberTextComponent(
-        color = goldColor,
-        textSize = 13.sp,
-        lineCount = 2,
-        textAlignment = Layout.Alignment.ALIGN_CENTER
-    )
-
-    val yAxisFormatter = { value: Double ->
-        when {
-            value >= 1_000_000 -> "${(value / 1_000_000).roundToInt()}M"
-            value >= 1_000 -> "${(value / 1_000).roundToInt()}k"
-            else -> value.toInt().toString()
-        }
-    }
-
     val yAxisValueFormatter = remember {
-        CartesianValueFormatter { _, value, _ -> yAxisFormatter(value) }
-    }
-
-    val markerYValueFormatter = { value: Double ->
-        val formatted = NumberFormat.getInstance(Locale.GERMAN).format(value.roundToInt())
-        "CHF $formatted"
+        CartesianValueFormatter { _, value, _ ->
+            ChartFormatters.formatYAxisValue(value)
+        }
     }
 
     val getFormattedDate = { value: Double ->
-        val index = value.toInt()
-        if (index in points.indices) {
-            dateFormatter.format(Date(points[index].first))
-        } else {
-            "–"
-        }
+        ChartFormatters.formatMarkerDate(value.toInt(), points, dateFormatter)
     }
 
-    val marker = rememberDefaultCartesianMarker(
-        label = labelComponent,
-        labelPosition = DefaultCartesianMarker.LabelPosition.Top,
-        indicator = { indicatorComponent },
-        indicatorSize = 14.dp,
-        guideline = guidelineComponent,
-        valueFormatter = { _, targets ->
-            val lineTarget = targets.firstOrNull() as? LineCartesianLayerMarkerTarget
-            val entry = lineTarget?.points?.firstOrNull()?.entry
-            if (entry != null) {
-                val dateStr = getFormattedDate(entry.x)
-                val valueStr = markerYValueFormatter(entry.y)
-                "$dateStr\n$valueStr"
-            } else {
-                "no data"
-            }
-        }
+    val marker = rememberChartMarker(
+        chartColor = chartColor,
+        points = points,
+        getFormattedDate = getFormattedDate
     )
 
-    // Enhanced 4-color gradient
     val gradientColors = arrayOf(
-        goldColor.copy(alpha = 0.7f),
-        goldColor.copy(alpha = 0.5f),
-        goldColor.copy(alpha = 0.25f),
+        chartColor.copy(alpha = 0.7f),
+        chartColor.copy(alpha = 0.5f),
+        chartColor.copy(alpha = 0.25f),
         Color.Transparent
     )
 
     CartesianChartHost(
         chart = rememberCartesianChart(
             rememberLineCartesianLayer(
-                rangeProvider = remember(yAxisRange) { 
+                rangeProvider = remember(yAxisRange) {
                     CartesianLayerRangeProvider.fixed(
                         minX = 0.0,
                         minY = yAxisRange.first,
                         maxY = yAxisRange.second
-                    ) 
+                    )
                 },
                 lineProvider = LineCartesianLayer.LineProvider.series(
                     LineCartesianLayer.Line(
-                        fill = LineCartesianLayer.LineFill.single(fill(goldColor)),
+                        fill = LineCartesianLayer.LineFill.single(fill(chartColor)),
                         areaFill = LineCartesianLayer.AreaFill.single(
-                            fill(
-                                ShaderProvider.verticalGradient(gradientColors)
-                            )
+                            fill(ShaderProvider.verticalGradient(gradientColors))
                         )
                     )
                 )
@@ -319,12 +170,7 @@ private fun EnhancedVicoChart(
                 label = axisLabelComponent,
                 guideline = null,
                 itemPlacer = remember(points, timeRange) {
-                    // Adjust spacing based on data points
-                    val spacing = when {
-                        points.size <= 7 -> 1 // Show all labels for week view
-                        points.size <= 30 -> maxOf(1, points.size / 6)
-                        else -> maxOf(1, points.size / 5)
-                    }
+                    val spacing = ChartDataProcessor.calculateAxisLabelSpacing(points.size)
                     HorizontalAxis.ItemPlacer.aligned(
                         spacing = { spacing },
                         addExtremeLabelPadding = true
@@ -355,31 +201,62 @@ private fun EnhancedVicoChart(
 }
 
 @Composable
-private fun TimeRangeChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val goldColor = MaterialTheme.colorScheme.primary
-    val backgroundColor = MaterialTheme.colorScheme.background
+private fun rememberChartMarker(
+    chartColor: Color,
+    points: List<Pair<Long, Double>>,
+    getFormattedDate: (Double) -> String
+): DefaultCartesianMarker {
+    val indicatorComponent = rememberLineComponent(
+        fill = fill(chartColor),
+        thickness = 16.dp,
+        strokeFill = fill(chartColor.copy(alpha = 0.3f)),
+        strokeThickness = 10.dp
+    )
 
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
-        color = if (selected) goldColor else backgroundColor,
-        modifier = modifier
-    ) {
-        Box(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (selected) Color.Black else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-            )
+    val guidelineComponent = rememberLineComponent(
+        fill = fill(chartColor.copy(alpha = 0.6f)),
+        thickness = 2.dp
+    )
+
+    val labelComponent = rememberTextComponent(
+        color = chartColor,
+        textSize = 13.sp,
+        lineCount = 2,
+        textAlignment = Layout.Alignment.ALIGN_CENTER
+    )
+
+    return rememberDefaultCartesianMarker(
+        label = labelComponent,
+        labelPosition = DefaultCartesianMarker.LabelPosition.Top,
+        indicator = { indicatorComponent },
+        indicatorSize = 14.dp,
+        guideline = guidelineComponent,
+        valueFormatter = { _, targets ->
+            val lineTarget = targets.firstOrNull() as? LineCartesianLayerMarkerTarget
+            val entry = lineTarget?.points?.firstOrNull()?.entry
+            if (entry != null) {
+                val dateStr = getFormattedDate(entry.x)
+                val valueStr = ChartFormatters.formatMarkerValue(entry.y)
+                "$dateStr\n$valueStr"
+            } else {
+                "no data"
+            }
         }
+    )
+}
+
+@Composable
+private fun EmptyChartState(color: Color) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            "No data available for this period",
+            style = MaterialTheme.typography.bodyMedium,
+            color = color.copy(alpha = 0.5f)
+        )
     }
 }
