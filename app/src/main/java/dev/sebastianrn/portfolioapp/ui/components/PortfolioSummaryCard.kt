@@ -1,12 +1,25 @@
 package dev.sebastianrn.portfolioapp.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.TrendingDown
-import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -14,7 +27,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import java.text.NumberFormat
 import java.util.Locale
 import kotlin.math.abs
@@ -100,30 +112,26 @@ fun PortfolioSummaryCard(
                         label = "Total Gain",
                         value = totalProfit,
                         percentage = profitPercent,
-                        isPositive = isPositive
+                        neutralColorNeeded = false,
+                        isPositive = isPositive,
+                        alignment = Alignment.Start
                     )
 
-                    // Invested
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "Invested",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            "CHF ${numberFormat.format(totalInvested.toInt())}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+                    GainStatItem(
+                        label = "Invested",
+                        value = totalInvested,
+                        percentage = null,
+                        neutralColorNeeded = true,
+                        isPositive = isPositive,
+                        alignment = Alignment.CenterHorizontally
+                    )
 
                     // Today
                     GainStatItem(
                         label = "Today",
                         value = dailyChange,
                         percentage = dailyChangePercent,
+                        neutralColorNeeded = false,
                         isPositive = isDailyPositive,
                         alignment = Alignment.End
                     )
@@ -137,17 +145,20 @@ fun PortfolioSummaryCard(
 private fun GainStatItem(
     label: String,
     value: Double,
-    percentage: Double,
-    isPositive: Boolean,
-    alignment: Alignment.Horizontal = Alignment.Start
+    percentage: Double?,
+    neutralColorNeeded: Boolean,
+    isPositive: Boolean?,
+    alignment: Alignment.Horizontal
 ) {
-    val color = if (isPositive) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
+    val color =
+        if (neutralColorNeeded) MaterialTheme.colorScheme.onSurface
+        else if (isPositive!!) MaterialTheme.colorScheme.secondary
+        else MaterialTheme.colorScheme.error
 
     Column(horizontalAlignment = alignment) {
         Text(
             label,
             style = MaterialTheme.typography.bodySmall,
-            fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
@@ -156,27 +167,28 @@ private fun GainStatItem(
             fontWeight = FontWeight.SemiBold,
             color = color
         )
-        Surface(
-            shape = MaterialTheme.shapes.small,
-            color = color.copy(alpha = 0.15f)
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
+        if (percentage != null) {
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = color.copy(alpha = 0.15f)
             ) {
-                Icon(
-                    if (isPositive) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
-                    contentDescription = null,
-                    modifier = Modifier.size(12.dp),
-                    tint = color
-                )
-                Text(
-                    "${String.format("%.1f", abs(percentage))}%",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = color
-                )
+                Row(
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Icon(
+                        if (isPositive!!) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
+                        contentDescription = null,
+                        tint = color
+                    )
+                    Text(
+                        "${String.format("%.1f", abs(percentage))}%",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = color
+                    )
+                }
             }
         }
     }
