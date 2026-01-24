@@ -104,7 +104,7 @@ fun PortfolioChart(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 12.dp),
+                    .padding(bottom = 12.dp, start = 12.dp, end = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 TimeRange.entries.forEach { range ->

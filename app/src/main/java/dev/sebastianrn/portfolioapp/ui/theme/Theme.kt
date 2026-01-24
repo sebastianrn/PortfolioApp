@@ -1,78 +1,79 @@
 package dev.sebastianrn.portfolioapp.ui.theme
 
 import android.app.Activity
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = GoldStart,
-    background = PremiumBlack,
-    surface = Charcoal,
-    surfaceVariant = SurfaceGray,
-    onBackground = TextWhite,
-    onSurface = TextWhite,
-    onSurfaceVariant = TextGray
+    primary = GoldPrimary,
+    primaryContainer = GoldDark,
+    secondary = TealAccent,
+    secondaryContainer = TealGradientEnd,
+    tertiary = PurpleAccent,
+    error = CoralAccent,
+    background = SurfaceDark,
+    surface = SurfaceCardDark,
+    surfaceVariant = SurfaceElevatedDark,
+    onPrimary = Color(0xFF000000),
+    onSecondary = Color(0xFF000000),
+    onTertiary = Color(0xFFFFFFFF),
+    onBackground = TextPrimaryDark,
+    onSurface = TextPrimaryDark,
+    onSurfaceVariant = TextSecondaryDark,
+    outline = TextTertiaryDark
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = GoldStart,
-    background = LuxuryCream,
-    surface = PearlWhite,
-    surfaceVariant = SoftBeige,
-    onBackground = TextBlack,
-    onSurface = TextBlack,
-    onSurfaceVariant = TextDarkGray
-)
-
-private val ExpressiveColorScheme = darkColorScheme(
-    primary = ExpressivePrimaryStart,
-    secondary = ExpressiveSecondary,
-    tertiary = ExpressiveTertiary,
-    error = ExpressiveError,
-    background = ExpressiveSurfaceContainer,
-    surface = ExpressiveSurfaceHigh,
-    surfaceVariant = ExpressiveSurfaceContainer,
-    onBackground = ExpressiveOnSurface,
-    onSurface = ExpressiveOnSurface,
-    onSurfaceVariant = ExpressiveOnSurface.copy(alpha = 0.7f)
+    primary = GoldPrimary,
+    primaryContainer = GoldLight,
+    secondary = TealAccent,
+    secondaryContainer = TealGradientStart,
+    tertiary = PurpleAccent,
+    error = CoralAccent,
+    background = SurfaceLight,
+    surface = SurfaceCardLight,
+    surfaceVariant = SurfaceElevatedLight,
+    onPrimary = Color(0xFF000000),
+    onSecondary = Color(0xFFFFFFFF),
+    onTertiary = Color(0xFFFFFFFF),
+    onBackground = TextPrimaryLight,
+    onSurface = TextPrimaryLight,
+    onSurfaceVariant = TextSecondaryLight,
+    outline = TextTertiaryLight
 )
 
 @Composable
 fun PortfolioAppTheme(
-    darkTheme: Boolean = true,
-    expressiveMode: Boolean = true,
+    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        expressiveMode -> ExpressiveColorScheme
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
+            window.statusBarColor = colorScheme.background.toArgb()
+            window.navigationBarColor = colorScheme.background.toArgb()
+
             val insetsController = WindowCompat.getInsetsController(window, view)
-
-            // Fix Status Bar Icons (Clock, Battery, etc.)
-            // If Dark Theme -> We want Light Icons (White) -> isAppearanceLightStatusBars = false
-            // If Light Theme -> We want Dark Icons (Black) -> isAppearanceLightStatusBars = true
             insetsController.isAppearanceLightStatusBars = !darkTheme
-
-            // Fix Navigation Bar Icons (Bottom bar)
             insetsController.isAppearanceLightNavigationBars = !darkTheme
         }
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = MaterialTheme.typography,
+        typography = ModernTypography,
+        shapes = ModernShapes,
         content = content
     )
 }

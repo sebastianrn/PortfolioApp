@@ -1,56 +1,31 @@
 package dev.sebastianrn.portfolioapp.ui.screens
 
-import AssetSummaryCard
-import DetailScreemTopBar
-import PriceHistoryCard
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import dev.sebastianrn.portfolioapp.R
+import androidx.compose.ui.unit.sp
+import dev.sebastianrn.portfolioapp.data.model.GoldAsset
 import dev.sebastianrn.portfolioapp.data.model.PriceHistory
-import dev.sebastianrn.portfolioapp.ui.components.AssetSheet
-import dev.sebastianrn.portfolioapp.ui.components.EditHistorySheet
-import dev.sebastianrn.portfolioapp.ui.components.PortfolioChartCard
-import dev.sebastianrn.portfolioapp.ui.theme.ExpressiveOnSurface
-import dev.sebastianrn.portfolioapp.ui.theme.ExpressivePrimaryStart
-import dev.sebastianrn.portfolioapp.ui.theme.ExpressiveSurfaceContainer
+import dev.sebastianrn.portfolioapp.ui.components.*
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
+import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,23 +42,11 @@ fun DetailScreen(
     var showEditDialog by remember { mutableStateOf(false) }
     var historyRecordToEdit by remember { mutableStateOf<PriceHistory?>(null) }
 
-    // Shimmer animation
-    val infiniteTransition = rememberInfiniteTransition(label = "shimmer")
-    val shimmerAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 0.6f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "shimmer"
-    )
-
     Scaffold(
-        containerColor = ExpressiveSurfaceContainer,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            DetailScreemTopBar(
-                title = asset?.name ?: "No name available",
+            ModernDetailTopBar(
+                title = asset?.name ?: "",
                 onBackClick = onBackClick,
                 onEditClick = { showEditDialog = true }
             )
@@ -91,14 +54,14 @@ fun DetailScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showSheet = true },
-                containerColor = ExpressivePrimaryStart,
+                containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.Black,
-                shape = RoundedCornerShape(16.dp)
+                shape = MaterialTheme.shapes.large
             ) {
                 Icon(
                     Icons.Filled.Add,
-                    contentDescription = "Add Price Record",
-                    modifier = Modifier.size(28.dp)
+                    "Add Record",
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
@@ -108,45 +71,32 @@ fun DetailScreen(
                 .fillMaxSize()
                 .padding(padding),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
                 asset?.let { a ->
-                    AssetSummaryCard(a, shimmerAlpha)
+                    ModernAssetSummaryCard(a)
                 }
             }
 
             item {
                 if (chartPoints.isNotEmpty()) {
-                    PortfolioChartCard(
-                        chartPoints
-                    )
+                    ModernPerformanceCard(chartPoints)
                 }
             }
 
             item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                Text(
+                    "Price History",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    Icon(
-                        Icons.Filled.History,
-                        contentDescription = null,
-                        tint = ExpressivePrimaryStart,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(R.string.price_history_title),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = ExpressiveOnSurface
-                    )
-                }
+                )
             }
 
             items(history) { record ->
-                PriceHistoryCard(
+                ModernHistoryCard(
                     record = record,
                     onEditClick = {
                         if (record.isManual) {
@@ -156,9 +106,7 @@ fun DetailScreen(
                 )
             }
 
-            item {
-                Spacer(modifier = Modifier.height(80.dp))
-            }
+            item { Spacer(modifier = Modifier.height(80.dp)) }
         }
     }
 
@@ -214,3 +162,324 @@ fun DetailScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ModernDetailTopBar(
+    title: String,
+    onBackClick: () -> Unit,
+    onEditClick: () -> Unit
+) {
+    TopAppBar(
+        title = {
+            Text(
+                title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        navigationIcon = {
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    "Back",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        },
+        actions = {
+            IconButton(
+                onClick = onEditClick,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+            ) {
+                Icon(
+                    Icons.Filled.Edit,
+                    "Edit",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    )
+}
+
+@Composable
+fun ModernAssetSummaryCard(asset: GoldAsset) {
+    val isPositive = asset.totalProfitOrLoss >= 0
+    val totalInvested = asset.purchasePrice * asset.quantity
+    val percentage = if (totalInvested > 0) {
+        (asset.totalProfitOrLoss / totalInvested) * 100
+    } else 0.0
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+            ) {
+                // Asset badges
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    ) {
+                        Text(
+                            text = asset.type.name,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
+                    ) {
+                        Text(
+                            text = "${asset.weightInGrams}g",
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Current Value
+                Text(
+                    "Current Value",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    "CHF ${NumberFormat.getInstance(Locale.GERMAN).format(asset.totalCurrentValue.toInt())}",
+                    style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Performance badge
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = if (isPositive)
+                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
+                    else
+                        MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            if (isPositive) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = if (isPositive) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
+                        )
+                        Text(
+                            "${if (isPositive) "+" else ""}${String.format("%.1f", percentage)}%",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isPositive) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
+                        )
+                        Text(
+                            "total return",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Details
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    DetailItem("Quantity", "${asset.quantity}")
+                    DetailItem(
+                        "Purchase Price",
+                        "CHF ${NumberFormat.getInstance(Locale.GERMAN).format(asset.purchasePrice.toInt())}"
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DetailItem(label: String, value: String) {
+    Column {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+@Composable
+fun ModernPerformanceCard(points: List<Pair<Long, Double>>) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(340.dp),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    Icons.Filled.ShowChart,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    "Performance",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                PortfolioChart(
+                    points = points,
+                    showTimeRangeSelector = true,
+                    goldColor = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ModernHistoryCard(
+    record: PriceHistory,
+    onEditClick: () -> Unit
+) {
+    val sdf = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
+    val timeSdf = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+
+    Card(
+        onClick = if (record.isManual) onEditClick else { {} },
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        enabled = record.isManual
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (record.isManual)
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                            else
+                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        if (record.isManual) Icons.Filled.Edit else Icons.Filled.CloudDone,
+                        contentDescription = null,
+                        tint = if (record.isManual) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Column {
+                    Text(
+                        sdf.format(Date(record.dateTimestamp)),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        timeSdf.format(Date(record.dateTimestamp)),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Text(
+                "CHF ${NumberFormat.getInstance(Locale.GERMAN).format(record.sellPrice.toInt())}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}

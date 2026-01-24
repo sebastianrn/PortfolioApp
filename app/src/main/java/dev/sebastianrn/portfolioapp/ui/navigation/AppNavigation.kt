@@ -26,7 +26,7 @@ fun AppNavigation(
         composable("main") {
             MainScreen(
                 viewModel = goldViewModel,
-                onCoinClick = { assetId ->
+                onAssetClick = { assetId ->
                     navController.navigate("detail/$assetId")
                 }
             )

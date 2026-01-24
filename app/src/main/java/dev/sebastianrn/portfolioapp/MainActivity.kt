@@ -44,7 +44,7 @@ class MainActivity : ComponentActivity() {
 
             PortfolioAppTheme(
                 darkTheme = isDarkTheme,
-                expressiveMode = true
+                //expressiveMode = true
             ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
