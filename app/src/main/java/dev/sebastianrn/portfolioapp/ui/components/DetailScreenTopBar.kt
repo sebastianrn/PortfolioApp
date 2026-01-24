@@ -1,21 +1,19 @@
+package dev.sebastianrn.portfolioapp.ui.components
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import dev.sebastianrn.portfolioapp.ui.theme.ExpressiveOnSurface
-import dev.sebastianrn.portfolioapp.ui.theme.ExpressiveSurfaceHigh
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailScreemTopBar(
+fun DetailTopBar(
     title: String,
     onBackClick: () -> Unit,
     onEditClick: () -> Unit
@@ -29,26 +27,35 @@ fun DetailScreemTopBar(
             )
         },
         navigationIcon = {
-            IconButton(onClick = onBackClick) {
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back"
+                    "Back",
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
         },
         actions = {
-            IconButton(onClick = onEditClick) {
+            IconButton(
+                onClick = onEditClick,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+            ) {
                 Icon(
                     Icons.Filled.Edit,
-                    contentDescription = "Edit Asset"
+                    "Edit",
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = ExpressiveSurfaceHigh,
-            titleContentColor = ExpressiveOnSurface,
-            navigationIconContentColor = ExpressiveOnSurface,
-            actionIconContentColor = ExpressiveOnSurface
+            containerColor = MaterialTheme.colorScheme.background
         )
     )
 }
