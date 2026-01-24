@@ -27,11 +27,6 @@ fun ModernTopBar(
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Black
                 )
-                Text(
-                    "Track your investments",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
             }
         },
         actions = {
