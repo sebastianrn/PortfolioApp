@@ -13,9 +13,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
 import java.text.NumberFormat
 import java.util.Locale
+import kotlin.math.abs
+
+private val numberFormat = NumberFormat.getInstance(Locale.GERMAN)
 
 @Composable
 fun AssetSummaryCard(asset: GoldAsset) {
@@ -27,7 +31,7 @@ fun AssetSummaryCard(asset: GoldAsset) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
@@ -38,7 +42,7 @@ fun AssetSummaryCard(asset: GoldAsset) {
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
                             Color.Transparent
                         )
                     )
@@ -47,105 +51,107 @@ fun AssetSummaryCard(asset: GoldAsset) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp)
+                    .padding(16.dp)
             ) {
-                // Asset badges
+                // Top row: Badges and Return indicator
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Surface(
-                        shape = MaterialTheme.shapes.small,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                    ) {
-                        Text(
+                    // Asset badges
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Badge(
                             text = asset.type.name,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            contentColor = MaterialTheme.colorScheme.primary
                         )
-                    }
-
-                    Surface(
-                        shape = MaterialTheme.shapes.small,
-                        color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
-                    ) {
-                        Text(
+                        Badge(
                             text = "${asset.weightInGrams}g",
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.tertiary
+                            containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f),
+                            contentColor = MaterialTheme.colorScheme.tertiary
                         )
                     }
-                }
 
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Current Value
-                Text(
-                    "Current Value",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    "CHF ${NumberFormat.getInstance(Locale.GERMAN).format(asset.totalCurrentValue.toInt())}",
-                    style = MaterialTheme.typography.displaySmall,
-                    fontWeight = FontWeight.Black,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Performance badge
-                Surface(
-                    shape = MaterialTheme.shapes.medium,
-                    color = if (isPositive)
-                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
-                    else
-                        MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
-                ) {
+                    // Return indicator with icon
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(
                             if (isPositive) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(16.dp),
                             tint = if (isPositive) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
                         )
                         Text(
-                            "${if (isPositive) "+" else ""}${String.format("%.1f", percentage)}%",
-                            style = MaterialTheme.typography.titleMedium,
+                            "${String.format("%.1f", abs(percentage))}%",
+                            style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
                             color = if (isPositive) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
-                        )
-                        Text(
-                            "total return",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Details
+                // Current Value - prominent display
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Column {
+                        Text(
+                            "Current Value",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "CHF ${numberFormat.format(asset.totalCurrentValue.toInt())}",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    // Total return value
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            "Return",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "CHF ${numberFormat.format(abs(asset.totalProfitOrLoss).toInt())}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isPositive) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Bottom stats row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    DetailItem("Quantity", "${asset.quantity}")
-                    DetailItem(
-                        "Purchase Price",
-                        "CHF ${NumberFormat.getInstance(Locale.GERMAN).format(asset.purchasePrice.toInt())}"
+                    StatItem(
+                        label = "Quantity",
+                        value = "${asset.quantity}"
+                    )
+                    StatItem(
+                        label = "Purchase Price",
+                        value = "CHF ${numberFormat.format(asset.purchasePrice.toInt())}"
+                    )
+                    StatItem(
+                        label = "Invested",
+                        value = "CHF ${numberFormat.format(totalInvested.toInt())}",
+                        alignment = Alignment.End
                     )
                 }
             }
@@ -154,17 +160,42 @@ fun AssetSummaryCard(asset: GoldAsset) {
 }
 
 @Composable
-fun DetailItem(label: String, value: String) {
-    Column {
+private fun Badge(
+    text: String,
+    containerColor: Color,
+    contentColor: Color
+) {
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = containerColor
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = contentColor
+        )
+    }
+}
+
+@Composable
+private fun StatItem(
+    label: String,
+    value: String,
+    alignment: Alignment.Horizontal = Alignment.Start
+) {
+    Column(horizontalAlignment = alignment) {
         Text(
             label,
             style = MaterialTheme.typography.bodySmall,
+            fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
             value,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface
         )
     }

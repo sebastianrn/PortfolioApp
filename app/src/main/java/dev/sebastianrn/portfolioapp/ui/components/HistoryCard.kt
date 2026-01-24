@@ -19,6 +19,8 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
+private val numberFormat = NumberFormat.getInstance(Locale.GERMAN)
+
 @Composable
 fun ModernHistoryCard(
     record: PriceHistory,
@@ -83,7 +85,7 @@ fun ModernHistoryCard(
             }
 
             Text(
-                "CHF ${NumberFormat.getInstance(Locale.GERMAN).format(record.sellPrice.toInt())}",
+                "CHF ${numberFormat.format(record.sellPrice.toInt())}",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary

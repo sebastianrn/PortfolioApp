@@ -59,19 +59,13 @@ fun MainScreen(
         ) {
             // Hero Value Card
             item {
-                HeroValueCard(
+                PortfolioSummaryCard(
                     totalValue = stats.totalValue,
+                    totalInvested = stats.totalInvested,
+                    totalProfit = stats.totalValue - stats.totalInvested,
                     dailyChange = dailyChange.first,
                     dailyChangePercent = dailyChange.second,
                     pulseAlpha = pulseAlpha
-                )
-            }
-
-            // Quick Stats Row
-            item {
-                QuickStats(
-                    totalInvested = stats.totalInvested,
-                    totalProfit = stats.totalValue - stats.totalInvested
                 )
             }
 

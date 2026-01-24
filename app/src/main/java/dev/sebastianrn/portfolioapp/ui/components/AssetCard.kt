@@ -20,6 +20,9 @@ import dev.sebastianrn.portfolioapp.data.model.AssetType
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
 import java.text.NumberFormat
 import java.util.Locale
+import kotlin.math.abs
+
+private val numberFormat = NumberFormat.getInstance(Locale.GERMAN)
 
 @Composable
 fun AssetCard(
@@ -128,7 +131,7 @@ fun AssetCard(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = "CHF ${NumberFormat.getInstance(Locale.GERMAN).format(asset.totalCurrentValue.toInt())}",
+                    text = "CHF ${numberFormat.format(asset.totalCurrentValue.toInt())}",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
@@ -143,7 +146,7 @@ fun AssetCard(
                         MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
                 ) {
                     Text(
-                        text = "${if (isPositive) "+" else ""}${String.format("%.1f", changePercent)}%",
+                        text = "${String.format("%.1f", abs(changePercent))}%",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,

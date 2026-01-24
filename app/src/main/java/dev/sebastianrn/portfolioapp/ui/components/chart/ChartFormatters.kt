@@ -6,6 +6,8 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 
+private val numberFormat = NumberFormat.getInstance(Locale.GERMAN)
+
 object ChartFormatters {
 
     /**
@@ -23,8 +25,7 @@ object ChartFormatters {
      * Formats marker value with CHF prefix.
      */
     fun formatMarkerValue(value: Double): String {
-        val formatted = NumberFormat.getInstance(Locale.GERMAN).format(value.roundToInt())
-        return "CHF $formatted"
+        return "CHF ${numberFormat.format(value.roundToInt())}"
     }
 
     /**
