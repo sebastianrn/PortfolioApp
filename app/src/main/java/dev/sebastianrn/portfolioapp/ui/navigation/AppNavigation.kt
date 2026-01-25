@@ -7,12 +7,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dev.sebastianrn.portfolioapp.ui.screens.DetailScreen
 import dev.sebastianrn.portfolioapp.ui.screens.MainScreen
+import dev.sebastianrn.portfolioapp.viewmodel.BackupViewModel
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 import dev.sebastianrn.portfolioapp.viewmodel.ThemeViewModel
 
 @Composable
 fun AppNavigation(
     goldViewModel: GoldViewModel,
+    backupViewModel: BackupViewModel,
     themeViewModel: ThemeViewModel,
     modifier: Modifier = Modifier
 ) {
@@ -26,6 +28,7 @@ fun AppNavigation(
         composable("main") {
             MainScreen(
                 viewModel = goldViewModel,
+                backupViewModel = backupViewModel,
                 onAssetClick = { assetId ->
                     navController.navigate("detail/$assetId")
                 }

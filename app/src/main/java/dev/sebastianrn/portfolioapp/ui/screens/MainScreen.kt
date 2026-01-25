@@ -1,21 +1,30 @@
 package dev.sebastianrn.portfolioapp.ui.screens
 
+import android.content.Intent
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.sebastianrn.portfolioapp.backup.BackupFile
 import dev.sebastianrn.portfolioapp.ui.components.*
+import dev.sebastianrn.portfolioapp.viewmodel.BackupViewModel
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     viewModel: GoldViewModel,
+    backupViewModel: BackupViewModel,
     onAssetClick: (Int) -> Unit
 ) {
     val assets by viewModel.allAssets.collectAsState()
@@ -23,8 +32,18 @@ fun MainScreen(
     val portfolioPoints by viewModel.portfolioCurve.collectAsState()
     val dailyChange by viewModel.portfolioChange.collectAsState()
 
+    // Backup state
+    val backupSettings by backupViewModel.backupSettings.collectAsState()
+    val backupFiles by backupViewModel.backupFiles.collectAsState()
+
+    val context = LocalContext.current
+
     var showAssetSheet by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
+    var showBackupSettings by remember { mutableStateOf(false) }
+    var showBackupList by remember { mutableStateOf(false) }
+    var showRestoreConfirm by remember { mutableStateOf<BackupFile?>(null) }
+    var showDeleteConfirm by remember { mutableStateOf<BackupFile?>(null) }
 
     // Animated value for progress indicators
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -41,10 +60,48 @@ fun MainScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            ModernTopBar(
-                onRefreshClick = { viewModel.updatePricesFromScraper() },
-                onMenuClick = { showMenu = true }
-            )
+            Box {
+                ModernTopBar(
+                    onRefreshClick = { viewModel.updatePricesFromScraper() },
+                    onMenuClick = { showMenu = true }
+                )
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Backup Settings") },
+                        onClick = {
+                            showMenu = false
+                            showBackupSettings = true
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.Settings, contentDescription = null)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Backup Now") },
+                        onClick = {
+                            showMenu = false
+                            backupViewModel.backupNow()
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.Backup, contentDescription = null)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Restore Backup") },
+                        onClick = {
+                            showMenu = false
+                            backupViewModel.loadBackupFiles()
+                            showBackupList = true
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.Restore, contentDescription = null)
+                        }
+                    )
+                }
+            }
         },
         floatingActionButton = {
             FAB(onClick = { showAssetSheet = true })
@@ -99,6 +156,7 @@ fun MainScreen(
         }
     }
 
+    // Asset Sheet
     if (showAssetSheet) {
         AssetSheet(
             onDismiss = { showAssetSheet = false },
@@ -114,6 +172,67 @@ fun MainScreen(
                 )
                 showAssetSheet = false
             }
+        )
+    }
+
+    // Backup Settings Sheet
+    if (showBackupSettings) {
+        BackupSettingsSheet(
+            settings = backupSettings,
+            onFrequencyChange = { frequency ->
+                backupViewModel.setBackupFrequency(frequency)
+            },
+            onBackupNow = {
+                backupViewModel.backupNow()
+            },
+            onViewBackups = {
+                backupViewModel.loadBackupFiles()
+                showBackupList = true
+            },
+            onDismiss = { showBackupSettings = false }
+        )
+    }
+
+    // Backup List Sheet
+    if (showBackupList) {
+        BackupListSheet(
+            backupFiles = backupFiles,
+            onFileSelect = { file ->
+                showBackupList = false
+                showRestoreConfirm = file
+            },
+            onFileShare = { file ->
+                backupViewModel.shareBackup(file)?.let { intent ->
+                    context.startActivity(Intent.createChooser(intent, "Share Backup"))
+                }
+            },
+            onFileDelete = { file ->
+                showDeleteConfirm = file
+            },
+            onDismiss = { showBackupList = false }
+        )
+    }
+
+    // Restore Confirm Dialog
+    showRestoreConfirm?.let { file ->
+        RestoreConfirmDialog(
+            fileName = file.name,
+            onConfirm = {
+                backupViewModel.restoreBackup(file)
+                showRestoreConfirm = null
+            },
+            onDismiss = { showRestoreConfirm = null }
+        )
+    }
+
+    // Delete Confirm Dialog
+    showDeleteConfirm?.let { file ->
+        DeleteConfirmDialog(
+            onConfirm = {
+                backupViewModel.deleteBackup(file)
+                showDeleteConfirm = null
+            },
+            onDismiss = { showDeleteConfirm = null }
         )
     }
 }

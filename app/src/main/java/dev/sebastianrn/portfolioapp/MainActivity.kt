@@ -17,6 +17,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.sebastianrn.portfolioapp.data.UserPreferences
 import dev.sebastianrn.portfolioapp.ui.navigation.AppNavigation
 import dev.sebastianrn.portfolioapp.ui.theme.PortfolioAppTheme
+import dev.sebastianrn.portfolioapp.viewmodel.BackupViewModel
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 import dev.sebastianrn.portfolioapp.viewmodel.ThemeViewModel
 
@@ -42,6 +43,15 @@ class MainActivity : ComponentActivity() {
                 }
             )
 
+            val backupViewModel: BackupViewModel = viewModel(
+                factory = object : ViewModelProvider.Factory {
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        @Suppress("UNCHECKED_CAST")
+                        return BackupViewModel(application) as T
+                    }
+                }
+            )
+
             PortfolioAppTheme(
                 darkTheme = isDarkTheme,
                 //expressiveMode = true
@@ -52,6 +62,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     AppNavigation(
                         goldViewModel = goldViewModel,
+                        backupViewModel = backupViewModel,
                         themeViewModel = themeViewModel
                     )
                 }
