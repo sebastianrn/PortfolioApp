@@ -1,5 +1,6 @@
 package dev.sebastianrn.portfolioapp.ui.components
 
+import StatItem
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,13 +27,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
-import java.text.NumberFormat
-import java.util.Locale
+import dev.sebastianrn.portfolioapp.util.formatCurrency
 import kotlin.math.abs
-
-private val numberFormat = NumberFormat.getInstance(Locale.GERMAN)
 
 @Composable
 fun AssetSummaryCard(asset: GoldAsset) {
@@ -81,8 +78,8 @@ fun AssetSummaryCard(asset: GoldAsset) {
                         )
                         Badge(
                             text = "${asset.weightInGrams}g",
-                            containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f),
-                            contentColor = MaterialTheme.colorScheme.tertiary
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            contentColor = MaterialTheme.colorScheme.primary
                         )
                     }
 
@@ -120,7 +117,7 @@ fun AssetSummaryCard(asset: GoldAsset) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            "CHF ${numberFormat.format(asset.totalCurrentValue.toInt())}",
+                            asset.totalCurrentValue.formatCurrency(),
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Black,
                             color = MaterialTheme.colorScheme.onSurface
@@ -135,7 +132,7 @@ fun AssetSummaryCard(asset: GoldAsset) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            "CHF ${numberFormat.format(abs(asset.totalProfitOrLoss).toInt())}",
+                            asset.totalProfitOrLoss.formatCurrency(short = true),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = if (isPositive) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
@@ -154,15 +151,32 @@ fun AssetSummaryCard(asset: GoldAsset) {
                 ) {
                     StatItem(
                         label = "Quantity",
-                        value = "${asset.quantity}"
+                        value = asset.quantity.toDouble(),
+                        isValueFormatShort = false,
+                        percentage = null,
+                        neutralColorNeeded = true,
+                        isPositive = false,
+                        isCurrency = false,
+                        alignment = Alignment.CenterHorizontally
                     )
+
                     StatItem(
                         label = "Purchase Price",
-                        value = "CHF ${numberFormat.format(asset.purchasePrice.toInt())}"
+                        value = asset.purchasePrice,
+                        isValueFormatShort = true,
+                        percentage = null,
+                        neutralColorNeeded = true,
+                        isPositive = false,
+                        alignment = Alignment.CenterHorizontally
                     )
+
                     StatItem(
                         label = "Invested",
-                        value = "CHF ${numberFormat.format(totalInvested.toInt())}",
+                        value = totalInvested,
+                        isValueFormatShort = true,
+                        percentage = null,
+                        neutralColorNeeded = true,
+                        isPositive = false,
                         alignment = Alignment.End
                     )
                 }
@@ -187,28 +201,6 @@ private fun Badge(
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
             color = contentColor
-        )
-    }
-}
-
-@Composable
-private fun StatItem(
-    label: String,
-    value: String,
-    alignment: Alignment.Horizontal = Alignment.Start
-) {
-    Column(horizontalAlignment = alignment) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodySmall,
-            fontSize = 11.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }

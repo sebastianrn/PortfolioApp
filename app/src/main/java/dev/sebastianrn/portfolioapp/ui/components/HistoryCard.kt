@@ -1,12 +1,22 @@
 package dev.sebastianrn.portfolioapp.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -15,11 +25,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.data.model.PriceHistory
-import java.text.NumberFormat
+import dev.sebastianrn.portfolioapp.util.formatCurrency
 import java.text.SimpleDateFormat
-import java.util.*
-
-private val numberFormat = NumberFormat.getInstance(Locale.GERMAN)
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ModernHistoryCard(
@@ -85,7 +94,7 @@ fun ModernHistoryCard(
             }
 
             Text(
-                "CHF ${numberFormat.format(record.sellPrice.toInt())}",
+                record.sellPrice.formatCurrency(),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary

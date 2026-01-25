@@ -1,5 +1,6 @@
 package dev.sebastianrn.portfolioapp.ui.components
 
+import StatItem
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,14 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -27,11 +23,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import java.text.NumberFormat
-import java.util.Locale
-import kotlin.math.abs
-
-private val numberFormat = NumberFormat.getInstance(Locale.GERMAN)
+import dev.sebastianrn.portfolioapp.util.formatCurrency
 
 @Composable
 fun PortfolioSummaryCard(
@@ -85,7 +77,7 @@ fun PortfolioSummaryCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        "CHF ${numberFormat.format(totalValue.toInt())}",
+                        totalValue.formatCurrency(),
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onSurface
@@ -107,29 +99,30 @@ fun PortfolioSummaryCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Total Gain
-                    GainStatItem(
+                    StatItem(
                         label = "Total Gain",
                         value = totalProfit,
+                        isValueFormatShort = false,
                         percentage = profitPercent,
                         neutralColorNeeded = false,
                         isPositive = isPositive,
                         alignment = Alignment.Start
                     )
 
-                    GainStatItem(
+                    StatItem(
                         label = "Invested",
                         value = totalInvested,
+                        isValueFormatShort = true,
                         percentage = null,
                         neutralColorNeeded = true,
                         isPositive = isPositive,
                         alignment = Alignment.CenterHorizontally
                     )
 
-                    // Today
-                    GainStatItem(
+                    StatItem(
                         label = "Today",
                         value = dailyChange,
+                        isValueFormatShort = false,
                         percentage = dailyChangePercent,
                         neutralColorNeeded = false,
                         isPositive = isDailyPositive,
@@ -141,55 +134,4 @@ fun PortfolioSummaryCard(
     }
 }
 
-@Composable
-private fun GainStatItem(
-    label: String,
-    value: Double,
-    percentage: Double?,
-    neutralColorNeeded: Boolean,
-    isPositive: Boolean?,
-    alignment: Alignment.Horizontal
-) {
-    val color =
-        if (neutralColorNeeded) MaterialTheme.colorScheme.onSurface
-        else if (isPositive!!) MaterialTheme.colorScheme.secondary
-        else MaterialTheme.colorScheme.error
 
-    Column(horizontalAlignment = alignment) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            "CHF ${numberFormat.format(abs(value).toInt())}",
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = color
-        )
-        if (percentage != null) {
-            Surface(
-                shape = MaterialTheme.shapes.small,
-                color = color.copy(alpha = 0.15f)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Icon(
-                        if (isPositive!!) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
-                        contentDescription = null,
-                        tint = color
-                    )
-                    Text(
-                        "${String.format("%.1f", abs(percentage))}%",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = color
-                    )
-                }
-            }
-        }
-    }
-}
