@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -60,46 +61,52 @@ fun MainScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            Box {
+            Box(modifier = Modifier.fillMaxWidth()) {
                 ModernTopBar(
                     onRefreshClick = { viewModel.updatePricesFromScraper() },
                     onMenuClick = { showMenu = true }
                 )
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false }
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(end = 8.dp, top = 4.dp)
                 ) {
-                    DropdownMenuItem(
-                        text = { Text("Backup Settings") },
-                        onClick = {
-                            showMenu = false
-                            showBackupSettings = true
-                        },
-                        leadingIcon = {
-                            Icon(Icons.Default.Settings, contentDescription = null)
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Backup Now") },
-                        onClick = {
-                            showMenu = false
-                            backupViewModel.backupNow()
-                        },
-                        leadingIcon = {
-                            Icon(Icons.Default.Backup, contentDescription = null)
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Restore Backup") },
-                        onClick = {
-                            showMenu = false
-                            backupViewModel.loadBackupFiles()
-                            showBackupList = true
-                        },
-                        leadingIcon = {
-                            Icon(Icons.Default.Restore, contentDescription = null)
-                        }
-                    )
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Backup Settings") },
+                            onClick = {
+                                showMenu = false
+                                showBackupSettings = true
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Settings, contentDescription = null)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Backup Now") },
+                            onClick = {
+                                showMenu = false
+                                backupViewModel.backupNow()
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Backup, contentDescription = null)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Restore Backup") },
+                            onClick = {
+                                showMenu = false
+                                backupViewModel.loadBackupFiles()
+                                showBackupList = true
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Restore, contentDescription = null)
+                            }
+                        )
+                    }
                 }
             }
         },
@@ -128,7 +135,7 @@ fun MainScreen(
 
             // Performance Chart
             item {
-                ChartCard(points = portfolioPoints)
+                PerformanceCard(points = portfolioPoints)
             }
 
             // Section Header

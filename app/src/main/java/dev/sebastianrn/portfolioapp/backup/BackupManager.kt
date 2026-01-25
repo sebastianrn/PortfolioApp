@@ -62,7 +62,7 @@ class BackupManager(private val context: Context) {
     }
 
     fun generateBackupFileName(): String {
-        val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH:mm:ss", Locale.US)
         val timestamp = dateFormat.format(Date())
         return "$BACKUP_FILE_PREFIX$timestamp$BACKUP_FILE_EXTENSION"
     }

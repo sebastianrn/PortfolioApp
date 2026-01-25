@@ -84,7 +84,7 @@ fun DetailScreen(
             }
 
             items(history) { record ->
-                ModernHistoryCard(
+                HistoryCard(
                     record = record,
                     onEditClick = {
                         if (record.isManual) {

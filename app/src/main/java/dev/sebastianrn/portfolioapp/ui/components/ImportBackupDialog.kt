@@ -170,12 +170,12 @@ private fun BackupFileItem(
 }
 
 private fun formatFileName(name: String): String {
-    // Convert portfolio_backup_20250125_120000.json to readable format
+    // Convert portfolio_backup_2025-01-25_12:00:00.json to readable format
     return try {
         val dateStr = name
             .removePrefix("portfolio_backup_")
             .removeSuffix(".json")
-        val inputFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd_HH:mm:ss", Locale.US)
         val outputFormat = SimpleDateFormat("MMM d, yyyy 'at' HH:mm", Locale.getDefault())
         val date = inputFormat.parse(dateStr)
         if (date != null) outputFormat.format(date) else name

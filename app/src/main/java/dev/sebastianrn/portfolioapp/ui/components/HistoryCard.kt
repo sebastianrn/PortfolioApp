@@ -31,7 +31,7 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun ModernHistoryCard(
+fun HistoryCard(
     record: PriceHistory,
     onEditClick: () -> Unit
 ) {
