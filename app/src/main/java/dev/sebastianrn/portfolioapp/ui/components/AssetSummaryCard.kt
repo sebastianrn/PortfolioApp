@@ -10,13 +10,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -29,7 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
 import dev.sebastianrn.portfolioapp.util.formatCurrency
-import kotlin.math.abs
 
 @Composable
 fun AssetSummaryCard(asset: GoldAsset) {
@@ -82,24 +77,6 @@ fun AssetSummaryCard(asset: GoldAsset) {
                             contentColor = MaterialTheme.colorScheme.primary
                         )
                     }
-
-                    // Return indicator with icon
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            if (isPositive) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
-                            contentDescription = null,
-                            tint = if (isPositive) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
-                        )
-                        Text(
-                            "${String.format("%.1f", abs(percentage))}%",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isPositive) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
-                        )
-                    }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -108,7 +85,7 @@ fun AssetSummaryCard(asset: GoldAsset) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
+                    verticalAlignment = Alignment.Top
                 ) {
                     Column {
                         Text(
@@ -126,16 +103,15 @@ fun AssetSummaryCard(asset: GoldAsset) {
 
                     // Total return value
                     Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            "Return",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            asset.totalProfitOrLoss.formatCurrency(short = true),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isPositive) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
+                        StatItem(
+                            label = "Return",
+                            value = asset.totalProfitOrLoss,
+                            isValueFormatShort = false,
+                            percentage = percentage,
+                            neutralColorNeeded = false,
+                            isPositive = isPositive,
+                            isCurrency = true,
+                            alignment = Alignment.End
                         )
                     }
                 }
