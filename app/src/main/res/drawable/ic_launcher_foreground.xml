@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
@@ -5,40 +6,127 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
+    <!-- Outer glow ring -->
     <path
-        android:pathData="M54,16
-                          C33.01,16 16,33.01 16,54
-                          C16,74.99 33.01,92 54,92
-                          C74.99,92 92,74.99 92,54
-                          C92,33.01 74.99,16 54,16 Z">
+        android:pathData="M54,22
+                          C36.3,22 22,36.3 22,54
+                          C22,71.7 36.3,86 54,86
+                          C71.7,86 86,71.7 86,54
+                          C86,36.3 71.7,22 54,22 Z
+                          M54,25
+                          C70,25 83,38 83,54
+                          C83,70 70,83 54,83
+                          C38,83 25,70 25,54
+                          C25,38 38,25 54,25 Z">
         <aapt:attr name="android:fillColor">
             <gradient
                 android:centerX="54"
                 android:centerY="54"
-                android:gradientRadius="38"
+                android:gradientRadius="35"
                 android:type="radial">
-                <item android:offset="0.3" android:color="@color/icon_luxury_gold_2" />
-                <item android:offset="1.0" android:color="@color/icon_luxury_gold_3" />
+                <item android:offset="0.0" android:color="#FFFFD700" />
+                <item android:offset="1.0" android:color="#FFCD7F32" />
             </gradient>
         </aapt:attr>
     </path>
 
+    <!-- Inner circle background -->
     <path
-        android:pathData="M54,20
-                          C35.2,20 20,35.2 20,54
-                          C20,72.8 35.2,88 54,88
-                          C72.8,88 88,72.8 88,54
-                          C88,35.2 72.8,20 54,20 Z
-                          M54,22
-                          C71.6,22 86,36.4 86,54
-                          C86,71.6 71.6,86 54,86
-                          C36.4,86 22,71.6 22,54
-                          C22,36.4 36.4,22 54,22 Z"
-        android:fillColor="@color/icon_luxury_gold_1"/>
+        android:pathData="M54,28
+                          C39.6,28 28,39.6 28,54
+                          C28,68.4 39.6,80 54,80
+                          C68.4,80 80,68.4 80,54
+                          C80,39.6 68.4,28 54,28 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:centerX="54"
+                android:centerY="54"
+                android:gradientRadius="28"
+                android:type="radial">
+                <item android:offset="0.0" android:color="#FF2D2D44" />
+                <item android:offset="1.0" android:color="#FF1A1A2E" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Gold bar - isometric 3D view -->
+    <!-- Top face (brightest) -->
+    <path
+        android:pathData="M40,50 L54,42 L68,50 L54,58 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="40"
+                android:startY="42"
+                android:endX="68"
+                android:endY="58"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FFFFEC8B" />
+                <item android:offset="0.3" android:color="#FFFFD700" />
+                <item android:offset="0.7" android:color="#FFFFC107" />
+                <item android:offset="1.0" android:color="#FFFFB300" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Left face (darker) -->
+    <path
+        android:pathData="M40,50 L40,62 L54,70 L54,58 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="40"
+                android:startY="50"
+                android:endX="54"
+                android:endY="70"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FFB8860B" />
+                <item android:offset="1.0" android:color="#FF8B6914" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Right face (medium) -->
+    <path
+        android:pathData="M54,58 L54,70 L68,62 L68,50 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="54"
+                android:startY="58"
+                android:endX="68"
+                android:endY="50"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FFDAA520" />
+                <item android:offset="1.0" android:color="#FFCD853F" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Shine highlight on top face -->
+    <path
+        android:pathData="M46,49 L54,44 L62,49"
+        android:strokeWidth="1.5"
+        android:strokeColor="#80FFFFFF"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+
+    <!-- Small sparkle -->
+    <path
+        android:pathData="M60,46 L61,44 L62,46 L64,47 L62,48 L61,50 L60,48 L58,47 Z"
+        android:fillColor="#FFFFFFFF" />
+
+    <!-- Upward trend arrow (subtle) -->
+    <path
+        android:pathData="M72,38 L72,32 L66,32"
+        android:strokeWidth="2.5"
+        android:strokeColor="#FF4CAF50"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000" />
 
     <path
-        android:fillColor="@color/icon_luxury_bg"
-        android:pathData="M40,64 L50,64 L50,50 L58,50 L58,64 L68,64
-                          L54,34 Z" />
+        android:pathData="M72,32 L64,40"
+        android:strokeWidth="2.5"
+        android:strokeColor="#FF4CAF50"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
 
 </vector>
