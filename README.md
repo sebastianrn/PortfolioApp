@@ -15,7 +15,7 @@ A modern Android application designed to track the value and performance of phys
 
 Privacy is a core feature of this app.
 * **Local Storage:** Your financial data never leaves your device unless you manually export a backup.
-* **Transparency:** You can find the full **Privacy Policy** at: `https://sebastianrn.github.io/PortfolioApp/`
+* **Transparency:** You can find the full **Privacy Policy** at: https://sebastianrn.github.io/PortfolioApp/privacy-policy
 
 ## 🛠️ Tech Stack
 
@@ -39,7 +39,7 @@ Privacy is a core feature of this app.
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/sebastianrn/PortfolioApp.git](https://github.com/sebastianrn/PortfolioApp.git)
+    git clone https://github.com/sebastianrn/PortfolioApp.git
     ```
 
 2.  **Configure API Key:**
