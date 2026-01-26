@@ -1,4 +1,4 @@
-package dev.sebastianrn.portfolioapp.ui.components
+package dev.sebastianrn.portfolioapp.ui.components.chart
 
 import android.text.Layout
 import androidx.compose.animation.core.Spring
@@ -43,10 +43,6 @@ import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.core.cartesian.marker.DefaultCartesianMarker
 import com.patrykandpatrick.vico.core.cartesian.marker.LineCartesianLayerMarkerTarget
 import com.patrykandpatrick.vico.core.common.shader.ShaderProvider
-import dev.sebastianrn.portfolioapp.ui.components.chart.ChartDataProcessor
-import dev.sebastianrn.portfolioapp.ui.components.chart.ChartFormatters
-import dev.sebastianrn.portfolioapp.ui.components.chart.TimeRange
-import dev.sebastianrn.portfolioapp.ui.components.chart.TimeRangeSelector
 
 @Composable
 fun PortfolioChart(

@@ -1,4 +1,4 @@
-package dev.sebastianrn.portfolioapp.ui.components
+package dev.sebastianrn.portfolioapp.ui.components.sheets
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -45,6 +45,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.R
+import dev.sebastianrn.portfolioapp.ui.components.common.AppTextField
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -157,7 +158,7 @@ fun EditHistorySheet(
 
             // Date Picker Field
             Box(modifier = Modifier.fillMaxWidth()) {
-                PortfolioOutlinedTextField(
+                AppTextField(
                     value = sdf.format(Date(selectedDate)),
                     onValueChange = {},
                     label = "Date",
@@ -179,7 +180,7 @@ fun EditHistorySheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            PortfolioOutlinedTextField(
+            AppTextField(
                 value = sellPrice,
                 onValueChange = {
                     sellPrice = it
@@ -193,7 +194,7 @@ fun EditHistorySheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            PortfolioOutlinedTextField(
+            AppTextField(
                 value = buyPrice,
                 onValueChange = {
                     buyPrice = it

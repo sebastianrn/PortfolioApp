@@ -1,4 +1,4 @@
-package dev.sebastianrn.portfolioapp.ui.components
+package dev.sebastianrn.portfolioapp.ui.components.cards
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background

@@ -1,6 +1,5 @@
-package dev.sebastianrn.portfolioapp.ui.components
+package dev.sebastianrn.portfolioapp.ui.components.cards
 
-import StatItem
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
+import dev.sebastianrn.portfolioapp.ui.components.common.StatItem
 import dev.sebastianrn.portfolioapp.util.formatCurrency
 
 @Composable
@@ -131,7 +131,7 @@ fun AssetSummaryCard(asset: GoldAsset) {
                         isValueFormatShort = false,
                         percentage = null,
                         neutralColorNeeded = true,
-                        isPositive = false,
+                        isPositive = null,
                         isCurrency = false,
                         alignment = Alignment.CenterHorizontally
                     )
@@ -142,7 +142,7 @@ fun AssetSummaryCard(asset: GoldAsset) {
                         isValueFormatShort = true,
                         percentage = null,
                         neutralColorNeeded = true,
-                        isPositive = false,
+                        isPositive = null,
                         alignment = Alignment.CenterHorizontally
                     )
 
@@ -152,7 +152,7 @@ fun AssetSummaryCard(asset: GoldAsset) {
                         isValueFormatShort = true,
                         percentage = null,
                         neutralColorNeeded = true,
-                        isPositive = false,
+                        isPositive = null,
                         alignment = Alignment.End
                     )
                 }

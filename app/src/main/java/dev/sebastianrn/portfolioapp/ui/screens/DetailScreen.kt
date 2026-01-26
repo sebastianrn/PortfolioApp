@@ -12,7 +12,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.data.model.PriceHistory
-import dev.sebastianrn.portfolioapp.ui.components.*
+import dev.sebastianrn.portfolioapp.ui.components.cards.AssetSummaryCard
+import dev.sebastianrn.portfolioapp.ui.components.cards.HistoryCard
+import dev.sebastianrn.portfolioapp.ui.components.cards.PerformanceCard
+import dev.sebastianrn.portfolioapp.ui.components.sheets.AssetSheet
+import dev.sebastianrn.portfolioapp.ui.components.sheets.EditHistorySheet
+import dev.sebastianrn.portfolioapp.ui.components.topbar.DetailTopBar
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

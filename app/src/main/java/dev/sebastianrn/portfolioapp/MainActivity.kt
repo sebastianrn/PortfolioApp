@@ -38,7 +38,13 @@ class MainActivity : ComponentActivity() {
                 factory = object : ViewModelProvider.Factory {
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         @Suppress("UNCHECKED_CAST")
-                        return GoldViewModel(application, repository, userPreferences) as T
+                        return GoldViewModel(
+                            repository = repository,
+                            prefs = userPreferences,
+                            calculateStats = appContainer.calculatePortfolioStats,
+                            calculateCurve = appContainer.calculatePortfolioCurve,
+                            updatePrices = appContainer.updatePrices
+                        ) as T
                     }
                 }
             )
@@ -54,7 +60,6 @@ class MainActivity : ComponentActivity() {
 
             PortfolioAppTheme(
                 darkTheme = isDarkTheme,
-                //expressiveMode = true
             ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),

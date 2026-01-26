@@ -1,4 +1,4 @@
-package dev.sebastianrn.portfolioapp.ui.components
+package dev.sebastianrn.portfolioapp.ui.components.cards
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

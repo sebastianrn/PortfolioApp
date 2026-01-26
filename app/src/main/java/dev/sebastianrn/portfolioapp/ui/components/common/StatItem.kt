@@ -1,3 +1,5 @@
+package dev.sebastianrn.portfolioapp.ui.components.common
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,19 +23,25 @@ import kotlin.math.abs
 fun StatItem(
     label: String,
     value: Double,
-    percentage: Double?,
+    percentage: Double? = null,
     isCurrency: Boolean = true,
-    isValueFormatShort: Boolean,
-    neutralColorNeeded: Boolean,
-    isPositive: Boolean?,
-    alignment: Alignment.Horizontal
+    isValueFormatShort: Boolean = false,
+    neutralColorNeeded: Boolean = false,
+    isPositive: Boolean? = null,
+    alignment: Alignment.Horizontal = Alignment.Start
 ) {
-    val color =
-        if (neutralColorNeeded) MaterialTheme.colorScheme.onSurface
-        else if (isPositive!!) MaterialTheme.colorScheme.secondary
-        else MaterialTheme.colorScheme.error
+    val color = when {
+        neutralColorNeeded -> MaterialTheme.colorScheme.onSurface
+        isPositive == true -> MaterialTheme.colorScheme.secondary
+        isPositive == false -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.onSurface
+    }
 
-    val valueFormatted = if (isCurrency) value.formatCurrency(short = isValueFormatShort) else value.toInt().toString()
+    val valueFormatted = if (isCurrency) {
+        value.formatCurrency(short = isValueFormatShort)
+    } else {
+        value.toInt().toString()
+    }
 
     Column(horizontalAlignment = alignment) {
         Text(
@@ -47,7 +55,7 @@ fun StatItem(
             fontWeight = FontWeight.SemiBold,
             color = color
         )
-        if (percentage != null) {
+        if (percentage != null && isPositive != null) {
             Surface(
                 shape = MaterialTheme.shapes.small,
                 color = color.copy(alpha = 0.15f)
@@ -58,7 +66,7 @@ fun StatItem(
                     horizontalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Icon(
-                        if (isPositive!!) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
+                        if (isPositive) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
                         contentDescription = null,
                         tint = color
                     )

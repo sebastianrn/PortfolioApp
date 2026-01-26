@@ -1,6 +1,7 @@
 package dev.sebastianrn.portfolioapp.ui.screens
 
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,9 +18,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.backup.BackupFile
-import dev.sebastianrn.portfolioapp.ui.components.*
+import dev.sebastianrn.portfolioapp.ui.components.cards.AssetCard
+import dev.sebastianrn.portfolioapp.ui.components.cards.PerformanceCard
+import dev.sebastianrn.portfolioapp.ui.components.cards.PortfolioSummaryCard
+import dev.sebastianrn.portfolioapp.ui.components.common.AddAssetFab
+import dev.sebastianrn.portfolioapp.ui.components.dialogs.DeleteConfirmDialog
+import dev.sebastianrn.portfolioapp.ui.components.dialogs.RestoreConfirmDialog
+import dev.sebastianrn.portfolioapp.ui.components.sheets.AssetSheet
+import dev.sebastianrn.portfolioapp.ui.components.sheets.BackupListSheet
+import dev.sebastianrn.portfolioapp.ui.components.sheets.BackupSettingsSheet
+import dev.sebastianrn.portfolioapp.ui.components.topbar.MainTopBar
 import dev.sebastianrn.portfolioapp.viewmodel.BackupViewModel
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
+import dev.sebastianrn.portfolioapp.viewmodel.UiEvent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +49,20 @@ fun MainScreen(
     val backupFiles by backupViewModel.backupFiles.collectAsState()
 
     val context = LocalContext.current
+
+    // Handle UI events from ViewModel
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is UiEvent.ShowToast -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                }
+                is UiEvent.ShowError -> {
+                    Toast.makeText(context, "Error: ${event.error.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
 
     var showAssetSheet by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
@@ -62,7 +87,7 @@ fun MainScreen(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             Box(modifier = Modifier.fillMaxWidth()) {
-                ModernTopBar(
+                MainTopBar(
                     onRefreshClick = { viewModel.updatePricesFromScraper() },
                     onMenuClick = { showMenu = true }
                 )
@@ -111,7 +136,7 @@ fun MainScreen(
             }
         },
         floatingActionButton = {
-            FAB(onClick = { showAssetSheet = true })
+            AddAssetFab(onClick = { showAssetSheet = true })
         }
     ) { padding ->
         LazyColumn(

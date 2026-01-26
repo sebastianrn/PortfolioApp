@@ -1,4 +1,4 @@
-package dev.sebastianrn.portfolioapp.ui.components
+package dev.sebastianrn.portfolioapp.ui.components.sheets
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.data.model.AssetType
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
+import dev.sebastianrn.portfolioapp.ui.components.common.AppTextField
 import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -122,7 +123,7 @@ fun AssetSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            PortfolioOutlinedTextField(
+            AppTextField(
                 value = name,
                 onValueChange = { name = it },
                 label = "Asset Name",
@@ -136,7 +137,7 @@ fun AssetSheet(
                 onExpandedChange = { expanded = !expanded },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                PortfolioOutlinedTextField(
+                AppTextField(
                     value = selectedOption.label,
                     onValueChange = {},
                     label = "Weight / Type",
@@ -178,14 +179,14 @@ fun AssetSheet(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Box(modifier = Modifier.weight(1f)) {
-                    PortfolioOutlinedTextField(
+                    AppTextField(
                         value = quantity,
                         onValueChange = { if (it.all { c -> c.isDigit() }) quantity = it },
                         label = "Quantity"
                     )
                 }
                 Box(modifier = Modifier.weight(1f)) {
-                    PortfolioOutlinedTextField(
+                    AppTextField(
                         value = philoroId,
                         onValueChange = { philoroId = it },
                         label = "Philoro ID"
@@ -195,7 +196,7 @@ fun AssetSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            PortfolioOutlinedTextField(
+            AppTextField(
                 value = purchasePrice,
                 onValueChange = { purchasePrice = it },
                 label = if (isEditMode) "Purchase Price (Total)" else "Paid Price (Total)",
