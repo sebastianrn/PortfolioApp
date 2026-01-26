@@ -90,7 +90,13 @@ interface GoldAssetDao {
     @Query("SELECT * FROM price_history WHERE assetId = :assetId ORDER BY dateTimestamp ASC LIMIT 1")
     suspend fun getEarliestHistory(assetId: Int): PriceHistory?
 
-    // --- NEW METHOD ---
     @Query("SELECT * FROM price_history WHERE assetId = :assetId ORDER BY dateTimestamp DESC LIMIT 1")
     suspend fun getLatestHistory(assetId: Int): PriceHistory?
+
+    // Non-Flow queries for backup
+    @Query("SELECT * FROM gold_assets ORDER BY id DESC")
+    suspend fun getAllAssetsOnce(): List<GoldAsset>
+
+    @Query("SELECT * FROM price_history ORDER BY dateTimestamp ASC")
+    suspend fun getAllHistoryOnce(): List<PriceHistory>
 }

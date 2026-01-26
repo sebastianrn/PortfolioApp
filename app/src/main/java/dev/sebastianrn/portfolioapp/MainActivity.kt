@@ -17,6 +17,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.sebastianrn.portfolioapp.data.UserPreferences
 import dev.sebastianrn.portfolioapp.ui.navigation.AppNavigation
 import dev.sebastianrn.portfolioapp.ui.theme.PortfolioAppTheme
+import dev.sebastianrn.portfolioapp.viewmodel.BackupViewModel
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
 import dev.sebastianrn.portfolioapp.viewmodel.ThemeViewModel
 
@@ -37,18 +38,36 @@ class MainActivity : ComponentActivity() {
                 factory = object : ViewModelProvider.Factory {
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         @Suppress("UNCHECKED_CAST")
-                        return GoldViewModel(application, repository, userPreferences) as T
+                        return GoldViewModel(
+                            repository = repository,
+                            prefs = userPreferences,
+                            calculateStats = appContainer.calculatePortfolioStats,
+                            calculateCurve = appContainer.calculatePortfolioCurve,
+                            updatePrices = appContainer.updatePrices
+                        ) as T
                     }
                 }
             )
 
-            PortfolioAppTheme(darkTheme = isDarkTheme) {
+            val backupViewModel: BackupViewModel = viewModel(
+                factory = object : ViewModelProvider.Factory {
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        @Suppress("UNCHECKED_CAST")
+                        return BackupViewModel(application) as T
+                    }
+                }
+            )
+
+            PortfolioAppTheme(
+                darkTheme = isDarkTheme,
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     AppNavigation(
                         goldViewModel = goldViewModel,
+                        backupViewModel = backupViewModel,
                         themeViewModel = themeViewModel
                     )
                 }
