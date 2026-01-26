@@ -7,10 +7,15 @@ A modern Android application designed to track the value and performance of phys
 * **Asset Tracking:** Manage your portfolio of Gold Coins and Bars. Track specific details like weight (g/oz), quantity, premiums, and original purchase price.
 * **Live Market Data:** Fetches real-time gold spot prices via [GoldAPI](https://www.goldapi.io/).
 * **Performance Charts:** Visualize your portfolio's value history and individual asset performance using interactive graphs.
-* **Multi-Currency Support:** Seamlessly switch between currencies (USD, EUR, CHF, GBP, etc.). The app automatically calculates exchange rates based on the gold standard.
 * **Data Security:** All data is stored locally on your device using a Room database.
 * **Backup & Restore:** Export your entire portfolio history to a JSON file and restore it on any device.
 * **Modern UI:** Fully responsive Material Design 3 interface with support for both **Light** and **Dark** themes.
+
+## 🔒 Privacy & Data Protection
+
+Privacy is a core feature of this app.
+* **Local Storage:** Your financial data never leaves your device unless you manually export a backup.
+* **Transparency:** You can find the full **Privacy Policy** at: `https://sebastianrn.github.io/PortfolioApp/`
 
 ## 🛠️ Tech Stack
 
@@ -34,21 +39,19 @@ A modern Android application designed to track the value and performance of phys
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/yourusername/GoldPortfolio.git](https://github.com/yourusername/GoldPortfolio.git)
+    git clone [https://github.com/sebastianrn/PortfolioApp.git](https://github.com/sebastianrn/PortfolioApp.git)
     ```
 
 2.  **Configure API Key:**
-    For security, the API key is not stored in version control.
-    * Open the `local.properties` file in the root of the project.
+    The API key is managed via `local.properties` for security.
+    * Open `local.properties` in the project root.
     * Add your key:
         ```properties
         GOLD_API_KEY=your_api_key_here
         ```
 
 3.  **Build and Run:**
-    * Open the project in Android Studio.
-    * Sync Gradle files.
-    * Run on an emulator or physical device (Min SDK 26).
+    * Open in Android Studio, sync Gradle, and run (Min SDK 26).
 
 ## 📸 Screenshots
 
@@ -58,7 +61,7 @@ A modern Android application designed to track the value and performance of phys
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please fork the repository and submit a pull request for any features, bug fixes, or enhancements.
+Contributions are welcome! Please fork the repository and submit a pull request.
 
 ## 📄 License
 
