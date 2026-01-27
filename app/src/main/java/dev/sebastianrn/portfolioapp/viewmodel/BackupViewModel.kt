@@ -2,6 +2,7 @@ package dev.sebastianrn.portfolioapp.viewmodel
 
 import android.app.Application
 import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
@@ -103,6 +104,30 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
                 result.onSuccess { jsonContent ->
                     val backup = Gson().fromJson(jsonContent, BackupData::class.java)
                     if (backup.assets.isNotEmpty()) {
+                        dao.restoreDatabase(backup.assets, backup.history)
+                        showToast("Backup restored successfully")
+                    } else {
+                        showToast("Backup file is empty or invalid")
+                    }
+                }.onFailure { error ->
+                    showToast("Failed to restore backup: ${error.message}")
+                }
+            } catch (e: Exception) {
+                showToast("Failed to restore backup: ${e.message}")
+            } finally {
+                _isRestoring.value = false
+            }
+        }
+    }
+
+    fun restoreFromUri(uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isRestoring.value = true
+            try {
+                val result = backupManager.readBackupFromUri(uri)
+                result.onSuccess { jsonContent ->
+                    val backup = Gson().fromJson(jsonContent, BackupData::class.java)
+                    if (backup != null && backup.assets.isNotEmpty()) {
                         dao.restoreDatabase(backup.assets, backup.history)
                         showToast("Backup restored successfully")
                     } else {

@@ -1,7 +1,10 @@
 package dev.sebastianrn.portfolioapp.ui.screens
 
 import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -70,6 +73,17 @@ fun MainScreen(
     var showBackupList by remember { mutableStateOf(false) }
     var showRestoreConfirm by remember { mutableStateOf<BackupFile?>(null) }
     var showDeleteConfirm by remember { mutableStateOf<BackupFile?>(null) }
+    var showImportConfirm by remember { mutableStateOf<Uri?>(null) }
+
+    // File picker for importing backup files
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let {
+            showBackupList = false
+            showImportConfirm = it
+        }
+    }
 
     // Animated value for progress indicators
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -241,6 +255,9 @@ fun MainScreen(
             onFileDelete = { file ->
                 showDeleteConfirm = file
             },
+            onImportFromFile = {
+                filePickerLauncher.launch(arrayOf("application/json", "*/*"))
+            },
             onDismiss = { showBackupList = false }
         )
     }
@@ -265,6 +282,18 @@ fun MainScreen(
                 showDeleteConfirm = null
             },
             onDismiss = { showDeleteConfirm = null }
+        )
+    }
+
+    // Import Confirm Dialog
+    showImportConfirm?.let { uri ->
+        RestoreConfirmDialog(
+            fileName = "imported file",
+            onConfirm = {
+                backupViewModel.restoreFromUri(uri)
+                showImportConfirm = null
+            },
+            onDismiss = { showImportConfirm = null }
         )
     }
 }

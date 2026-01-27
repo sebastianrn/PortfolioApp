@@ -218,7 +218,7 @@ fun AssetSheet(
                                 name = name,
                                 type = selectedOption.type,
                                 purchasePrice = p,
-                                currentSellPrice = p,
+                                currentSellPrice = asset?.currentSellPrice ?: p,
                                 currentBuyPrice = asset?.currentBuyPrice ?: p,
                                 quantity = q,
                                 weightInGrams = selectedOption.grams,

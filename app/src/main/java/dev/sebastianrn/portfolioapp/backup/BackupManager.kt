@@ -1,6 +1,7 @@
 package dev.sebastianrn.portfolioapp.backup
 
 import android.content.Context
+import android.net.Uri
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -100,6 +101,17 @@ class BackupManager(private val context: Context) {
             } else {
                 Result.failure(Exception("Backup file not found"))
             }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun readBackupFromUri(uri: Uri): Result<String> {
+        return try {
+            val inputStream = context.contentResolver.openInputStream(uri)
+                ?: return Result.failure(Exception("Cannot open file"))
+            val content = inputStream.bufferedReader().use { it.readText() }
+            Result.success(content)
         } catch (e: Exception) {
             Result.failure(e)
         }

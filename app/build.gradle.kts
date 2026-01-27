@@ -1,5 +1,6 @@
 import java.util.Properties
 import java.io.FileInputStream
+import java.io.FileOutputStream
 
 plugins {
     alias(libs.plugins.android.application)
@@ -14,6 +15,45 @@ if (localPropertiesFile.exists()) {
     localProperties.load(FileInputStream(localPropertiesFile))
 }
 
+// Version Management - Pattern: x.y where y goes from 0-9, then x increments
+val versionPropsFile = file("version.properties")
+val versionProps = Properties().apply {
+    if (versionPropsFile.exists()) {
+        load(FileInputStream(versionPropsFile))
+    } else {
+        this["VERSION_CODE"] = "1"
+        this["VERSION_MAJOR"] = "0"
+        this["VERSION_MINOR"] = "5"
+    }
+}
+
+var vCode = versionProps["VERSION_CODE"].toString().toInt()
+var vMajor = versionProps["VERSION_MAJOR"].toString().toInt()
+var vMinor = versionProps["VERSION_MINOR"].toString().toInt()
+
+// Auto-increment on release builds (works with Android Studio Generate Signed APK/Bundle)
+val isReleaseBuild = gradle.startParameter.taskNames.any {
+    it.contains("Release", ignoreCase = true) &&
+            (it.contains("assemble", ignoreCase = true) || it.contains("bundle", ignoreCase = true))
+}
+
+if (isReleaseBuild) {
+    vCode += 1
+    if (vMinor >= 9) {
+        vMajor += 1
+        vMinor = 0
+    } else {
+        vMinor += 1
+    }
+    versionProps["VERSION_CODE"] = vCode.toString()
+    versionProps["VERSION_MAJOR"] = vMajor.toString()
+    versionProps["VERSION_MINOR"] = vMinor.toString()
+    versionProps.store(FileOutputStream(versionPropsFile), "Version properties - Pattern: x.y (y: 0-9)")
+    println("Version bumped to: $vMajor.$vMinor (code: $vCode)")
+}
+
+val vName = "$vMajor.$vMinor"
+
 android {
     namespace = "dev.sebastianrn.portfolioapp"
     compileSdk = 36 // Targeting Android 14/15 (Safe stable version)
@@ -22,8 +62,8 @@ android {
         applicationId = "dev.sebastianrn.portfolioapp"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.95.1"
+        versionCode = vCode
+        versionName = vName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -125,4 +165,13 @@ dependencies {
 
     // WorkManager for scheduled backups
     implementation(libs.work.runtime.ktx)
+}
+
+// Version task - prints current version
+tasks.register("printVersion") {
+    group = "versioning"
+    description = "Print current version information"
+    doLast {
+        println("Current version: $vMajor.$vMinor (code: $vCode)")
+    }
 }

@@ -144,7 +144,7 @@ fun DetailScreen(
                     name = updatedAsset.name,
                     type = updatedAsset.type,
                     purchasePrice = updatedAsset.purchasePrice,
-                    currentSellPrice = updatedAsset.purchasePrice,
+                    currentSellPrice = updatedAsset.currentSellPrice,
                     quantity = updatedAsset.quantity,
                     weight = updatedAsset.weightInGrams,
                     philoroId = updatedAsset.philoroId
