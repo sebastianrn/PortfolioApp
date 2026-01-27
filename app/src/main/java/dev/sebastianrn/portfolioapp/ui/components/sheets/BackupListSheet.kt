@@ -212,7 +212,7 @@ private fun formatFileName(name: String): String {
         val dateStr = name
             .removePrefix("portfolio_backup_")
             .removeSuffix(".json")
-        val inputFormat = SimpleDateFormat("yyyy-MM-dd_HH:mm:ss", Locale.US)
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd_HH:mm:ss_SSS", Locale.US)
         val outputFormat = SimpleDateFormat("MMM d, yyyy 'at' HH:mm", Locale.getDefault())
         val date = inputFormat.parse(dateStr)
         if (date != null) outputFormat.format(date) else name

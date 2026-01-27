@@ -61,9 +61,15 @@ class BackupManager(private val context: Context) {
             prefs[KEY_LAST_BACKUP_STATUS] = status
         }
     }
+    
+    suspend fun resetSettings() {
+        context.backupDataStore.edit { prefs ->
+            prefs.clear()
+        }
+    }
 
     fun generateBackupFileName(): String {
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH:mm:ss", Locale.US)
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH:mm:ss_SSS", Locale.US)
         val timestamp = dateFormat.format(Date())
         return "$BACKUP_FILE_PREFIX$timestamp$BACKUP_FILE_EXTENSION"
     }
@@ -139,7 +145,7 @@ class BackupManager(private val context: Context) {
 
 data class BackupSettings(
     val isEnabled: Boolean = false,
-    val frequency: BackupFrequency = BackupFrequency.DAILY,
+    val frequency: BackupFrequency = BackupFrequency.MANUAL,
     val lastBackupTime: Long? = null,
     val lastBackupStatus: String? = null
 )
@@ -158,7 +164,7 @@ enum class BackupFrequency(val displayName: String, val intervalHours: Long) {
 
     companion object {
         fun fromString(value: String?): BackupFrequency {
-            return entries.find { it.name == value } ?: DAILY
+            return entries.find { it.name == value } ?: MANUAL
         }
     }
 }

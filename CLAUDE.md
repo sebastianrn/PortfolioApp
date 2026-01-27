@@ -193,6 +193,25 @@ class AppContainer(context: Context) {
 - **Kotlin**: 2.2.21 | **JVM Target**: 1.8
 - **Java**: Requires Java 17 for Gradle builds
 
+## Versioning
+
+Version format: `x.y` (e.g., `0.5`, `0.6`, ... `0.9`, `1.0`)
+
+- **Auto-increment**: Version increments automatically on release builds
+- **Minor (y)**: Goes 0→9, then wraps to 0 and increments major (x)
+- **VERSION_CODE**: Always increments by 1 with each release
+- **Storage**: `app/version.properties`
+
+Works with:
+- `./gradlew assembleRelease`
+- `./gradlew bundleRelease`
+- Android Studio → Build → Generate Signed Bundle / APK
+
+```bash
+# Check current version
+./gradlew printVersion
+```
+
 ## Coding Conventions
 
 ### Naming
