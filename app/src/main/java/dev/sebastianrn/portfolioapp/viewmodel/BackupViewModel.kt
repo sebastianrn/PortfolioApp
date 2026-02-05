@@ -13,6 +13,9 @@ import dev.sebastianrn.portfolioapp.backup.BackupFrequency
 import dev.sebastianrn.portfolioapp.backup.BackupManager
 import dev.sebastianrn.portfolioapp.backup.BackupSettings
 import dev.sebastianrn.portfolioapp.backup.BackupWorker
+import dev.sebastianrn.portfolioapp.backup.CloudBackupFile
+import dev.sebastianrn.portfolioapp.backup.DriveFolder
+import dev.sebastianrn.portfolioapp.backup.GoogleDriveService
 import dev.sebastianrn.portfolioapp.data.local.AppDatabase
 import dev.sebastianrn.portfolioapp.data.model.BackupData
 import kotlinx.coroutines.Dispatchers
@@ -24,7 +27,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
 
-class BackupViewModel(application: Application) : AndroidViewModel(application) {
+class BackupViewModel(
+    application: Application,
+    private val googleDriveService: GoogleDriveService
+) : AndroidViewModel(application) {
 
     private val backupManager = BackupManager(application)
     private val database = AppDatabase.getDatabase(application)
@@ -43,6 +49,21 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _isRestoring = MutableStateFlow(false)
     val isRestoring: StateFlow<Boolean> = _isRestoring.asStateFlow()
+
+    // Google Drive state
+    val isSignedIn: StateFlow<Boolean> = googleDriveService.isSignedIn
+    val userEmail: StateFlow<String?> = googleDriveService.userEmail
+
+    private val _cloudBackupFiles = MutableStateFlow<List<CloudBackupFile>>(emptyList())
+    val cloudBackupFiles: StateFlow<List<CloudBackupFile>> = _cloudBackupFiles.asStateFlow()
+
+    private val _isCloudLoading = MutableStateFlow(false)
+    val isCloudLoading: StateFlow<Boolean> = _isCloudLoading.asStateFlow()
+
+    val selectedFolder: StateFlow<DriveFolder?> = googleDriveService.selectedFolder
+
+    private val _availableFolders = MutableStateFlow<List<DriveFolder>>(emptyList())
+    val availableFolders: StateFlow<List<DriveFolder>> = _availableFolders.asStateFlow()
 
     fun setBackupFrequency(frequency: BackupFrequency) {
         viewModelScope.launch {
@@ -179,6 +200,224 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
         } catch (e: Exception) {
             showToast("Failed to share backup: ${e.message}")
             null
+        }
+    }
+
+    // Google Drive operations
+
+    fun getSignInIntent(): Intent = googleDriveService.getSignInIntent()
+
+    fun handleSignInResult(data: Intent?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            googleDriveService.handleSignInResult(data)
+                .onSuccess { email ->
+                    showToast("Signed in as $email")
+                    loadCloudBackups()
+                }
+                .onFailure { error ->
+                    showToast("Sign in failed: ${error.message}")
+                }
+        }
+    }
+
+    fun signOut() {
+        viewModelScope.launch(Dispatchers.IO) {
+            googleDriveService.signOut()
+            _cloudBackupFiles.value = emptyList()
+            _availableFolders.value = emptyList()
+            showToast("Signed out from Google Drive")
+        }
+    }
+
+    fun loadFolders() {
+        if (!isSignedIn.value) return
+
+        viewModelScope.launch(Dispatchers.IO) {
+            _isCloudLoading.value = true
+            try {
+                googleDriveService.listFolders()
+                    .onSuccess { folders ->
+                        _availableFolders.value = folders
+                    }
+                    .onFailure { error ->
+                        showToast("Failed to load folders: ${error.message}")
+                    }
+            } finally {
+                _isCloudLoading.value = false
+            }
+        }
+    }
+
+    fun selectFolder(folder: DriveFolder) {
+        googleDriveService.setSelectedFolder(folder)
+        loadCloudBackups()
+    }
+
+    fun createAndSelectFolder(folderName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isCloudLoading.value = true
+            try {
+                googleDriveService.createFolder(folderName)
+                    .onSuccess { folder ->
+                        googleDriveService.setSelectedFolder(folder)
+                        loadFolders()
+                        showToast("Folder created: ${folder.name}")
+                    }
+                    .onFailure { error ->
+                        showToast("Failed to create folder: ${error.message}")
+                    }
+            } finally {
+                _isCloudLoading.value = false
+            }
+        }
+    }
+
+    fun loadCloudBackups() {
+        if (!isSignedIn.value) return
+
+        viewModelScope.launch(Dispatchers.IO) {
+            _isCloudLoading.value = true
+            try {
+                googleDriveService.listBackups()
+                    .onSuccess { files ->
+                        _cloudBackupFiles.value = files
+                    }
+                    .onFailure { error ->
+                        showToast("Failed to load cloud backups: ${error.message}")
+                    }
+            } finally {
+                _isCloudLoading.value = false
+            }
+        }
+    }
+
+    fun uploadToCloud() {
+        if (!isSignedIn.value) {
+            showToast("Please sign in to Google Drive first")
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            _isCloudLoading.value = true
+            try {
+                val assets = dao.getAllAssetsOnce()
+                val history = dao.getAllHistoryOnce()
+
+                val backupData = BackupData(
+                    assets = assets,
+                    history = history
+                )
+
+                val jsonContent = Gson().toJson(backupData)
+                val fileName = backupManager.generateBackupFileName()
+
+                googleDriveService.uploadBackup(jsonContent, fileName)
+                    .onSuccess {
+                        backupManager.updateLastCloudBackup("Success")
+                        showToast("Uploaded to Google Drive")
+                        loadCloudBackups()
+                    }
+                    .onFailure { error ->
+                        backupManager.updateLastCloudBackup("Failed: ${error.message}")
+                        showToast("Cloud upload failed: ${error.message}")
+                    }
+            } catch (e: Exception) {
+                backupManager.updateLastCloudBackup("Failed: ${e.message}")
+                showToast("Cloud upload failed: ${e.message}")
+            } finally {
+                _isCloudLoading.value = false
+            }
+        }
+    }
+
+    fun restoreFromCloud(cloudFile: CloudBackupFile) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isRestoring.value = true
+            try {
+                googleDriveService.downloadBackup(cloudFile.id)
+                    .onSuccess { jsonContent ->
+                        val backup = Gson().fromJson(jsonContent, BackupData::class.java)
+                        if (backup != null && backup.assets.isNotEmpty()) {
+                            dao.restoreDatabase(backup.assets, backup.history)
+                            showToast("Backup restored from cloud")
+                        } else {
+                            showToast("Cloud backup is empty or invalid")
+                        }
+                    }
+                    .onFailure { error ->
+                        showToast("Failed to restore from cloud: ${error.message}")
+                    }
+            } catch (e: Exception) {
+                showToast("Failed to restore from cloud: ${e.message}")
+            } finally {
+                _isRestoring.value = false
+            }
+        }
+    }
+
+    fun downloadFromCloud(cloudFile: CloudBackupFile) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isCloudLoading.value = true
+            try {
+                googleDriveService.downloadBackup(cloudFile.id)
+                    .onSuccess { jsonContent ->
+                        backupManager.saveBackup(jsonContent)
+                        showToast("Downloaded to local storage")
+                        loadBackupFiles()
+                    }
+                    .onFailure { error ->
+                        showToast("Download failed: ${error.message}")
+                    }
+            } finally {
+                _isCloudLoading.value = false
+            }
+        }
+    }
+
+    fun deleteFromCloud(cloudFile: CloudBackupFile) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isCloudLoading.value = true
+            try {
+                googleDriveService.deleteBackup(cloudFile.id)
+                    .onSuccess {
+                        showToast("Deleted from Google Drive")
+                        loadCloudBackups()
+                    }
+                    .onFailure { error ->
+                        showToast("Failed to delete: ${error.message}")
+                    }
+            } finally {
+                _isCloudLoading.value = false
+            }
+        }
+    }
+
+    fun uploadLocalBackupToCloud(file: BackupFile) {
+        if (!isSignedIn.value) {
+            showToast("Please sign in to Google Drive first")
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            _isCloudLoading.value = true
+            try {
+                backupManager.readBackup(file.path)
+                    .onSuccess { jsonContent ->
+                        googleDriveService.uploadBackup(jsonContent, file.name)
+                            .onSuccess {
+                                showToast("Uploaded to Google Drive")
+                                loadCloudBackups()
+                            }
+                            .onFailure { error ->
+                                showToast("Upload failed: ${error.message}")
+                            }
+                    }
+                    .onFailure { error ->
+                        showToast("Failed to read backup: ${error.message}")
+                    }
+            } finally {
+                _isCloudLoading.value = false
+            }
         }
     }
 

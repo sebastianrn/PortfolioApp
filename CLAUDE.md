@@ -110,7 +110,10 @@ app/src/main/java/dev/sebastianrn/portfolioapp/
 │   ├── BackupWorker.kt          # WorkManager periodic backup
 │   ├── BackupSettings.kt        # Settings data class
 │   ├── BackupFile.kt            # File metadata data class
-│   └── BackupFrequency.kt       # Enum: MANUAL, DAILY, WEEKLY
+│   ├── BackupFrequency.kt       # Enum: MANUAL, DAILY, WEEKLY
+│   ├── GoogleDriveService.kt    # Google Drive API integration
+│   ├── CloudBackupFile.kt       # Cloud file metadata data class
+│   └── DriveFolder.kt           # Drive folder data class (in GoogleDriveService.kt)
 │
 └── util/
     ├── CurrencyUtils.kt         # Double.formatCurrency() extension
@@ -185,6 +188,9 @@ class AppContainer(context: Context) {
 | DataStore | 1.2.0 | User preferences |
 | WorkManager | 2.11.0 | Scheduled backups |
 | Gson | (via Retrofit) | JSON serialization |
+| Play Services Auth | 21.3.0 | Google Sign-In |
+| Google API Client | 2.7.0 | Google Drive API |
+| Google Drive API | v3-rev20241206 | Drive file operations |
 
 ## Configuration
 
@@ -299,33 +305,32 @@ CREATE TABLE price_history (
 
 ```
 app/src/test/kotlin/dev/sebastianrn/portfolioapp/
+├── TestDataFactory.kt               # Shared test data factory (207+ tests total)
 ├── domain/usecase/
-│   ├── CalculatePortfolioStatsUseCaseTest.kt
-│   ├── CalculatePortfolioCurveUseCaseTest.kt
-│   └── UpdatePricesUseCaseTest.kt
+│   ├── CalculatePortfolioStatsUseCaseTest.kt  # 15 tests
+│   ├── CalculatePortfolioCurveUseCaseTest.kt  # 14 tests
+│   └── UpdatePricesUseCaseTest.kt             # 15 tests
 ├── viewmodel/
-│   ├── GoldViewModelTest.kt
-│   ├── BackupViewModelTest.kt
-│   └── ThemeViewModelTest.kt
+│   ├── GoldViewModelTest.kt         # 20 tests
+│   └── UiEventTest.kt               # 12 tests
 ├── data/
 │   ├── model/
-│   │   ├── GoldAssetTest.kt
-│   │   └── PortfolioSummaryTest.kt
+│   │   ├── GoldAssetTest.kt         # 15 tests
+│   │   └── PortfolioSummaryTest.kt  # 14 tests
 │   └── repository/
-│       └── GoldRepositoryTest.kt
+│       └── GoldRepositoryTest.kt    # 21 tests
 ├── util/
-│   ├── CurrencyUtilsTest.kt
-│   ├── DateUtilsTest.kt
-│   └── ConstantsTest.kt
+│   ├── CurrencyUtilsTest.kt         # 17 tests
+│   ├── DateUtilsTest.kt             # 12 tests
+│   └── ConstantsTest.kt             # 8 tests
 └── ui/components/chart/
-    └── ChartDataProcessorTest.kt
+    └── ChartDataProcessorTest.kt    # 24 tests
 
 app/src/androidTest/kotlin/dev/sebastianrn/portfolioapp/
 ├── data/
-│   ├── GoldAssetDaoTest.kt
-│   └── AppDatabaseMigrationTest.kt
+│   └── GoldAssetDaoTest.kt          # 35+ tests (instrumented)
 └── backup/
-    └── BackupManagerTest.kt
+    └── BackupManagerTest.kt         # 20+ tests (instrumented)
 ```
 
 ### Testing Libraries
@@ -435,15 +440,18 @@ class GoldAssetDaoTest {
 ./gradlew test connectedAndroidTest
 ```
 
-### Test Coverage Guidelines
+### Test Coverage Summary
 
-| Layer | Coverage Target | Key Test Cases |
-|-------|----------------|----------------|
-| UseCases | 100% | Empty inputs, edge cases, calculations |
-| ViewModels | 90%+ | State flows, events, error handling |
-| Repository | 85%+ | CRUD operations, flow emissions |
-| DAO | 100% | All queries, cascade deletes, transactions |
-| Utilities | 100% | Formatting, edge cases, locales |
+| Layer | Tests | Key Test Cases |
+|-------|-------|----------------|
+| UseCases | 44 | Empty inputs, edge cases, portfolio calculations, price updates |
+| ViewModels | 32 | State flows, UI events, asset CRUD, error handling |
+| Repository | 21 | CRUD operations, flow emissions, API integration |
+| Models | 29 | Data class behavior, copy operations, edge cases |
+| Utilities | 37 | Currency formatting, date parsing, constants validation |
+| Chart | 24 | Data filtering, time ranges, calculations |
+| DAO | 35+ | All queries, cascade deletes, transactions, Flow emissions |
+| Backup | 20+ | File operations, JSON serialization, retention policies |
 
 ### Test Data Factories
 
@@ -485,12 +493,68 @@ object TestDataFactory {
 
 ## Backup System
 
+### Local Backups
+
 - **Storage**: Local app files (`/files/backups/`)
 - **Format**: JSON (Gson serialization)
 - **Filename**: `portfolio_backup_YYYY-MM-DD_HH:mm:ss.json`
 - **Scheduling**: WorkManager (Daily/Weekly/Manual)
 - **Retention**: Keeps last 10 backups, auto-deletes older ones
 - **Sharing**: FileProvider for secure file sharing
+
+### Google Drive Integration
+
+Cloud backup sync to Google Drive for extra safety.
+
+#### Features
+
+- **Sign-in**: Google Sign-In with `DRIVE_FILE` scope (user-visible folders)
+- **Folder Selection**: Choose any folder in Google Drive for backups
+- **Folder Persistence**: Selected folder saved in SharedPreferences
+- **Operations**: Upload, download, restore, delete cloud backups
+- **UI**: BackupSettingsSheet with folder picker and create folder dialog
+
+#### Setup (Google Cloud Console)
+
+1. Create OAuth 2.0 Client ID (Android type)
+2. Set OAuth consent screen to **Testing** mode
+3. Add test users (email addresses)
+4. Configure SHA-1 fingerprint from your keystore
+
+```bash
+# Get debug SHA-1 fingerprint
+keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android
+```
+
+#### Architecture
+
+```
+BackupViewModel
+    ├── GoogleDriveService (injected via AppContainer)
+    │   ├── googleSignInClient (sign-in/out)
+    │   ├── driveService (Drive API v3)
+    │   ├── selectedFolder (StateFlow<DriveFolder?>)
+    │   └── SharedPreferences (folder persistence)
+    └── BackupManager (local backups)
+```
+
+#### Key Classes
+
+| Class | Purpose |
+|-------|---------|
+| `GoogleDriveService` | Wrapper for Google Sign-In and Drive API |
+| `DriveFolder` | Data class for folder (id, name) |
+| `CloudBackupFile` | Data class for cloud file metadata |
+| `BackupSettingsSheet` | UI with folder selection dropdown |
+| `BackupListSheet` | Local/Cloud tab toggle with file lists |
+
+#### Usage Flow
+
+1. User opens Backup Settings
+2. Signs in with Google account
+3. Selects or creates a folder for backups
+4. Uploads/downloads backups to/from selected folder
+5. Folder selection persists across app restarts
 
 ## Common Tasks
 

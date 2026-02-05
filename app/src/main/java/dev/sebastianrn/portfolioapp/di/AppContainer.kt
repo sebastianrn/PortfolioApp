@@ -5,6 +5,7 @@ import dev.sebastianrn.portfolioapp.data.local.AppDatabase
 import dev.sebastianrn.portfolioapp.data.remote.NetworkModule
 import dev.sebastianrn.portfolioapp.data.remote.PhiloroScrapingService
 import dev.sebastianrn.portfolioapp.data.repository.GoldRepository
+import dev.sebastianrn.portfolioapp.backup.GoogleDriveService
 import dev.sebastianrn.portfolioapp.domain.usecase.CalculatePortfolioCurveUseCase
 import dev.sebastianrn.portfolioapp.domain.usecase.CalculatePortfolioStatsUseCase
 import dev.sebastianrn.portfolioapp.domain.usecase.UpdatePricesUseCase
@@ -16,6 +17,11 @@ class AppContainer(context: Context) {
     // Network layer
     private val apiService = NetworkModule.api
     private val scraper = PhiloroScrapingService()
+
+    // Google Drive service
+    val googleDriveService: GoogleDriveService by lazy {
+        GoogleDriveService(context)
+    }
 
     // Repository - single source of truth
     val repository: GoldRepository by lazy {

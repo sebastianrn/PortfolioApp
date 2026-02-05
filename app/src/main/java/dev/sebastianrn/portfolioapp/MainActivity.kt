@@ -2,8 +2,10 @@ package dev.sebastianrn.portfolioapp
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -53,10 +55,19 @@ class MainActivity : ComponentActivity() {
                 factory = object : ViewModelProvider.Factory {
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         @Suppress("UNCHECKED_CAST")
-                        return BackupViewModel(application) as T
+                        return BackupViewModel(
+                            application = application,
+                            googleDriveService = appContainer.googleDriveService
+                        ) as T
                     }
                 }
             )
+
+            val googleSignInLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.StartActivityForResult()
+            ) { result ->
+                backupViewModel.handleSignInResult(result.data)
+            }
 
             PortfolioAppTheme(
                 darkTheme = isDarkTheme,
@@ -68,7 +79,10 @@ class MainActivity : ComponentActivity() {
                     AppNavigation(
                         goldViewModel = goldViewModel,
                         backupViewModel = backupViewModel,
-                        themeViewModel = themeViewModel
+                        themeViewModel = themeViewModel,
+                        onGoogleSignIn = {
+                            googleSignInLauncher.launch(backupViewModel.getSignInIntent())
+                        }
                     )
                 }
             }

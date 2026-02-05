@@ -120,6 +120,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.ui.text.google.fonts)
     implementation(libs.google.material)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.datastore.preferences)
@@ -165,6 +166,12 @@ dependencies {
 
     // WorkManager for scheduled backups
     implementation(libs.work.runtime.ktx)
+
+    // Google Drive API
+    implementation(libs.play.services.auth)
+    implementation(libs.google.api.client.android)
+    implementation(libs.google.api.services.drive)
+    implementation(libs.kotlinx.coroutines.play.services)
 }
 
 // Version task - prints current version

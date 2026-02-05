@@ -23,6 +23,9 @@ class BackupManager(private val context: Context) {
         private val KEY_BACKUP_FREQUENCY = stringPreferencesKey("backup_frequency")
         private val KEY_LAST_BACKUP_TIME = longPreferencesKey("last_backup_time")
         private val KEY_LAST_BACKUP_STATUS = stringPreferencesKey("last_backup_status")
+        private val KEY_SYNC_TO_CLOUD = booleanPreferencesKey("sync_to_cloud")
+        private val KEY_LAST_CLOUD_BACKUP_TIME = longPreferencesKey("last_cloud_backup_time")
+        private val KEY_LAST_CLOUD_BACKUP_STATUS = stringPreferencesKey("last_cloud_backup_status")
 
         const val BACKUP_FILE_PREFIX = "portfolio_backup_"
         const val BACKUP_FILE_EXTENSION = ".json"
@@ -39,7 +42,10 @@ class BackupManager(private val context: Context) {
             isEnabled = prefs[KEY_BACKUP_ENABLED] ?: false,
             frequency = BackupFrequency.fromString(prefs[KEY_BACKUP_FREQUENCY]),
             lastBackupTime = prefs[KEY_LAST_BACKUP_TIME],
-            lastBackupStatus = prefs[KEY_LAST_BACKUP_STATUS]
+            lastBackupStatus = prefs[KEY_LAST_BACKUP_STATUS],
+            syncToCloud = prefs[KEY_SYNC_TO_CLOUD] ?: false,
+            lastCloudBackupTime = prefs[KEY_LAST_CLOUD_BACKUP_TIME],
+            lastCloudBackupStatus = prefs[KEY_LAST_CLOUD_BACKUP_STATUS]
         )
     }
 
@@ -59,6 +65,19 @@ class BackupManager(private val context: Context) {
         context.backupDataStore.edit { prefs ->
             prefs[KEY_LAST_BACKUP_TIME] = System.currentTimeMillis()
             prefs[KEY_LAST_BACKUP_STATUS] = status
+        }
+    }
+
+    suspend fun setSyncToCloud(enabled: Boolean) {
+        context.backupDataStore.edit { prefs ->
+            prefs[KEY_SYNC_TO_CLOUD] = enabled
+        }
+    }
+
+    suspend fun updateLastCloudBackup(status: String) {
+        context.backupDataStore.edit { prefs ->
+            prefs[KEY_LAST_CLOUD_BACKUP_TIME] = System.currentTimeMillis()
+            prefs[KEY_LAST_CLOUD_BACKUP_STATUS] = status
         }
     }
     
@@ -147,7 +166,10 @@ data class BackupSettings(
     val isEnabled: Boolean = false,
     val frequency: BackupFrequency = BackupFrequency.MANUAL,
     val lastBackupTime: Long? = null,
-    val lastBackupStatus: String? = null
+    val lastBackupStatus: String? = null,
+    val syncToCloud: Boolean = false,
+    val lastCloudBackupTime: Long? = null,
+    val lastCloudBackupStatus: String? = null
 )
 
 data class BackupFile(

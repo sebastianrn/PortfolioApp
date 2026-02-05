@@ -16,6 +16,7 @@ fun AppNavigation(
     goldViewModel: GoldViewModel,
     backupViewModel: BackupViewModel,
     themeViewModel: ThemeViewModel,
+    onGoogleSignIn: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
@@ -31,7 +32,8 @@ fun AppNavigation(
                 backupViewModel = backupViewModel,
                 onAssetClick = { assetId ->
                     navController.navigate("detail/$assetId")
-                }
+                },
+                onGoogleSignIn = onGoogleSignIn
             )
         }
 

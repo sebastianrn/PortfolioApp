@@ -21,6 +21,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.backup.BackupFile
+import dev.sebastianrn.portfolioapp.backup.CloudBackupFile
+import dev.sebastianrn.portfolioapp.backup.DriveFolder
 import dev.sebastianrn.portfolioapp.ui.components.cards.AssetCard
 import dev.sebastianrn.portfolioapp.ui.components.cards.PerformanceCard
 import dev.sebastianrn.portfolioapp.ui.components.cards.PortfolioSummaryCard
@@ -40,7 +42,8 @@ import dev.sebastianrn.portfolioapp.viewmodel.UiEvent
 fun MainScreen(
     viewModel: GoldViewModel,
     backupViewModel: BackupViewModel,
-    onAssetClick: (Int) -> Unit
+    onAssetClick: (Int) -> Unit,
+    onGoogleSignIn: () -> Unit
 ) {
     val assets by viewModel.allAssets.collectAsState()
     val stats by viewModel.portfolioStats.collectAsState()
@@ -50,6 +53,12 @@ fun MainScreen(
     // Backup state
     val backupSettings by backupViewModel.backupSettings.collectAsState()
     val backupFiles by backupViewModel.backupFiles.collectAsState()
+    val cloudBackupFiles by backupViewModel.cloudBackupFiles.collectAsState()
+    val isSignedIn by backupViewModel.isSignedIn.collectAsState()
+    val userEmail by backupViewModel.userEmail.collectAsState()
+    val isCloudLoading by backupViewModel.isCloudLoading.collectAsState()
+    val selectedFolder by backupViewModel.selectedFolder.collectAsState()
+    val availableFolders by backupViewModel.availableFolders.collectAsState()
 
     val context = LocalContext.current
 
@@ -74,6 +83,8 @@ fun MainScreen(
     var showRestoreConfirm by remember { mutableStateOf<BackupFile?>(null) }
     var showDeleteConfirm by remember { mutableStateOf<BackupFile?>(null) }
     var showImportConfirm by remember { mutableStateOf<Uri?>(null) }
+    var showCloudRestoreConfirm by remember { mutableStateOf<CloudBackupFile?>(null) }
+    var showCloudDeleteConfirm by remember { mutableStateOf<CloudBackupFile?>(null) }
 
     // File picker for importing backup files
     val filePickerLauncher = rememberLauncherForActivityResult(
@@ -225,6 +236,11 @@ fun MainScreen(
     if (showBackupSettings) {
         BackupSettingsSheet(
             settings = backupSettings,
+            isSignedIn = isSignedIn,
+            userEmail = userEmail,
+            selectedFolder = selectedFolder,
+            availableFolders = availableFolders,
+            isCloudLoading = isCloudLoading,
             onFrequencyChange = { frequency ->
                 backupViewModel.setBackupFrequency(frequency)
             },
@@ -233,8 +249,17 @@ fun MainScreen(
             },
             onViewBackups = {
                 backupViewModel.loadBackupFiles()
+                if (isSignedIn) {
+                    backupViewModel.loadCloudBackups()
+                }
                 showBackupList = true
             },
+            onGoogleSignIn = onGoogleSignIn,
+            onGoogleSignOut = { backupViewModel.signOut() },
+            onUploadToCloud = { backupViewModel.uploadToCloud() },
+            onLoadFolders = { backupViewModel.loadFolders() },
+            onSelectFolder = { folder -> backupViewModel.selectFolder(folder) },
+            onCreateFolder = { folderName -> backupViewModel.createAndSelectFolder(folderName) },
             onDismiss = { showBackupSettings = false }
         )
     }
@@ -243,6 +268,9 @@ fun MainScreen(
     if (showBackupList) {
         BackupListSheet(
             backupFiles = backupFiles,
+            cloudBackupFiles = cloudBackupFiles,
+            isSignedIn = isSignedIn,
+            isCloudLoading = isCloudLoading,
             onFileSelect = { file ->
                 showBackupList = false
                 showRestoreConfirm = file
@@ -254,6 +282,19 @@ fun MainScreen(
             },
             onFileDelete = { file ->
                 showDeleteConfirm = file
+            },
+            onFileUploadToCloud = { file ->
+                backupViewModel.uploadLocalBackupToCloud(file)
+            },
+            onCloudFileRestore = { cloudFile ->
+                showBackupList = false
+                showCloudRestoreConfirm = cloudFile
+            },
+            onCloudFileDownload = { cloudFile ->
+                backupViewModel.downloadFromCloud(cloudFile)
+            },
+            onCloudFileDelete = { cloudFile ->
+                showCloudDeleteConfirm = cloudFile
             },
             onImportFromFile = {
                 filePickerLauncher.launch(arrayOf("application/json", "*/*"))
@@ -294,6 +335,29 @@ fun MainScreen(
                 showImportConfirm = null
             },
             onDismiss = { showImportConfirm = null }
+        )
+    }
+
+    // Cloud Restore Confirm Dialog
+    showCloudRestoreConfirm?.let { cloudFile ->
+        RestoreConfirmDialog(
+            fileName = cloudFile.name,
+            onConfirm = {
+                backupViewModel.restoreFromCloud(cloudFile)
+                showCloudRestoreConfirm = null
+            },
+            onDismiss = { showCloudRestoreConfirm = null }
+        )
+    }
+
+    // Cloud Delete Confirm Dialog
+    showCloudDeleteConfirm?.let { cloudFile ->
+        DeleteConfirmDialog(
+            onConfirm = {
+                backupViewModel.deleteFromCloud(cloudFile)
+                showCloudDeleteConfirm = null
+            },
+            onDismiss = { showCloudDeleteConfirm = null }
         )
     }
 }
