@@ -46,6 +46,7 @@ fun MainScreen(
     val stats by viewModel.portfolioStats.collectAsState()
     val portfolioPoints by viewModel.portfolioCurve.collectAsState()
     val dailyChange by viewModel.portfolioChange.collectAsState()
+    val lastUpdated by viewModel.lastUpdated.collectAsState()
 
     // Backup state
     val backupSettings by backupViewModel.backupSettings.collectAsState()
@@ -168,7 +169,8 @@ fun MainScreen(
                     totalProfit = stats.totalValue - stats.totalInvested,
                     dailyChange = dailyChange.first,
                     dailyChangePercent = dailyChange.second,
-                    pulseAlpha = pulseAlpha
+                    pulseAlpha = pulseAlpha,
+                    lastUpdated = lastUpdated
                 )
             }
 

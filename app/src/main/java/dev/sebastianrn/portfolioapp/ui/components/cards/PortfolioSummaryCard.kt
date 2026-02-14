@@ -16,6 +16,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -24,6 +25,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.ui.components.common.StatItem
 import dev.sebastianrn.portfolioapp.util.formatCurrency
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun PortfolioSummaryCard(
@@ -32,7 +36,8 @@ fun PortfolioSummaryCard(
     totalProfit: Double,
     dailyChange: Double,
     dailyChangePercent: Double,
-    pulseAlpha: Float
+    pulseAlpha: Float,
+    lastUpdated: Long? = null
 ) {
     val isPositive = totalProfit >= 0
     val isDailyPositive = dailyChange >= 0
@@ -64,12 +69,29 @@ fun PortfolioSummaryCard(
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                // Current Value label
-                Text(
-                    "Current Value",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                // Current Value label + last updated
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Current Value",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    lastUpdated?.let { timestamp ->
+                        val formatted = remember(timestamp) {
+                            SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
+                                .format(Date(timestamp))
+                        }
+                        Text(
+                            text = formatted,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
 
                 // Main portfolio value with pulse indicator
                 Row(

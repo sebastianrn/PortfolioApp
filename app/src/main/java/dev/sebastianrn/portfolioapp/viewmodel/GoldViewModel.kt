@@ -66,6 +66,11 @@ class GoldViewModel(
         .map { assets -> calculateStats(assets) }
         .stateIn(viewModelScope, SharingStarted.Lazily, PortfolioSummary())
 
+    // Timestamp of the most recent price history entry
+    val lastUpdated: StateFlow<Long?> = allHistory
+        .map { history -> history.maxByOrNull { it.dateTimestamp }?.dateTimestamp }
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
     // Portfolio value curve over time (delegated to UseCase)
     val portfolioCurve: StateFlow<List<Pair<Long, Double>>> = allHistory
         .combine(allAssets) { history, assets ->
