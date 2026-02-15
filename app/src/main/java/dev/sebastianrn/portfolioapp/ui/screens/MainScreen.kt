@@ -5,7 +5,13 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.*
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.backup.BackupFile
+import dev.sebastianrn.portfolioapp.ui.components.bottombar.MainTab
 import dev.sebastianrn.portfolioapp.ui.components.cards.AssetCard
 import dev.sebastianrn.portfolioapp.ui.components.cards.PerformanceCard
 import dev.sebastianrn.portfolioapp.ui.components.cards.PortfolioSummaryCard
@@ -40,6 +47,8 @@ import dev.sebastianrn.portfolioapp.viewmodel.UiEvent
 fun MainScreen(
     viewModel: GoldViewModel,
     backupViewModel: BackupViewModel,
+    selectedTab: MainTab,
+    onTabSelected: (MainTab) -> Unit,
     onAssetClick: (Int) -> Unit
 ) {
     val assets by viewModel.allAssets.collectAsState()
@@ -151,56 +160,78 @@ fun MainScreen(
             }
         },
         floatingActionButton = {
-            AddAssetFab(onClick = { showAssetSheet = true })
+            AnimatedVisibility(
+                visible = selectedTab == MainTab.Assets,
+                enter = scaleIn(tween(200)) + fadeIn(tween(200)),
+                exit = scaleOut(tween(150)) + fadeOut(tween(150))
+            ) {
+                AddAssetFab(onClick = { showAssetSheet = true })
+            }
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        Box(
+            modifier = Modifier.fillMaxSize()
         ) {
-            // Hero Value Card
-            item {
-                PortfolioSummaryCard(
-                    totalValue = stats.totalValue,
-                    totalInvested = stats.totalInvested,
-                    totalProfit = stats.totalValue - stats.totalInvested,
-                    dailyChange = dailyChange.first,
-                    dailyChangePercent = dailyChange.second,
-                    pulseAlpha = pulseAlpha,
-                    lastUpdated = lastUpdated
-                )
+            Crossfade(
+                targetState = selectedTab,
+                animationSpec = tween(300),
+                label = "tab_content",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) { tab ->
+                when (tab) {
+                    MainTab.Portfolio -> {
+                        LazyColumn(
+                            contentPadding = PaddingValues(
+                                start = 16.dp, top = 16.dp, end = 16.dp, bottom = 120.dp
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            item {
+                                PortfolioSummaryCard(
+                                    totalValue = stats.totalValue,
+                                    totalInvested = stats.totalInvested,
+                                    totalProfit = stats.totalValue - stats.totalInvested,
+                                    dailyChange = dailyChange.first,
+                                    dailyChangePercent = dailyChange.second,
+                                    pulseAlpha = pulseAlpha,
+                                    lastUpdated = lastUpdated
+                                )
+                            }
+                            item {
+                                PerformanceCard(points = portfolioPoints)
+                            }
+                        }
+                    }
+
+                    MainTab.Assets -> {
+                        LazyColumn(
+                            contentPadding = PaddingValues(
+                                start = 16.dp, top = 16.dp, end = 16.dp, bottom = 120.dp
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            item {
+                                Text(
+                                    "Your Assets",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                                )
+                            }
+                            items(items = assets, key = { it.id }) { asset ->
+                                AssetCard(
+                                    asset = asset,
+                                    onAssetClick = { onAssetClick(asset.id) }
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
-            // Performance Chart
-            item {
-                PerformanceCard(points = portfolioPoints)
-            }
-
-            // Section Header
-            item {
-                Text(
-                    "Your Assets",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                )
-            }
-
-            // Asset Cards
-            items(items = assets, key = { it.id }) { asset ->
-                AssetCard(
-                    asset = asset,
-                    onAssetClick = { onAssetClick(asset.id) }
-                )
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(80.dp))
-            }
         }
     }
 
