@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainTopBar(
+    title: String = "Gold Portfolio",
     onRefreshClick: () -> Unit,
     onMenuClick: () -> Unit
 ) {
@@ -31,7 +32,7 @@ fun MainTopBar(
         title = {
             Column {
                 Text(
-                    "Gold Portfolio",
+                    title,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Black
                 )
