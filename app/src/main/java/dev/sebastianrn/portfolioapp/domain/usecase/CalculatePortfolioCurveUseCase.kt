@@ -18,11 +18,17 @@ class CalculatePortfolioCurveUseCase {
 
         val assetMap = assets.associateBy { it.id }
         val latestPrices = mutableMapOf<Int, Double>()
+        val cal = Calendar.getInstance()
 
-        // Group entries by date to ensure only ONE point per day
+        // Group entries by minute (truncate seconds/ms) so one price update batch = one point
         return history.sortedBy { it.dateTimestamp }
-            .groupBy { it.dateTimestamp }
-            .map { (timestamp, entriesForDay) ->
+            .groupBy { entry ->
+                cal.timeInMillis = entry.dateTimestamp
+                cal.set(Calendar.SECOND, 0)
+                cal.set(Calendar.MILLISECOND, 0)
+                cal.timeInMillis
+            }
+            .map { (dayTimestamp, entriesForDay) ->
                 // 1. Update latest known prices for all assets in these entries
                 entriesForDay.forEach { latestPrices[it.assetId] = it.sellPrice }
 
@@ -32,7 +38,7 @@ class CalculatePortfolioCurveUseCase {
                     (asset?.quantity ?: 0).toDouble() * price
                 }
 
-                timestamp to totalValue
+                dayTimestamp to totalValue
             }
     }
 

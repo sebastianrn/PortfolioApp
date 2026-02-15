@@ -7,6 +7,7 @@ import dev.sebastianrn.portfolioapp.data.remote.PhiloroScrapingService
 import dev.sebastianrn.portfolioapp.data.repository.GoldRepository
 import dev.sebastianrn.portfolioapp.domain.usecase.CalculatePortfolioCurveUseCase
 import dev.sebastianrn.portfolioapp.domain.usecase.CalculatePortfolioStatsUseCase
+import dev.sebastianrn.portfolioapp.domain.usecase.CalculateHistoricalStatsUseCase
 import dev.sebastianrn.portfolioapp.domain.usecase.UpdatePricesUseCase
 
 class AppContainer(context: Context) {
@@ -33,6 +34,10 @@ class AppContainer(context: Context) {
 
     val calculatePortfolioCurve: CalculatePortfolioCurveUseCase by lazy {
         CalculatePortfolioCurveUseCase()
+    }
+
+    val calculateHistoricalStats: CalculateHistoricalStatsUseCase by lazy {
+        CalculateHistoricalStatsUseCase()
     }
 
     val updatePrices: UpdatePricesUseCase by lazy {

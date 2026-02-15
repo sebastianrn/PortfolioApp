@@ -29,7 +29,9 @@ import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.backup.BackupFile
 import dev.sebastianrn.portfolioapp.ui.components.bottombar.MainTab
 import dev.sebastianrn.portfolioapp.ui.components.cards.AssetCard
+import dev.sebastianrn.portfolioapp.ui.components.cards.HistoricalStatsCard
 import dev.sebastianrn.portfolioapp.ui.components.cards.PerformanceCard
+import dev.sebastianrn.portfolioapp.ui.components.cards.PortfolioHistoryCard
 import dev.sebastianrn.portfolioapp.ui.components.cards.PortfolioSummaryCard
 import dev.sebastianrn.portfolioapp.ui.components.common.AddAssetFab
 import dev.sebastianrn.portfolioapp.ui.components.dialogs.DeleteConfirmDialog
@@ -56,6 +58,7 @@ fun MainScreen(
     val portfolioPoints by viewModel.portfolioCurve.collectAsState()
     val dailyChange by viewModel.portfolioChange.collectAsState()
     val lastUpdated by viewModel.lastUpdated.collectAsState()
+    val historicalStats by viewModel.historicalStats.collectAsState()
 
     // Backup state
     val backupSettings by backupViewModel.backupSettings.collectAsState()
@@ -201,6 +204,44 @@ fun MainScreen(
                             }
                             item {
                                 PerformanceCard(points = portfolioPoints)
+                            }
+                            item {
+                                HistoricalStatsCard(stats = historicalStats)
+                            }
+
+                            // Portfolio Value History
+                            if (portfolioPoints.size >= 2) {
+                                item {
+                                    Text(
+                                        "Portfolio History",
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onBackground,
+                                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                                    )
+                                }
+
+                                // Show most recent first
+                                val reversed = portfolioPoints.reversed()
+                                items(reversed.size) { index ->
+                                    val point = reversed[index]
+                                    val previousValue = if (index < reversed.size - 1) {
+                                        reversed[index + 1].second
+                                    } else {
+                                        point.second
+                                    }
+                                    val change = point.second - previousValue
+                                    val changePercent = if (previousValue != 0.0) {
+                                        (change / previousValue) * 100
+                                    } else 0.0
+
+                                    PortfolioHistoryCard(
+                                        timestamp = point.first,
+                                        value = point.second,
+                                        change = change,
+                                        changePercent = changePercent
+                                    )
+                                }
                             }
                         }
                     }
