@@ -43,6 +43,7 @@ class MainActivity : ComponentActivity() {
                             prefs = userPreferences,
                             calculateStats = appContainer.calculatePortfolioStats,
                             calculateCurve = appContainer.calculatePortfolioCurve,
+                            calculateHistoricalStats = appContainer.calculateHistoricalStats,
                             updatePrices = appContainer.updatePrices
                         ) as T
                     }

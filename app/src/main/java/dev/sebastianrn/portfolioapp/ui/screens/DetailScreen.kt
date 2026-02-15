@@ -99,7 +99,7 @@ fun DetailScreen(
                 )
             }
 
-            item { Spacer(modifier = Modifier.height(80.dp)) }
+            item { Spacer(modifier = Modifier.height(120.dp)) }
         }
     }
 

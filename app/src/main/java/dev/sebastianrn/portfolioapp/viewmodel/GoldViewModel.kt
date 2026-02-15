@@ -8,9 +8,11 @@ import dev.sebastianrn.portfolioapp.data.model.AssetType
 import dev.sebastianrn.portfolioapp.data.model.BackupData
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
 import dev.sebastianrn.portfolioapp.data.model.PriceHistory
+import dev.sebastianrn.portfolioapp.data.model.HistoricalStats
 import dev.sebastianrn.portfolioapp.data.model.PortfolioSummary
 import dev.sebastianrn.portfolioapp.data.UserPreferences
 import dev.sebastianrn.portfolioapp.data.repository.GoldRepository
+import dev.sebastianrn.portfolioapp.domain.usecase.CalculateHistoricalStatsUseCase
 import dev.sebastianrn.portfolioapp.domain.usecase.CalculatePortfolioCurveUseCase
 import dev.sebastianrn.portfolioapp.domain.usecase.CalculatePortfolioStatsUseCase
 import dev.sebastianrn.portfolioapp.domain.usecase.UpdatePricesUseCase
@@ -42,6 +44,7 @@ class GoldViewModel(
     private val prefs: UserPreferences,
     private val calculateStats: CalculatePortfolioStatsUseCase,
     private val calculateCurve: CalculatePortfolioCurveUseCase,
+    private val calculateHistoricalStats: CalculateHistoricalStatsUseCase,
     private val updatePrices: UpdatePricesUseCase
 ) : ViewModel() {
 
@@ -83,6 +86,12 @@ class GoldViewModel(
     val portfolioChange: StateFlow<Pair<Double, Double>> = portfolioCurve
         .map { curve -> calculateCurve.calculateDailyChange(curve) }
         .stateIn(viewModelScope, SharingStarted.Lazily, 0.0 to 0.0)
+
+    // Historical performance stats (delegated to UseCase)
+    val historicalStats: StateFlow<HistoricalStats> = portfolioCurve
+        .map { curve -> calculateHistoricalStats(curve) }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.Lazily, HistoricalStats())
 
     // --- Asset Operations ---
 

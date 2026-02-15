@@ -47,8 +47,9 @@ app/src/main/java/dev/sebastianrn/portfolioapp/
 │   ├── remote/                  # Network layer
 │   │   ├── GoldApi.kt           # Retrofit interface + NetworkModule
 │   │   └── PhiloroScrapingService.kt  # API for Philoro prices
-│   └── repository/
-│       └── GoldRepository.kt    # Single source of truth
+│   ├── repository/
+│   │   └── GoldRepository.kt    # Single source of truth
+│   └── UserPreferences.kt       # DataStore currency preferences
 │
 ├── domain/
 │   └── usecase/                 # Business logic (Clean Architecture)
@@ -57,7 +58,7 @@ app/src/main/java/dev/sebastianrn/portfolioapp/
 │       └── UpdatePricesUseCase.kt             # Price fetching from APIs
 │
 ├── viewmodel/
-│   ├── GoldViewModel.kt         # Main ViewModel (assets, prices, stats)
+│   ├── GoldViewModel.kt         # Main ViewModel (assets, prices, stats, lastUpdated)
 │   ├── BackupViewModel.kt       # Backup/restore operations
 │   ├── ThemeViewModel.kt        # Theme management
 │   └── UiEvent.kt               # Sealed class for one-time UI events
@@ -79,7 +80,7 @@ app/src/main/java/dev/sebastianrn/portfolioapp/
 │   │   ├── cards/               # Card components
 │   │   │   ├── AssetCard.kt     # Asset list item
 │   │   │   ├── AssetSummaryCard.kt  # Detail screen header
-│   │   │   ├── PortfolioSummaryCard.kt  # Main dashboard card
+│   │   │   ├── PortfolioSummaryCard.kt  # Main dashboard card (with last updated)
 │   │   │   ├── HistoryCard.kt   # Price history item
 │   │   │   ├── PerformanceCard.kt   # Performance chart wrapper
 │   │   │   └── ChartCard.kt     # Alternative chart wrapper
@@ -103,7 +104,9 @@ app/src/main/java/dev/sebastianrn/portfolioapp/
 │   └── theme/
 │       ├── Theme.kt             # Material3 theme definition
 │       ├── Color.kt             # Color palette
-│       └── Type.kt              # Typography
+│       ├── Font.kt              # Google Fonts provider + FontFamily (Inter)
+│       ├── Shapes.kt            # Material3 shape definitions
+│       └── Typography.kt        # Typography using GoogleSansFlexFamily
 │
 ├── backup/
 │   ├── BackupManager.kt         # Local file storage management
@@ -179,6 +182,7 @@ class AppContainer(context: Context) {
 | Library | Version | Purpose |
 |---------|---------|---------|
 | Compose BOM | 2025.12.00 | UI framework (Material 3) |
+| Compose Google Fonts | (via BOM) | Downloadable fonts (Inter) |
 | Room | 2.8.4 | Local database |
 | Retrofit | 3.0.0 | Network requests |
 | Vico | 2.3.6 | Charts |
@@ -491,6 +495,14 @@ object TestDataFactory {
 - **Scheduling**: WorkManager (Daily/Weekly/Manual)
 - **Retention**: Keeps last 10 backups, auto-deletes older ones
 - **Sharing**: FileProvider for secure file sharing
+
+## Typography / Font
+
+- **Font**: Inter (via Google Downloadable Fonts), used as `GoogleSansFlexFamily`
+- **Provider**: `Font.kt` defines the `GoogleFont.Provider` with GMS font certs
+- **Certificates**: `res/values/font_certs.xml` (required for Google Fonts provider)
+- **Usage**: All `Typography` text styles in `Typography.kt` set `fontFamily = GoogleSansFlexFamily`
+- **Dependency**: `androidx.compose.ui:ui-text-google-fonts` (version managed by Compose BOM)
 
 ## Common Tasks
 
