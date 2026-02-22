@@ -34,6 +34,7 @@ import dev.sebastianrn.portfolioapp.ui.components.cards.PerformanceCard
 import dev.sebastianrn.portfolioapp.ui.components.cards.PortfolioHistoryCard
 import dev.sebastianrn.portfolioapp.ui.components.cards.PortfolioSummaryCard
 import dev.sebastianrn.portfolioapp.ui.components.common.AddAssetFab
+import dev.sebastianrn.portfolioapp.util.formatCurrency
 import dev.sebastianrn.portfolioapp.ui.components.dialogs.DeleteConfirmDialog
 import dev.sebastianrn.portfolioapp.ui.components.dialogs.RestoreConfirmDialog
 import dev.sebastianrn.portfolioapp.ui.components.sheets.AssetSheet
@@ -80,6 +81,7 @@ fun MainScreen(
         }
     }
 
+    var showAllHistory by remember { mutableStateOf(false) }
     var showAssetSheet by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var showBackupSettings by remember { mutableStateOf(false) }
@@ -115,6 +117,7 @@ fun MainScreen(
         topBar = {
             Box(modifier = Modifier.fillMaxWidth()) {
                 MainTopBar(
+                    title = selectedTab.label,
                     onRefreshClick = { viewModel.updatePricesFromScraper() },
                     onMenuClick = { showMenu = true }
                 )
@@ -211,22 +214,43 @@ fun MainScreen(
 
                             // Portfolio Value History
                             if (portfolioPoints.size >= 2) {
+                                val reversed = portfolioPoints.reversed()
+                                val maxPreview = 20
+                                val hasMore = reversed.size > maxPreview
+                                val displayList = if (showAllHistory) reversed else reversed.take(maxPreview)
+
                                 item {
-                                    Text(
-                                        "Portfolio History",
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                                    )
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 8.dp, bottom = 4.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            "Portfolio History",
+                                            style = MaterialTheme.typography.headlineSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onBackground
+                                        )
+                                        if (hasMore) {
+                                            TextButton(onClick = { showAllHistory = !showAllHistory }) {
+                                                Text(
+                                                    if (showAllHistory) "Show less" else "Show all (${reversed.size})",
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
 
-                                // Show most recent first
-                                val reversed = portfolioPoints.reversed()
-                                items(reversed.size) { index ->
-                                    val point = reversed[index]
-                                    val previousValue = if (index < reversed.size - 1) {
-                                        reversed[index + 1].second
+                                items(displayList.size) { index ->
+                                    val point = displayList[index]
+                                    // Find the previous point in the full reversed list
+                                    val fullIndex = if (showAllHistory) index else index
+                                    val previousValue = if (fullIndex < reversed.size - 1) {
+                                        reversed[fullIndex + 1].second
                                     } else {
                                         point.second
                                     }
@@ -247,19 +271,77 @@ fun MainScreen(
                     }
 
                     MainTab.Assets -> {
+                        val totalProfit = stats.totalValue - stats.totalInvested
+                        val profitPercent = if (stats.totalInvested > 0) {
+                            (totalProfit / stats.totalInvested) * 100
+                        } else 0.0
+                        val isProfitPositive = totalProfit >= 0
+
                         LazyColumn(
                             contentPadding = PaddingValues(
                                 start = 16.dp, top = 16.dp, end = 16.dp, bottom = 120.dp
                             ),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
+                            // Compact portfolio summary
+                            item {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = MaterialTheme.shapes.large,
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surface
+                                    )
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column {
+                                            Text(
+                                                "Total Value",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                stats.totalValue.formatCurrency(),
+                                                style = MaterialTheme.typography.titleLarge,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                        Surface(
+                                            shape = MaterialTheme.shapes.small,
+                                            color = if (isProfitPositive)
+                                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
+                                            else
+                                                MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
+                                        ) {
+                                            Text(
+                                                text = "${if (isProfitPositive) "+" else ""}${String.format("%.1f", profitPercent)}%",
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                                style = MaterialTheme.typography.labelLarge,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (isProfitPositive)
+                                                    MaterialTheme.colorScheme.secondary
+                                                else
+                                                    MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Section header + count
                             item {
                                 Text(
-                                    "Your Assets",
+                                    "Your Assets (${assets.size})",
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onBackground,
-                                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
                                 )
                             }
                             items(items = assets, key = { it.id }) { asset ->
