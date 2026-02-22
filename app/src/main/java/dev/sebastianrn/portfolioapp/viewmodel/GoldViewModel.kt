@@ -2,10 +2,10 @@ package dev.sebastianrn.portfolioapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.gson.Gson
+import dev.sebastianrn.portfolioapp.backup.BackupSerializer
 import dev.sebastianrn.portfolioapp.BuildConfig
 import dev.sebastianrn.portfolioapp.data.model.AssetType
-import dev.sebastianrn.portfolioapp.data.model.BackupData
+import dev.sebastianrn.portfolioapp.ui.components.chart.ChartDataProcessor
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
 import dev.sebastianrn.portfolioapp.data.model.PriceHistory
 import dev.sebastianrn.portfolioapp.data.model.HistoricalStats
@@ -255,14 +255,13 @@ class GoldViewModel(
     // --- Backup Operations ---
 
     fun createBackupJson(): String {
-        val backup = BackupData(assets = allAssets.value, history = allHistory.value)
-        return Gson().toJson(backup)
+        return BackupSerializer.serialize(allAssets.value, allHistory.value)
     }
 
     suspend fun restoreFromBackupJson(jsonString: String): Boolean {
         return try {
-            val backup = Gson().fromJson(jsonString, BackupData::class.java)
-            if (backup.assets.isNotEmpty()) {
+            val backup = BackupSerializer.deserialize(jsonString)
+            if (backup != null && backup.assets.isNotEmpty()) {
                 repository.restoreDatabase(backup.assets, backup.history)
                 for (asset in backup.assets) {
                     refreshAssetCurrentPrice(asset.id)
@@ -283,18 +282,8 @@ class GoldViewModel(
         return repository.getHistoryForAsset(assetId)
             .map { history ->
                 if (history.isEmpty()) return@map emptyList()
-
                 val rawPoints = history.reversed().map { it.dateTimestamp to it.sellPrice }
-
-                // Downsample if too many points
-                if (rawPoints.size > Constants.MAX_CHART_POINTS) {
-                    val step = rawPoints.size / Constants.MAX_CHART_POINTS
-                    rawPoints.filterIndexed { index, _ ->
-                        index % step == 0 || index == rawPoints.lastIndex
-                    }
-                } else {
-                    rawPoints
-                }
+                ChartDataProcessor.downsample(rawPoints)
             }
             .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())

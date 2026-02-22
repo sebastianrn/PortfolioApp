@@ -24,11 +24,9 @@ interface GoldApiService {
 }
 
 object NetworkModule {
-    private const val BASE_URL = "https://www.goldapi.io/"
-
     val api: GoldApiService by lazy {
         Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(dev.sebastianrn.portfolioapp.util.Constants.GOLD_API_BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(GoldApiService::class.java)

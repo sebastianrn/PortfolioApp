@@ -1,10 +1,23 @@
 package dev.sebastianrn.portfolioapp.ui.components.chart
 
+import dev.sebastianrn.portfolioapp.util.Constants
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
 object ChartDataProcessor {
+
+    /**
+     * Downsamples a list of chart points if it exceeds [Constants.MAX_CHART_POINTS].
+     * Always preserves the first and last points.
+     */
+    fun downsample(points: List<Pair<Long, Double>>): List<Pair<Long, Double>> {
+        if (points.size <= Constants.MAX_CHART_POINTS) return points
+        val step = points.size / Constants.MAX_CHART_POINTS
+        return points.filterIndexed { index, _ ->
+            index % step == 0 || index == points.lastIndex
+        }
+    }
 
     /**
      * Filters points based on selected time range and ensures only one data point per day.

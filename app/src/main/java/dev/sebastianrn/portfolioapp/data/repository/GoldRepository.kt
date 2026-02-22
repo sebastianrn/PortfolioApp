@@ -35,6 +35,10 @@ class GoldRepository(
     suspend fun restoreDatabase(assets: List<GoldAsset>, history: List<PriceHistory>)  = dao.restoreDatabase(assets, history)
 
 
+    // Non-Flow queries for backup operations
+    suspend fun getAllAssetsOnce(): List<GoldAsset> = dao.getAllAssetsOnce()
+    suspend fun getAllHistoryOnce(): List<PriceHistory> = dao.getAllHistoryOnce()
+
     suspend fun addHistory(history: PriceHistory) {
         dao.insertHistory(history)
         // We can enforce logic here: updating the asset's current price whenever history is added

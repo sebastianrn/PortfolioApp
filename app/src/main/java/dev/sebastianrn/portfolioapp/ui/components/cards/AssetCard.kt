@@ -16,7 +16,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,8 +28,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.sebastianrn.portfolioapp.data.model.AssetType
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
+import dev.sebastianrn.portfolioapp.ui.components.common.Badge
+import dev.sebastianrn.portfolioapp.util.formatAsPercentage
 import dev.sebastianrn.portfolioapp.util.formatCurrency
-import kotlin.math.abs
 
 @Composable
 fun AssetCard(
@@ -109,20 +109,14 @@ fun AssetCard(
                     )
 
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Surface(
-                            shape = MaterialTheme.shapes.small,
-                            color = MaterialTheme.colorScheme.surfaceVariant
-                        ) {
-                            Text(
-                                text = asset.type.name,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Badge(
+                            text = asset.type.name,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
 
                         Text(
                             text = "${asset.quantity} × ${asset.weightInGrams}g",
@@ -146,21 +140,17 @@ fun AssetCard(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                Surface(
-                    shape = MaterialTheme.shapes.small,
-                    color = if (isPositive)
+                Badge(
+                    text = changePercent.formatAsPercentage(),
+                    containerColor = if (isPositive)
                         MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
                     else
-                        MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
-                ) {
-                    Text(
-                        text = "${String.format("%.1f", abs(changePercent))}%",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isPositive) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
-                    )
-                }
+                        MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
+                    contentColor = if (isPositive)
+                        MaterialTheme.colorScheme.secondary
+                    else
+                        MaterialTheme.colorScheme.error
+                )
             }
 
             Icon(

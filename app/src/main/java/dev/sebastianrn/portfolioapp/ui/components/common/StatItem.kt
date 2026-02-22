@@ -16,8 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.sebastianrn.portfolioapp.util.formatAsPercentage
 import dev.sebastianrn.portfolioapp.util.formatCurrency
-import kotlin.math.abs
 
 @Composable
 fun StatItem(
@@ -71,7 +71,7 @@ fun StatItem(
                         tint = color
                     )
                     Text(
-                        "${String.format("%.1f", abs(percentage))}%",
+                        percentage.formatAsPercentage(),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = color

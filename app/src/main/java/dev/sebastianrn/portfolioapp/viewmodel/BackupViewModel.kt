@@ -3,32 +3,37 @@ package dev.sebastianrn.portfolioapp.viewmodel
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.gson.Gson
 import dev.sebastianrn.portfolioapp.backup.BackupFile
 import dev.sebastianrn.portfolioapp.backup.BackupFrequency
 import dev.sebastianrn.portfolioapp.backup.BackupManager
+import dev.sebastianrn.portfolioapp.backup.BackupSerializer
 import dev.sebastianrn.portfolioapp.backup.BackupSettings
 import dev.sebastianrn.portfolioapp.backup.BackupWorker
-import dev.sebastianrn.portfolioapp.data.local.AppDatabase
-import dev.sebastianrn.portfolioapp.data.model.BackupData
+import dev.sebastianrn.portfolioapp.data.repository.GoldRepository
+import dev.sebastianrn.portfolioapp.util.Constants
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
 
-class BackupViewModel(application: Application) : AndroidViewModel(application) {
+class BackupViewModel(
+    application: Application,
+    private val repository: GoldRepository,
+    private val backupManager: BackupManager
+) : AndroidViewModel(application) {
 
-    private val backupManager = BackupManager(application)
-    private val database = AppDatabase.getDatabase(application)
-    private val dao = database.goldAssetDao()
+    // One-time UI events channel (consistent with GoldViewModel pattern)
+    private val _events = Channel<UiEvent>(Channel.BUFFERED)
+    val events = _events.receiveAsFlow()
 
     val backupSettings: StateFlow<BackupSettings> = backupManager.backupSettings
         .stateIn(viewModelScope, SharingStarted.Lazily, BackupSettings())
@@ -61,29 +66,24 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch(Dispatchers.IO) {
             _isBackingUp.value = true
             try {
-                val assets = dao.getAllAssetsOnce()
-                val history = dao.getAllHistoryOnce()
+                val assets = repository.getAllAssetsOnce()
+                val history = repository.getAllHistoryOnce()
 
-                val backupData = BackupData(
-                    assets = assets,
-                    history = history
-                )
-
-                val jsonContent = Gson().toJson(backupData)
+                val jsonContent = BackupSerializer.serialize(assets, history)
                 val result = backupManager.saveBackup(jsonContent)
 
                 result.onSuccess {
                     backupManager.updateLastBackup("Success")
-                    backupManager.deleteOldBackups(10)
-                    showToast("Backup completed successfully")
+                    backupManager.deleteOldBackups(Constants.MAX_BACKUP_FILES)
+                    sendEvent(UiEvent.ShowToast("Backup completed successfully"))
                     loadBackupFiles()
                 }.onFailure { error ->
                     backupManager.updateLastBackup("Failed: ${error.message}")
-                    showToast("Backup failed: ${error.message}")
+                    sendEvent(UiEvent.ShowToast("Backup failed: ${error.message}"))
                 }
             } catch (e: Exception) {
                 backupManager.updateLastBackup("Failed: ${e.message}")
-                showToast("Backup failed: ${e.message}")
+                sendEvent(UiEvent.ShowToast("Backup failed: ${e.message}"))
             } finally {
                 _isBackingUp.value = false
             }
@@ -102,18 +102,12 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
             try {
                 val result = backupManager.readBackup(file.path)
                 result.onSuccess { jsonContent ->
-                    val backup = Gson().fromJson(jsonContent, BackupData::class.java)
-                    if (backup.assets.isNotEmpty()) {
-                        dao.restoreDatabase(backup.assets, backup.history)
-                        showToast("Backup restored successfully")
-                    } else {
-                        showToast("Backup file is empty or invalid")
-                    }
+                    restoreFromJson(jsonContent)
                 }.onFailure { error ->
-                    showToast("Failed to restore backup: ${error.message}")
+                    sendEvent(UiEvent.ShowToast("Failed to restore backup: ${error.message}"))
                 }
             } catch (e: Exception) {
-                showToast("Failed to restore backup: ${e.message}")
+                sendEvent(UiEvent.ShowToast("Failed to restore backup: ${e.message}"))
             } finally {
                 _isRestoring.value = false
             }
@@ -126,18 +120,12 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
             try {
                 val result = backupManager.readBackupFromUri(uri)
                 result.onSuccess { jsonContent ->
-                    val backup = Gson().fromJson(jsonContent, BackupData::class.java)
-                    if (backup != null && backup.assets.isNotEmpty()) {
-                        dao.restoreDatabase(backup.assets, backup.history)
-                        showToast("Backup restored successfully")
-                    } else {
-                        showToast("Backup file is empty or invalid")
-                    }
+                    restoreFromJson(jsonContent)
                 }.onFailure { error ->
-                    showToast("Failed to restore backup: ${error.message}")
+                    sendEvent(UiEvent.ShowToast("Failed to restore backup: ${error.message}"))
                 }
             } catch (e: Exception) {
-                showToast("Failed to restore backup: ${e.message}")
+                sendEvent(UiEvent.ShowToast("Failed to restore backup: ${e.message}"))
             } finally {
                 _isRestoring.value = false
             }
@@ -147,10 +135,10 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
     fun deleteBackup(file: BackupFile) {
         viewModelScope.launch(Dispatchers.IO) {
             if (backupManager.deleteBackup(file.path)) {
-                showToast("Backup deleted")
+                sendEvent(UiEvent.ShowToast("Backup deleted"))
                 loadBackupFiles()
             } else {
-                showToast("Failed to delete backup")
+                sendEvent(UiEvent.ShowToast("Failed to delete backup"))
             }
         }
     }
@@ -159,7 +147,7 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
         return try {
             val backupFile = File(file.path)
             if (!backupFile.exists()) {
-                showToast("Backup file not found")
+                sendEvent(UiEvent.ShowToast("Backup file not found"))
                 return null
             }
 
@@ -177,14 +165,29 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
         } catch (e: Exception) {
-            showToast("Failed to share backup: ${e.message}")
+            sendEvent(UiEvent.ShowToast("Failed to share backup: ${e.message}"))
             null
         }
     }
 
-    private fun showToast(message: String) {
-        viewModelScope.launch(Dispatchers.Main) {
-            Toast.makeText(getApplication(), message, Toast.LENGTH_SHORT).show()
+    // --- Private Helpers ---
+
+    /**
+     * Shared restore logic used by both [restoreBackup] and [restoreFromUri].
+     */
+    private suspend fun restoreFromJson(jsonContent: String) {
+        val backup = BackupSerializer.deserialize(jsonContent)
+        if (backup != null && backup.assets.isNotEmpty()) {
+            repository.restoreDatabase(backup.assets, backup.history)
+            sendEvent(UiEvent.ShowToast("Backup restored successfully"))
+        } else {
+            sendEvent(UiEvent.ShowToast("Backup file is empty or invalid"))
+        }
+    }
+
+    private fun sendEvent(event: UiEvent) {
+        viewModelScope.launch {
+            _events.send(event)
         }
     }
 }
