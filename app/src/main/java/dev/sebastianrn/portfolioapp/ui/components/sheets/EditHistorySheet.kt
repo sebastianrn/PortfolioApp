@@ -1,6 +1,5 @@
 package dev.sebastianrn.portfolioapp.ui.components.sheets
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,13 +38,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.ui.components.common.AppTextField
+import dev.sebastianrn.portfolioapp.ui.components.common.SheetHeader
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -130,29 +129,9 @@ fun EditHistorySheet(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header with gradient
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                                Color.Transparent
-                            )
-                        ),
-                        shape = RoundedCornerShape(20.dp)
-                    )
-                    .padding(20.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = if (isEditMode) "Edit Record" else stringResource(R.string.update_value_title),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
+            SheetHeader(
+                title = if (isEditMode) "Edit Record" else stringResource(R.string.update_value_title)
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 

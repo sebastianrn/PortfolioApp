@@ -1,14 +1,11 @@
 package dev.sebastianrn.portfolioapp.ui.components.cards
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.Edit
@@ -21,10 +18,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.data.model.PriceHistory
+import dev.sebastianrn.portfolioapp.ui.components.common.CircularIconBox
 import dev.sebastianrn.portfolioapp.util.formatCurrency
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -58,17 +55,11 @@ fun HistoryCard(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (record.isManual)
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                            else
-                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
-                        ),
-                    contentAlignment = Alignment.Center
+                CircularIconBox(
+                    backgroundColor = if (record.isManual)
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    else
+                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
                 ) {
                     Icon(
                         if (record.isManual) Icons.Filled.Edit else Icons.Filled.CloudDone,

@@ -34,9 +34,10 @@ import dev.sebastianrn.portfolioapp.ui.components.cards.PerformanceCard
 import dev.sebastianrn.portfolioapp.ui.components.cards.PortfolioHistoryCard
 import dev.sebastianrn.portfolioapp.ui.components.cards.PortfolioSummaryCard
 import dev.sebastianrn.portfolioapp.ui.components.common.AddAssetFab
+import dev.sebastianrn.portfolioapp.ui.components.common.Badge
+import dev.sebastianrn.portfolioapp.ui.components.dialogs.ConfirmDialog
+import dev.sebastianrn.portfolioapp.util.formatAsPercentage
 import dev.sebastianrn.portfolioapp.util.formatCurrency
-import dev.sebastianrn.portfolioapp.ui.components.dialogs.DeleteConfirmDialog
-import dev.sebastianrn.portfolioapp.ui.components.dialogs.RestoreConfirmDialog
 import dev.sebastianrn.portfolioapp.ui.components.sheets.AssetSheet
 import dev.sebastianrn.portfolioapp.ui.components.sheets.BackupListSheet
 import dev.sebastianrn.portfolioapp.ui.components.sheets.BackupSettingsSheet
@@ -67,9 +68,22 @@ fun MainScreen(
 
     val context = LocalContext.current
 
-    // Handle UI events from ViewModel
+    // Handle UI events from ViewModels
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
+            when (event) {
+                is UiEvent.ShowToast -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                }
+                is UiEvent.ShowError -> {
+                    Toast.makeText(context, "Error: ${event.error.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        backupViewModel.events.collect { event ->
             when (event) {
                 is UiEvent.ShowToast -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
@@ -312,24 +326,17 @@ fun MainScreen(
                                                 color = MaterialTheme.colorScheme.onSurface
                                             )
                                         }
-                                        Surface(
-                                            shape = MaterialTheme.shapes.small,
-                                            color = if (isProfitPositive)
+                                        Badge(
+                                            text = profitPercent.formatAsPercentage(showSign = true),
+                                            containerColor = if (isProfitPositive)
                                                 MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
                                             else
-                                                MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
-                                        ) {
-                                            Text(
-                                                text = "${if (isProfitPositive) "+" else ""}${String.format("%.1f", profitPercent)}%",
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                                style = MaterialTheme.typography.labelLarge,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (isProfitPositive)
-                                                    MaterialTheme.colorScheme.secondary
-                                                else
-                                                    MaterialTheme.colorScheme.error
-                                            )
-                                        }
+                                                MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
+                                            contentColor = if (isProfitPositive)
+                                                MaterialTheme.colorScheme.secondary
+                                            else
+                                                MaterialTheme.colorScheme.error
+                                        )
                                     }
                                 }
                             }
@@ -420,8 +427,11 @@ fun MainScreen(
 
     // Restore Confirm Dialog
     showRestoreConfirm?.let { file ->
-        RestoreConfirmDialog(
-            fileName = file.name,
+        ConfirmDialog(
+            title = "Restore Backup?",
+            message = "This will replace all current data with the backup.",
+            warningMessage = "This action cannot be undone.",
+            confirmText = "Restore",
             onConfirm = {
                 backupViewModel.restoreBackup(file)
                 showRestoreConfirm = null
@@ -432,7 +442,10 @@ fun MainScreen(
 
     // Delete Confirm Dialog
     showDeleteConfirm?.let { file ->
-        DeleteConfirmDialog(
+        ConfirmDialog(
+            title = "Delete Backup?",
+            message = "This backup will be permanently deleted.",
+            confirmText = "Delete",
             onConfirm = {
                 backupViewModel.deleteBackup(file)
                 showDeleteConfirm = null
@@ -443,8 +456,11 @@ fun MainScreen(
 
     // Import Confirm Dialog
     showImportConfirm?.let { uri ->
-        RestoreConfirmDialog(
-            fileName = "imported file",
+        ConfirmDialog(
+            title = "Restore Backup?",
+            message = "This will replace all current data with the imported file.",
+            warningMessage = "This action cannot be undone.",
+            confirmText = "Restore",
             onConfirm = {
                 backupViewModel.restoreFromUri(uri)
                 showImportConfirm = null

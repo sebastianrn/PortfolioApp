@@ -7,6 +7,7 @@ import dev.sebastianrn.portfolioapp.data.model.AssetType
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
 import dev.sebastianrn.portfolioapp.data.model.PriceHistory
 import dev.sebastianrn.portfolioapp.data.repository.GoldRepository
+import dev.sebastianrn.portfolioapp.domain.usecase.CalculateHistoricalStatsUseCase
 import dev.sebastianrn.portfolioapp.domain.usecase.CalculatePortfolioCurveUseCase
 import dev.sebastianrn.portfolioapp.domain.usecase.CalculatePortfolioStatsUseCase
 import dev.sebastianrn.portfolioapp.domain.usecase.UpdatePricesUseCase
@@ -40,6 +41,7 @@ class GoldViewModelTest {
     private lateinit var prefs: UserPreferences
     private lateinit var calculateStats: CalculatePortfolioStatsUseCase
     private lateinit var calculateCurve: CalculatePortfolioCurveUseCase
+    private lateinit var calculateHistoricalStats: CalculateHistoricalStatsUseCase
     private lateinit var updatePrices: UpdatePricesUseCase
 
     private val testDispatcher = StandardTestDispatcher()
@@ -56,6 +58,7 @@ class GoldViewModelTest {
         prefs = mockk(relaxed = true)
         calculateStats = CalculatePortfolioStatsUseCase()
         calculateCurve = CalculatePortfolioCurveUseCase()
+        calculateHistoricalStats = CalculateHistoricalStatsUseCase()
         updatePrices = mockk(relaxed = true)
 
         // Setup default mocks
@@ -68,6 +71,7 @@ class GoldViewModelTest {
             prefs = prefs,
             calculateStats = calculateStats,
             calculateCurve = calculateCurve,
+            calculateHistoricalStats = calculateHistoricalStats,
             updatePrices = updatePrices
         )
     }
@@ -320,6 +324,7 @@ class GoldViewModelTest {
             prefs = prefs,
             calculateStats = calculateStats,
             calculateCurve = calculateCurve,
+            calculateHistoricalStats = calculateHistoricalStats,
             updatePrices = updatePrices
         )
 
@@ -352,6 +357,7 @@ class GoldViewModelTest {
             prefs = prefs,
             calculateStats = calculateStats,
             calculateCurve = calculateCurve,
+            calculateHistoricalStats = calculateHistoricalStats,
             updatePrices = updatePrices
         )
 

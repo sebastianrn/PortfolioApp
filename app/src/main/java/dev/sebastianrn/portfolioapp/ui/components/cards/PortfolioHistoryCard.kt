@@ -1,14 +1,11 @@
 package dev.sebastianrn.portfolioapp.ui.components.cards
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingFlat
@@ -22,14 +19,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.sebastianrn.portfolioapp.ui.components.common.CircularIconBox
+import dev.sebastianrn.portfolioapp.util.formatAsPercentage
 import dev.sebastianrn.portfolioapp.util.formatCurrency
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.math.abs
 
 @Composable
 fun PortfolioHistoryCard(
@@ -74,12 +71,8 @@ fun PortfolioHistoryCard(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(trendColor.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center
+                CircularIconBox(
+                    backgroundColor = trendColor.copy(alpha = 0.15f)
                 ) {
                     Icon(
                         trendIcon,
@@ -103,7 +96,7 @@ fun PortfolioHistoryCard(
                     )
                     if (!isNeutral) {
                         Text(
-                            "${if (isPositive) "+" else ""}${change.formatCurrency()} (${String.format("%.1f", abs(changePercent))}%)",
+                            "${if (isPositive) "+" else ""}${change.formatCurrency()} (${changePercent.formatAsPercentage()})",
                             style = MaterialTheme.typography.bodySmall,
                             color = trendColor
                         )

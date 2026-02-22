@@ -6,9 +6,8 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.google.gson.Gson
 import dev.sebastianrn.portfolioapp.data.local.AppDatabase
-import dev.sebastianrn.portfolioapp.data.model.BackupData
+import dev.sebastianrn.portfolioapp.util.Constants
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
 
@@ -51,26 +50,18 @@ class BackupWorker(
                 return Result.success()
             }
 
-            // Get backup data
             val database = AppDatabase.getDatabase(applicationContext)
             val dao = database.goldAssetDao()
             val assets = dao.getAllAssetsOnce()
             val history = dao.getAllHistoryOnce()
 
-            val backupData = BackupData(
-                assets = assets,
-                history = history
-            )
+            val jsonContent = BackupSerializer.serialize(assets, history)
 
-            val jsonContent = Gson().toJson(backupData)
-
-            // Save to local storage
             val result = backupManager.saveBackup(jsonContent)
 
             if (result.isSuccess) {
                 backupManager.updateLastBackup("Success")
-                // Clean up old backups, keep last 10
-                backupManager.deleteOldBackups(10)
+                backupManager.deleteOldBackups(Constants.MAX_BACKUP_FILES)
                 Result.success()
             } else {
                 backupManager.updateLastBackup("Failed: ${result.exceptionOrNull()?.message}")

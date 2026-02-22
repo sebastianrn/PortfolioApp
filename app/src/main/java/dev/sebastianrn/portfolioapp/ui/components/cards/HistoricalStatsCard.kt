@@ -18,11 +18,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.data.model.HistoricalStats
+import dev.sebastianrn.portfolioapp.util.formatAsPercentage
 import dev.sebastianrn.portfolioapp.util.formatCurrency
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.math.abs
 
 @Composable
 fun HistoricalStatsCard(
@@ -160,7 +160,7 @@ private fun HistoricalStatItem(
         )
         if (percentage != null) {
             Text(
-                "${String.format("%.1f", percentage)}%",
+                percentage.formatAsPercentage(),
                 style = MaterialTheme.typography.labelSmall,
                 color = color
             )
@@ -187,7 +187,7 @@ private fun PercentStatItem(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            "${String.format("%.1f", abs(percentage))}%",
+            percentage.formatAsPercentage(),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
             color = color

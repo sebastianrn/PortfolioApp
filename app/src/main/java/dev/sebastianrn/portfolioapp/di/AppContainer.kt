@@ -1,6 +1,7 @@
 package dev.sebastianrn.portfolioapp.di
 
 import android.content.Context
+import dev.sebastianrn.portfolioapp.backup.BackupManager
 import dev.sebastianrn.portfolioapp.data.local.AppDatabase
 import dev.sebastianrn.portfolioapp.data.remote.NetworkModule
 import dev.sebastianrn.portfolioapp.data.remote.PhiloroScrapingService
@@ -17,6 +18,11 @@ class AppContainer(context: Context) {
     // Network layer
     private val apiService = NetworkModule.api
     private val scraper = PhiloroScrapingService()
+
+    // Backup manager
+    val backupManager: BackupManager by lazy {
+        BackupManager(context)
+    }
 
     // Repository - single source of truth
     val repository: GoldRepository by lazy {

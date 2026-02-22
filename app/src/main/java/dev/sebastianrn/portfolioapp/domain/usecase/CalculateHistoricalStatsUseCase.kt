@@ -11,74 +11,96 @@ class CalculateHistoricalStatsUseCase {
     operator fun invoke(curve: List<Pair<Long, Double>>): HistoricalStats {
         if (curve.size < 2) return HistoricalStats()
 
-        // All-time high and low
-        val athPoint = curve.maxBy { it.second }
-        val atlPoint = curve.minBy { it.second }
+        val extremes = findExtremes(curve)
+        val dayChanges = findBestAndWorstDays(curve)
+        val maxDrawdown = calculateMaxDrawdown(curve)
+        val totalReturn = calculateTotalReturn(curve)
 
-        // Day-over-day changes
-        var bestDayAbsolute = 0.0
-        var bestDayPercent = 0.0
-        var bestDayDate = 0L
-        var worstDayAbsolute = 0.0
-        var worstDayPercent = 0.0
-        var worstDayDate = 0L
+        return HistoricalStats(
+            allTimeHigh = extremes.ath.second,
+            allTimeHighDate = extremes.ath.first,
+            allTimeLow = extremes.atl.second,
+            allTimeLowDate = extremes.atl.first,
+            bestDayAbsolute = dayChanges.bestAbsolute,
+            bestDayPercent = dayChanges.bestPercent,
+            bestDayDate = dayChanges.bestDate,
+            worstDayAbsolute = dayChanges.worstAbsolute,
+            worstDayPercent = dayChanges.worstPercent,
+            worstDayDate = dayChanges.worstDate,
+            maxDrawdownPercent = maxDrawdown,
+            totalReturnPercent = totalReturn
+        )
+    }
 
-        // Max drawdown tracking
-        var peak = curve.first().second
-        var maxDrawdownPercent = 0.0
+    private data class Extremes(
+        val ath: Pair<Long, Double>,
+        val atl: Pair<Long, Double>
+    )
+
+    private data class DayChanges(
+        val bestAbsolute: Double = 0.0,
+        val bestPercent: Double = 0.0,
+        val bestDate: Long = 0L,
+        val worstAbsolute: Double = 0.0,
+        val worstPercent: Double = 0.0,
+        val worstDate: Long = 0L
+    )
+
+    private fun findExtremes(curve: List<Pair<Long, Double>>): Extremes {
+        return Extremes(
+            ath = curve.maxBy { it.second },
+            atl = curve.minBy { it.second }
+        )
+    }
+
+    private fun findBestAndWorstDays(curve: List<Pair<Long, Double>>): DayChanges {
+        var bestAbsolute = 0.0
+        var bestPercent = 0.0
+        var bestDate = 0L
+        var worstAbsolute = 0.0
+        var worstPercent = 0.0
+        var worstDate = 0L
 
         for (i in 1 until curve.size) {
             val prevValue = curve[i - 1].second
             val currValue = curve[i].second
-            val timestamp = curve[i].first
-
-            // Day-over-day change
             val change = currValue - prevValue
             val changePercent = if (prevValue != 0.0) (change / prevValue) * 100 else 0.0
 
-            if (change > bestDayAbsolute) {
-                bestDayAbsolute = change
-                bestDayPercent = changePercent
-                bestDayDate = timestamp
+            if (change > bestAbsolute) {
+                bestAbsolute = change
+                bestPercent = changePercent
+                bestDate = curve[i].first
             }
-            if (change < worstDayAbsolute) {
-                worstDayAbsolute = change
-                worstDayPercent = changePercent
-                worstDayDate = timestamp
-            }
-
-            // Max drawdown
-            if (currValue > peak) {
-                peak = currValue
-            }
-            if (peak > 0.0) {
-                val drawdown = (peak - currValue) / peak * 100
-                if (drawdown > maxDrawdownPercent) {
-                    maxDrawdownPercent = drawdown
-                }
+            if (change < worstAbsolute) {
+                worstAbsolute = change
+                worstPercent = changePercent
+                worstDate = curve[i].first
             }
         }
 
-        // Total return
+        return DayChanges(bestAbsolute, bestPercent, bestDate, worstAbsolute, worstPercent, worstDate)
+    }
+
+    private fun calculateMaxDrawdown(curve: List<Pair<Long, Double>>): Double {
+        var peak = curve.first().second
+        var maxDrawdownPercent = 0.0
+
+        for (i in 1 until curve.size) {
+            val currValue = curve[i].second
+            if (currValue > peak) peak = currValue
+            if (peak > 0.0) {
+                val drawdown = (peak - currValue) / peak * 100
+                if (drawdown > maxDrawdownPercent) maxDrawdownPercent = drawdown
+            }
+        }
+
+        return maxDrawdownPercent
+    }
+
+    private fun calculateTotalReturn(curve: List<Pair<Long, Double>>): Double {
         val firstValue = curve.first().second
         val lastValue = curve.last().second
-        val totalReturnPercent = if (firstValue != 0.0) {
-            (lastValue - firstValue) / firstValue * 100
-        } else 0.0
-
-        return HistoricalStats(
-            allTimeHigh = athPoint.second,
-            allTimeHighDate = athPoint.first,
-            allTimeLow = atlPoint.second,
-            allTimeLowDate = atlPoint.first,
-            bestDayAbsolute = bestDayAbsolute,
-            bestDayPercent = bestDayPercent,
-            bestDayDate = bestDayDate,
-            worstDayAbsolute = worstDayAbsolute,
-            worstDayPercent = worstDayPercent,
-            worstDayDate = worstDayDate,
-            maxDrawdownPercent = maxDrawdownPercent,
-            totalReturnPercent = totalReturnPercent
-        )
+        return if (firstValue != 0.0) (lastValue - firstValue) / firstValue * 100 else 0.0
     }
 }

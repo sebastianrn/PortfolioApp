@@ -3,6 +3,7 @@ package dev.sebastianrn.portfolioapp.data.remote
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
+import dev.sebastianrn.portfolioapp.util.Constants
 import java.net.URL
 
 data class ApiResponse(
@@ -35,7 +36,6 @@ data class ScrapedAsset(
 class PhiloroScrapingService {
 
     companion object {
-        private const val API_BASE_URL = "https://philoro.ch/api/prices/products?country=CH&currency=CHF&skus="
         private const val TAG = "PhiloroApiService"
     }
 
@@ -51,7 +51,7 @@ class PhiloroScrapingService {
         try {
             // 1. Construct URL with comma-separated SKUs
             val skuParam = skus.joinToString(",")
-            val fullUrl = "$API_BASE_URL$skuParam"
+            val fullUrl = "${Constants.PHILORO_API_BASE_URL}$skuParam"
 
             Log.d(TAG, "Calling API: $fullUrl")
 

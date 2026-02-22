@@ -54,7 +54,11 @@ class MainActivity : ComponentActivity() {
                 factory = object : ViewModelProvider.Factory {
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         @Suppress("UNCHECKED_CAST")
-                        return BackupViewModel(application) as T
+                        return BackupViewModel(
+                            application = application,
+                            repository = repository,
+                            backupManager = appContainer.backupManager
+                        ) as T
                     }
                 }
             )

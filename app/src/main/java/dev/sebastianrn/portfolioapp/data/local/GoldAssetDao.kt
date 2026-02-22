@@ -46,7 +46,7 @@ interface GoldAssetDao {
     @Query("SELECT * FROM price_history ORDER BY dateTimestamp ASC")
     fun getAllHistory(): Flow<List<PriceHistory>>
 
-    @Query("SELECT * FROM gold_assets WHERE philoroId IS NOT NULL AND philoroId != ''")
+    @Query("SELECT * FROM gold_assets WHERE philoroId > 0")
     suspend fun getAssetsWithPhiloroId(): List<GoldAsset>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
