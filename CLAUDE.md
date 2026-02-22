@@ -39,6 +39,7 @@ app/src/main/java/dev/sebastianrn/portfolioapp/
 │   │   ├── PriceHistory.kt      # Price history entity
 │   │   ├── AssetType.kt         # Enum: COIN, BAR
 │   │   ├── PortfolioSummary.kt  # Portfolio stats DTO
+│   │   ├── HistoricalStats.kt   # Historical performance stats DTO
 │   │   └── BackupData.kt        # Backup serialization DTO
 │   ├── local/                   # Room database layer
 │   │   ├── AppDatabase.kt       # Room database singleton
@@ -53,12 +54,13 @@ app/src/main/java/dev/sebastianrn/portfolioapp/
 │
 ├── domain/
 │   └── usecase/                 # Business logic (Clean Architecture)
-│       ├── CalculatePortfolioStatsUseCase.kt  # Portfolio value/profit calculation
-│       ├── CalculatePortfolioCurveUseCase.kt  # Portfolio curve + daily change
-│       └── UpdatePricesUseCase.kt             # Price fetching from APIs
+│       ├── CalculatePortfolioStatsUseCase.kt      # Portfolio value/profit calculation
+│       ├── CalculatePortfolioCurveUseCase.kt      # Portfolio curve + daily change (grouped by minute)
+│       ├── CalculateHistoricalStatsUseCase.kt     # ATH/ATL, best/worst day, drawdown, return
+│       └── UpdatePricesUseCase.kt                 # Price fetching from APIs
 │
 ├── viewmodel/
-│   ├── GoldViewModel.kt         # Main ViewModel (assets, prices, stats, lastUpdated)
+│   ├── GoldViewModel.kt         # Main ViewModel (assets, prices, stats, historicalStats, lastUpdated)
 │   ├── BackupViewModel.kt       # Backup/restore operations
 │   ├── ThemeViewModel.kt        # Theme management
 │   └── UiEvent.kt               # Sealed class for one-time UI events
@@ -68,19 +70,24 @@ app/src/main/java/dev/sebastianrn/portfolioapp/
 │
 ├── ui/
 │   ├── screens/
-│   │   ├── MainScreen.kt        # Portfolio dashboard
+│   │   ├── MainScreen.kt        # Tab-based dashboard (Portfolio + Assets tabs)
 │   │   └── DetailScreen.kt      # Asset detail view
 │   ├── navigation/
-│   │   └── NavGraph.kt          # Compose NavHost with routes
+│   │   └── AppNavigation.kt     # NavHost + FloatingNavBar overlay (owns tab state)
 │   ├── components/
 │   │   ├── common/              # Reusable atomic components
 │   │   │   ├── StatItem.kt      # Stat display with optional percentage
 │   │   │   ├── AppTextField.kt  # Styled text input
 │   │   │   └── AddAssetFab.kt   # Floating action button
+│   │   ├── bottombar/           # Bottom navigation
+│   │   │   ├── FloatingNavBar.kt  # Revolut-style floating pill nav bar
+│   │   │   └── MainTab.kt      # Tab enum (Portfolio, Assets)
 │   │   ├── cards/               # Card components
 │   │   │   ├── AssetCard.kt     # Asset list item
 │   │   │   ├── AssetSummaryCard.kt  # Detail screen header
 │   │   │   ├── PortfolioSummaryCard.kt  # Main dashboard card (with last updated)
+│   │   │   ├── HistoricalStatsCard.kt   # ATH/ATL, best/worst day, drawdown stats
+│   │   │   ├── PortfolioHistoryCard.kt  # Portfolio value history entry with trend icon
 │   │   │   ├── HistoryCard.kt   # Price history item
 │   │   │   ├── PerformanceCard.kt   # Performance chart wrapper
 │   │   │   └── ChartCard.kt     # Alternative chart wrapper
@@ -93,7 +100,7 @@ app/src/main/java/dev/sebastianrn/portfolioapp/
 │   │   │   ├── RestoreConfirmDialog.kt
 │   │   │   └── DeleteConfirmDialog.kt
 │   │   ├── topbar/              # App bars
-│   │   │   ├── MainTopBar.kt    # Main screen top bar
+│   │   │   ├── MainTopBar.kt    # Main screen top bar (dynamic title per tab)
 │   │   │   └── DetailTopBar.kt  # Detail screen top bar
 │   │   └── chart/               # Chart components & utilities
 │   │       ├── PortfolioChart.kt    # Vico line chart
@@ -173,9 +180,18 @@ class AppContainer(context: Context) {
     // UseCases
     val calculatePortfolioStats by lazy { CalculatePortfolioStatsUseCase() }
     val calculatePortfolioCurve by lazy { CalculatePortfolioCurveUseCase() }
+    val calculateHistoricalStats by lazy { CalculateHistoricalStatsUseCase() }
     val updatePrices by lazy { UpdatePricesUseCase(repository, scraper, api) }
 }
 ```
+
+### Navigation
+
+- **AppNavigation** owns `selectedTab` state and renders `FloatingNavBar` as a `Box` overlay on top of `NavHost`
+- **FloatingNavBar** is a Revolut-style compact pill nav bar visible on all screens (MainScreen + DetailScreen)
+- **MainScreen** receives `selectedTab` and `onTabSelected` as params; uses `Crossfade` for tab switching
+- **Tabs**: `MainTab.Portfolio` (summary, chart, historical stats, portfolio history) and `MainTab.Assets` (compact summary, asset list)
+- Tapping a tab from DetailScreen pops back to MainScreen via `navController.popBackStack`
 
 ## Key Dependencies
 
@@ -228,11 +244,12 @@ Works with:
 | UseCases | `*UseCase.kt` | `CalculatePortfolioCurveUseCase` |
 | ViewModels | `*ViewModel.kt` | `GoldViewModel` |
 | TopBars | `*TopBar.kt` | `MainTopBar`, `DetailTopBar` |
+| Tabs | `*Tab.kt` | `MainTab` |
 
 ### File Organization
 
 - **One component per file** (file name matches primary composable)
-- **Group by feature type**: `cards/`, `sheets/`, `dialogs/`, `topbar/`, `chart/`
+- **Group by feature type**: `cards/`, `sheets/`, `dialogs/`, `topbar/`, `bottombar/`, `chart/`
 - **Common components** in `common/` subdirectory
 - **Business logic** in `domain/usecase/`
 
@@ -522,7 +539,7 @@ object TestDataFactory {
 ### Add a new screen
 
 1. Create in `ui/screens/`
-2. Add route to `navigation/NavGraph.kt`
+2. Add route to `navigation/AppNavigation.kt`
 3. Create corresponding ViewModel if needed
 4. Handle UiEvents with `LaunchedEffect`
 
