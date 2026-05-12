@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.sebastianrn.portfolioapp.backup.BackupFile
 import dev.sebastianrn.portfolioapp.ui.components.bottombar.MainTab
 import dev.sebastianrn.portfolioapp.ui.components.cards.AssetCard
@@ -55,16 +56,16 @@ fun MainScreen(
     onTabSelected: (MainTab) -> Unit,
     onAssetClick: (Int) -> Unit
 ) {
-    val assets by viewModel.allAssets.collectAsState()
-    val stats by viewModel.portfolioStats.collectAsState()
-    val portfolioPoints by viewModel.portfolioCurve.collectAsState()
-    val dailyChange by viewModel.portfolioChange.collectAsState()
-    val lastUpdated by viewModel.lastUpdated.collectAsState()
-    val historicalStats by viewModel.historicalStats.collectAsState()
+    val assets by viewModel.allAssets.collectAsStateWithLifecycle()
+    val stats by viewModel.portfolioStats.collectAsStateWithLifecycle()
+    val portfolioPoints by viewModel.portfolioCurve.collectAsStateWithLifecycle()
+    val dailyChange by viewModel.portfolioChange.collectAsStateWithLifecycle()
+    val lastUpdated by viewModel.lastUpdated.collectAsStateWithLifecycle()
+    val historicalStats by viewModel.historicalStats.collectAsStateWithLifecycle()
 
     // Backup state
-    val backupSettings by backupViewModel.backupSettings.collectAsState()
-    val backupFiles by backupViewModel.backupFiles.collectAsState()
+    val backupSettings by backupViewModel.backupSettings.collectAsStateWithLifecycle()
+    val backupFiles by backupViewModel.backupFiles.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
 
@@ -134,7 +135,7 @@ fun MainScreen(
                     title = selectedTab.label,
                     onRefreshClick = { viewModel.updatePricesFromScraper() },
                     onMenuClick = { showMenu = true }
-                )
+                }
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -355,8 +356,7 @@ fun MainScreen(
                                 AssetCard(
                                     asset = asset,
                                     onAssetClick = { onAssetClick(asset.id) }
-                                )
-                            }
+                            )
                         }
                     }
                 }

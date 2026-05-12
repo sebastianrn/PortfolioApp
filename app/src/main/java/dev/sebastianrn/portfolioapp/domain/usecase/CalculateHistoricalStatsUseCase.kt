@@ -54,10 +54,12 @@ class CalculateHistoricalStatsUseCase {
     }
 
     private fun findBestAndWorstDays(curve: List<Pair<Long, Double>>): DayChanges {
+        if (curve.size < 2) return DayChanges()
+
         var bestAbsolute = 0.0
         var bestPercent = 0.0
         var bestDate = 0L
-        var worstAbsolute = 0.0
+        var worstAbsolute = Double.MAX_VALUE
         var worstPercent = 0.0
         var worstDate = 0L
 
