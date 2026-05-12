@@ -25,15 +25,14 @@ class GoldRepository(
     suspend fun addAsset(asset: GoldAsset): Long = dao.insert(asset)
     suspend fun updateAsset(asset: GoldAsset) = dao.update(asset)
     suspend fun getAssetWithPhiloroId(): List<GoldAsset> = dao.getAssetsWithPhiloroId()
-    suspend fun updatePricesByPhiloroId(philoroId: Int, sellPrice: Double, buyPrice: Double) = dao.updatePricesByPhiloroId(philoroId,sellPrice, buyPrice)
+    suspend fun updatePricesByPhiloroId(philoroId: Int, sellPrice: Double, buyPrice: Double) = dao.updatePricesByPhiloroId(philoroId, sellPrice, buyPrice)
     suspend fun deleteAsset(asset: GoldAsset) = dao.deleteAsset(asset)
     suspend fun getEarliestHistory(assetId: Int): PriceHistory? = dao.getEarliestHistory(assetId)
     suspend fun getLatestHistory(assetId: Int): PriceHistory? = dao.getLatestHistory(assetId)
     suspend fun updateHistory(history: PriceHistory) = dao.updateHistory(history)
     suspend fun insertHistory(history: PriceHistory) = dao.insertHistory(history)
     suspend fun updateCurrentPrice(assetId: Int, newPrice: Double) = dao.updateCurrentPrice(assetId, newPrice)
-    suspend fun restoreDatabase(assets: List<GoldAsset>, history: List<PriceHistory>)  = dao.restoreDatabase(assets, history)
-
+    suspend fun restoreDatabase(assets: List<GoldAsset>, history: List<PriceHistory>) = dao.restoreDatabase(assets, history)
 
     // Non-Flow queries for backup operations
     suspend fun getAllAssetsOnce(): List<GoldAsset> = dao.getAllAssetsOnce()
@@ -43,5 +42,17 @@ class GoldRepository(
         dao.insertHistory(history)
         // We can enforce logic here: updating the asset's current price whenever history is added
         dao.updateCurrentPrice(history.assetId, history.sellPrice)
+    }
+
+    /**
+     * Generic safe call wrapper for consistent error handling.
+     * Use this for all suspend operations that can throw.
+     */
+    suspend fun <T> safeCall(block: suspend () -> T): Result<T> {
+        return try {
+            Result.success(block())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }
