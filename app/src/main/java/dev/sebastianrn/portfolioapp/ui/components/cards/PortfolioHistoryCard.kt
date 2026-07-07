@@ -25,11 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.sebastianrn.portfolioapp.util.DateFormats
 import dev.sebastianrn.portfolioapp.util.formatAsPercentage
 import dev.sebastianrn.portfolioapp.util.formatCurrency
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import dev.sebastianrn.portfolioapp.util.formatDate
 
 @Composable
 fun PortfolioHistoryCard(
@@ -39,7 +38,6 @@ fun PortfolioHistoryCard(
     changePercent: Double,
     modifier: Modifier = Modifier
 ) {
-    val sdf = remember { SimpleDateFormat("MMM dd, yyyy · HH:mm", Locale.getDefault()) }
     val isPositive = change > 0
     val isNeutral = change == 0.0
 
@@ -91,7 +89,7 @@ fun PortfolioHistoryCard(
 
                 Column {
                     Text(
-                        sdf.format(Date(timestamp)),
+                        remember(timestamp) { timestamp.formatDate(DateFormats.listRow) },
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface

@@ -26,11 +26,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.ui.components.common.AnimatedCounterText
 import dev.sebastianrn.portfolioapp.ui.components.common.GlassTile
 import dev.sebastianrn.portfolioapp.ui.components.common.TrendChip
@@ -38,11 +40,10 @@ import dev.sebastianrn.portfolioapp.ui.theme.AppGradients
 import dev.sebastianrn.portfolioapp.ui.theme.GoldDeep
 import dev.sebastianrn.portfolioapp.ui.theme.OnGold
 import dev.sebastianrn.portfolioapp.ui.theme.OnGoldMuted
+import dev.sebastianrn.portfolioapp.util.DateFormats
 import dev.sebastianrn.portfolioapp.util.formatAsPercentage
 import dev.sebastianrn.portfolioapp.util.formatCurrency
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import dev.sebastianrn.portfolioapp.util.formatDate
 
 /**
  * Gold "vault" hero card: shimmering champagne gradient, counting balance,
@@ -119,7 +120,7 @@ fun PortfolioSummaryCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "TOTAL BALANCE",
+                    stringResource(R.string.total_balance).uppercase(),
                     style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 2.sp),
                     fontWeight = FontWeight.Bold,
                     color = OnGoldMuted
@@ -136,11 +137,10 @@ fun PortfolioSummaryCard(
                     Text(
                         text = lastUpdated?.let { timestamp ->
                             val formatted = remember(timestamp) {
-                                SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault())
-                                    .format(Date(timestamp))
+                                timestamp.formatDate(DateFormats.dayMonthTime)
                             }
-                            "Live · $formatted"
-                        } ?: "Live",
+                            stringResource(R.string.live_updated, formatted)
+                        } ?: stringResource(R.string.live_label),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = OnGoldMuted
@@ -168,7 +168,7 @@ fun PortfolioSummaryCard(
                     onGold = true
                 )
                 Text(
-                    "all time",
+                    stringResource(R.string.all_time),
                     style = MaterialTheme.typography.labelSmall,
                     color = OnGoldMuted
                 )
@@ -181,19 +181,19 @@ fun PortfolioSummaryCard(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 GlassTile(
-                    label = "Invested",
+                    label = stringResource(R.string.tile_invested),
                     value = totalInvested.formatCurrency(short = true),
                     modifier = Modifier.weight(1f)
                 )
                 GlassTile(
-                    label = "Total Gain",
+                    label = stringResource(R.string.tile_total_gain),
                     value = totalProfit.formatCurrency(),
                     subText = profitPercent.formatAsPercentage(showSign = true),
                     trend = isPositive,
                     modifier = Modifier.weight(1f)
                 )
                 GlassTile(
-                    label = "Today",
+                    label = stringResource(R.string.tile_today),
                     value = dailyChange.formatCurrency(),
                     subText = dailyChangePercent.formatAsPercentage(showSign = true),
                     trend = isDailyPositive,

@@ -20,14 +20,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.backup.BackupFile
 import dev.sebastianrn.portfolioapp.ui.components.bottombar.MainTab
 import dev.sebastianrn.portfolioapp.ui.components.cards.AssetCard
@@ -49,6 +54,7 @@ import dev.sebastianrn.portfolioapp.ui.components.sheets.BackupSettingsSheet
 import dev.sebastianrn.portfolioapp.ui.components.topbar.MainTopBar
 import dev.sebastianrn.portfolioapp.viewmodel.BackupViewModel
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
+import dev.sebastianrn.portfolioapp.viewmodel.ThemeViewModel
 import dev.sebastianrn.portfolioapp.viewmodel.UiEvent
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,20 +62,22 @@ import dev.sebastianrn.portfolioapp.viewmodel.UiEvent
 fun MainScreen(
     viewModel: GoldViewModel,
     backupViewModel: BackupViewModel,
+    themeViewModel: ThemeViewModel,
     selectedTab: MainTab,
     onTabSelected: (MainTab) -> Unit,
     onAssetClick: (Int) -> Unit
 ) {
-    val assets by viewModel.allAssets.collectAsState()
-    val stats by viewModel.portfolioStats.collectAsState()
-    val portfolioPoints by viewModel.portfolioCurve.collectAsState()
-    val dailyChange by viewModel.portfolioChange.collectAsState()
-    val lastUpdated by viewModel.lastUpdated.collectAsState()
-    val historicalStats by viewModel.historicalStats.collectAsState()
+    val assets by viewModel.allAssets.collectAsStateWithLifecycle()
+    val isDarkTheme by themeViewModel.isDarkTheme.collectAsStateWithLifecycle()
+    val stats by viewModel.portfolioStats.collectAsStateWithLifecycle()
+    val portfolioPoints by viewModel.portfolioCurve.collectAsStateWithLifecycle()
+    val dailyChange by viewModel.portfolioChange.collectAsStateWithLifecycle()
+    val lastUpdated by viewModel.lastUpdated.collectAsStateWithLifecycle()
+    val historicalStats by viewModel.historicalStats.collectAsStateWithLifecycle()
 
     // Backup state
-    val backupSettings by backupViewModel.backupSettings.collectAsState()
-    val backupFiles by backupViewModel.backupFiles.collectAsState()
+    val backupSettings by backupViewModel.backupSettings.collectAsStateWithLifecycle()
+    val backupFiles by backupViewModel.backupFiles.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
 
@@ -78,10 +86,12 @@ fun MainScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is UiEvent.ShowToast -> {
-                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                    val message = context.getString(event.messageRes, *event.args.toTypedArray())
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 }
                 is UiEvent.ShowError -> {
-                    Toast.makeText(context, "Error: ${event.error.message}", Toast.LENGTH_LONG).show()
+                    val message = context.getString(R.string.error_prefix, event.error.message.orEmpty())
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -91,10 +101,12 @@ fun MainScreen(
         backupViewModel.events.collect { event ->
             when (event) {
                 is UiEvent.ShowToast -> {
-                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                    val message = context.getString(event.messageRes, *event.args.toTypedArray())
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 }
                 is UiEvent.ShowError -> {
-                    Toast.makeText(context, "Error: ${event.error.message}", Toast.LENGTH_LONG).show()
+                    val message = context.getString(R.string.error_prefix, event.error.message.orEmpty())
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -124,7 +136,7 @@ fun MainScreen(
         topBar = {
             Box(modifier = Modifier.fillMaxWidth()) {
                 MainTopBar(
-                    title = selectedTab.label,
+                    title = stringResource(selectedTab.labelRes),
                     onRefreshClick = { viewModel.updatePricesFromScraper() },
                     onMenuClick = { showMenu = true }
                 )
@@ -135,10 +147,12 @@ fun MainScreen(
                 ) {
                     DropdownMenu(
                         expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
+                        onDismissRequest = { showMenu = false },
+                        shape = MaterialTheme.shapes.medium,
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Backup Settings") },
+                            text = { Text(stringResource(R.string.menu_backup_settings)) },
                             onClick = {
                                 showMenu = false
                                 showBackupSettings = true
@@ -148,7 +162,7 @@ fun MainScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Backup Now") },
+                            text = { Text(stringResource(R.string.menu_backup_now)) },
                             onClick = {
                                 showMenu = false
                                 backupViewModel.backupNow()
@@ -158,7 +172,7 @@ fun MainScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Restore Backup") },
+                            text = { Text(stringResource(R.string.menu_restore_backup)) },
                             onClick = {
                                 showMenu = false
                                 backupViewModel.loadBackupFiles()
@@ -166,6 +180,19 @@ fun MainScreen(
                             },
                             leadingIcon = {
                                 Icon(Icons.Default.Restore, contentDescription = null)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(if (isDarkTheme) R.string.menu_light_theme else R.string.menu_dark_theme)) },
+                            onClick = {
+                                showMenu = false
+                                themeViewModel.toggleTheme()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    if (isDarkTheme) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
+                                    contentDescription = null
+                                )
                             }
                         )
                     }
@@ -178,7 +205,10 @@ fun MainScreen(
                 enter = scaleIn(tween(200)) + fadeIn(tween(200)),
                 exit = scaleOut(tween(150)) + fadeOut(tween(150))
             ) {
-                AddAssetFab(onClick = { showAssetSheet = true })
+                AddAssetFab(
+                    onClick = { showAssetSheet = true },
+                    contentDescription = stringResource(R.string.add_action)
+                )
             }
         }
     ) { padding ->
@@ -244,13 +274,13 @@ fun MainScreen(
 
                                 item {
                                     SectionHeader(
-                                        title = "Portfolio History",
+                                        title = stringResource(R.string.portfolio_history_title),
                                         modifier = Modifier.padding(top = 8.dp),
                                         trailing = {
                                             if (hasMore) {
                                                 TextButton(onClick = { showAllHistory = !showAllHistory }) {
                                                     Text(
-                                                        if (showAllHistory) "Show less" else "Show all (${reversed.size})",
+                                                        if (showAllHistory) stringResource(R.string.show_less) else stringResource(R.string.show_all, reversed.size),
                                                         style = MaterialTheme.typography.labelLarge,
                                                         color = MaterialTheme.colorScheme.primary
                                                     )
@@ -317,7 +347,7 @@ fun MainScreen(
                                         ) {
                                             Column {
                                                 Text(
-                                                    "TOTAL VALUE",
+                                                    stringResource(R.string.total_portfolio_value).uppercase(),
                                                     style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 2.sp),
                                                     fontWeight = FontWeight.Bold,
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -340,7 +370,7 @@ fun MainScreen(
                             // Section header + count
                             item {
                                 SectionHeader(
-                                    title = "Your Assets (${assets.size})",
+                                    title = stringResource(R.string.your_assets_count, assets.size),
                                     modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
                                 )
                             }
@@ -421,10 +451,10 @@ fun MainScreen(
     // Restore Confirm Dialog
     showRestoreConfirm?.let { file ->
         ConfirmDialog(
-            title = "Restore Backup?",
-            message = "This will replace all current data with the backup.",
-            warningMessage = "This action cannot be undone.",
-            confirmText = "Restore",
+            title = stringResource(R.string.restore_backup_title),
+            message = stringResource(R.string.restore_backup_message),
+            warningMessage = stringResource(R.string.irreversible_warning),
+            confirmText = stringResource(R.string.restore_action),
             onConfirm = {
                 backupViewModel.restoreBackup(file)
                 showRestoreConfirm = null
@@ -436,9 +466,9 @@ fun MainScreen(
     // Delete Confirm Dialog
     showDeleteConfirm?.let { file ->
         ConfirmDialog(
-            title = "Delete Backup?",
-            message = "This backup will be permanently deleted.",
-            confirmText = "Delete",
+            title = stringResource(R.string.delete_backup_title),
+            message = stringResource(R.string.delete_backup_message),
+            confirmText = stringResource(R.string.delete_action),
             onConfirm = {
                 backupViewModel.deleteBackup(file)
                 showDeleteConfirm = null
@@ -450,10 +480,10 @@ fun MainScreen(
     // Import Confirm Dialog
     showImportConfirm?.let { uri ->
         ConfirmDialog(
-            title = "Restore Backup?",
-            message = "This will replace all current data with the imported file.",
-            warningMessage = "This action cannot be undone.",
-            confirmText = "Restore",
+            title = stringResource(R.string.restore_backup_title),
+            message = stringResource(R.string.restore_import_message),
+            warningMessage = stringResource(R.string.irreversible_warning),
+            confirmText = stringResource(R.string.restore_action),
             onConfirm = {
                 backupViewModel.restoreFromUri(uri)
                 showImportConfirm = null

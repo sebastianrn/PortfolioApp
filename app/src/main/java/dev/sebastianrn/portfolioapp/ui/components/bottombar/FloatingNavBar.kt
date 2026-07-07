@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -36,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -107,18 +109,19 @@ fun FloatingNavBar(
 
             Row(
                 modifier = Modifier
+                    .heightIn(min = 48.dp)
                     .clip(CircleShape)
                     .background(backgroundColor)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
                     ) { onTabSelected(tab) }
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                    .padding(horizontal = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
                     imageVector = if (isSelected) tab.selectedIcon else tab.unselectedIcon,
-                    contentDescription = tab.label,
+                    contentDescription = stringResource(tab.labelRes),
                     tint = iconTint,
                     modifier = Modifier
                         .size(22.dp)
@@ -141,7 +144,7 @@ fun FloatingNavBar(
                     Row {
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = tab.label,
+                            text = stringResource(tab.labelRes),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary

@@ -13,10 +13,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -33,12 +30,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.model.AssetType
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
 import dev.sebastianrn.portfolioapp.ui.components.common.AppTextField
+import dev.sebastianrn.portfolioapp.ui.components.common.GoldButton
 import dev.sebastianrn.portfolioapp.ui.components.common.SheetHeader
 import kotlin.math.abs
 
@@ -54,13 +53,13 @@ fun AssetSheet(
     data class WeightOption(val label: String, val grams: Double, val type: AssetType)
 
     val options = listOf(
-        WeightOption("1 oz Coin", 31.1035, AssetType.COIN),
-        WeightOption("1/2 oz Coin", 15.5517, AssetType.COIN),
-        WeightOption("1/4 oz Coin", 7.7758, AssetType.COIN),
-        WeightOption("500g Bar", 500.0, AssetType.BAR),
-        WeightOption("250g Bar", 250.0, AssetType.BAR),
-        WeightOption("100g Bar", 100.0, AssetType.BAR),
-        WeightOption("50g Bar", 50.0, AssetType.BAR)
+        WeightOption(stringResource(R.string.weight_coin_1oz), 31.1035, AssetType.COIN),
+        WeightOption(stringResource(R.string.weight_coin_half_oz), 15.5517, AssetType.COIN),
+        WeightOption(stringResource(R.string.weight_coin_quarter_oz), 7.7758, AssetType.COIN),
+        WeightOption(stringResource(R.string.weight_bar_500g), 500.0, AssetType.BAR),
+        WeightOption(stringResource(R.string.weight_bar_250g), 250.0, AssetType.BAR),
+        WeightOption(stringResource(R.string.weight_bar_100g), 100.0, AssetType.BAR),
+        WeightOption(stringResource(R.string.weight_bar_50g), 50.0, AssetType.BAR)
     )
 
     val initialOption = if (asset != null) {
@@ -77,9 +76,13 @@ fun AssetSheet(
     var selectedOption by remember { mutableStateOf(initialOption) }
     var expanded by remember { mutableStateOf(false) }
 
+    var isNameError by remember { mutableStateOf(false) }
+    var isPriceError by remember { mutableStateOf(false) }
+    var isQuantityError by remember { mutableStateOf(false) }
+
     val isEditMode = asset != null
-    val title = if (isEditMode) "Edit Asset" else "Add Asset"
-    val buttonText = if (isEditMode) "Update Asset" else "Add to Portfolio"
+    val title = stringResource(if (isEditMode) R.string.sheet_edit_asset else R.string.sheet_add_asset)
+    val buttonText = stringResource(if (isEditMode) R.string.update_asset else R.string.add_to_portfolio)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -102,9 +105,14 @@ fun AssetSheet(
 
             AppTextField(
                 value = name,
-                onValueChange = { name = it },
-                label = "Asset Name",
-                placeholder = "e.g. Vreneli, Krugerrand"
+                onValueChange = {
+                    name = it
+                    isNameError = false
+                },
+                label = stringResource(R.string.asset_name_label),
+                placeholder = stringResource(R.string.asset_name_placeholder),
+                isError = isNameError,
+                errorMessage = stringResource(R.string.asset_name_error)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -117,7 +125,7 @@ fun AssetSheet(
                 AppTextField(
                     value = selectedOption.label,
                     onValueChange = {},
-                    label = "Weight / Type",
+                    label = stringResource(R.string.weight_type_label),
                     readOnly = true,
                     trailingIcon = {
                         ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
@@ -158,15 +166,24 @@ fun AssetSheet(
                 Box(modifier = Modifier.weight(1f)) {
                     AppTextField(
                         value = quantity,
-                        onValueChange = { if (it.all { c -> c.isDigit() }) quantity = it },
-                        label = "Quantity"
+                        onValueChange = {
+                            if (it.all { c -> c.isDigit() }) {
+                                quantity = it
+                                isQuantityError = false
+                            }
+                        },
+                        label = stringResource(R.string.quantity_label),
+                        keyboardType = KeyboardType.Number,
+                        isError = isQuantityError,
+                        errorMessage = stringResource(R.string.quantity_error)
                     )
                 }
                 Box(modifier = Modifier.weight(1f)) {
                     AppTextField(
                         value = philoroId,
-                        onValueChange = { philoroId = it },
-                        label = "Philoro ID"
+                        onValueChange = { if (it.all { c -> c.isDigit() }) philoroId = it },
+                        label = stringResource(R.string.philoro_id_label),
+                        keyboardType = KeyboardType.Number
                     )
                 }
             }
@@ -175,20 +192,31 @@ fun AssetSheet(
 
             AppTextField(
                 value = purchasePrice,
-                onValueChange = { purchasePrice = it },
-                label = if (isEditMode) "Purchase Price (Total)" else "Paid Price (Total)",
+                onValueChange = {
+                    purchasePrice = it
+                    isPriceError = false
+                },
+                label = stringResource(if (isEditMode) R.string.purchase_price_total else R.string.paid_price_total),
+                keyboardType = KeyboardType.Decimal,
+                isError = isPriceError,
+                errorMessage = stringResource(R.string.price_error),
                 suffix = "CHF"
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
+            GoldButton(
+                text = buttonText,
                 onClick = {
                     val q = quantity.toIntOrNull()
                     val p = purchasePrice.toDoubleOrNull()
                     val i = philoroId.toIntOrNull() ?: 0
 
-                    if (name.isNotBlank() && q != null && p != null) {
+                    isNameError = name.isBlank()
+                    isQuantityError = (q == null)
+                    isPriceError = (p == null)
+
+                    if (!isNameError && q != null && p != null) {
                         onSave(
                             GoldAsset(
                                 id = asset?.id ?: 0,
@@ -203,22 +231,8 @@ fun AssetSheet(
                             )
                         )
                     }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.Black
-                )
-            ) {
-                Text(
-                    buttonText,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+                }
+            )
         }
     }
 }

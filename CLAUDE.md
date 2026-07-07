@@ -82,7 +82,8 @@ app/src/main/java/dev/sebastianrn/portfolioapp/
 │   │   │   ├── SectionHeader.kt # Gold accent bar + uppercase section label
 │   │   │   ├── EntranceFade.kt  # Staggered fade/slide entrance animation
 │   │   │   ├── SheetHeader.kt   # Bottom sheet title with gold accent bar
-│   │   │   ├── AppTextField.kt  # Styled text input
+│   │   │   ├── AppTextField.kt  # Styled text input (with keyboardType support)
+│   │   │   ├── GoldButton.kt    # Gold gradient CTA button for sheets
 │   │   │   └── AddAssetFab.kt   # Gold gradient floating action button
 │   │   ├── bottombar/           # Bottom navigation
 │   │   │   ├── FloatingNavBar.kt  # Revolut-style floating pill nav bar
@@ -514,7 +515,7 @@ object TestDataFactory {
 
 - **Storage**: Local app files (`/files/backups/`)
 - **Format**: JSON (Gson serialization)
-- **Filename**: `portfolio_backup_YYYY-MM-DD_HH:mm:ss.json`
+- **Filename**: `portfolio_backup_yyyy-MM-dd_HH:mm:ss_SSS.json`
 - **Scheduling**: WorkManager (Daily/Weekly/Manual)
 - **Retention**: Keeps last 10 backups, auto-deletes older ones
 - **Sharing**: FileProvider for secure file sharing

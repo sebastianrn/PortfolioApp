@@ -2,16 +2,18 @@ package dev.sebastianrn.portfolioapp.backup
 
 import android.content.Context
 import android.net.Uri
+import androidx.annotation.StringRes
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import dev.sebastianrn.portfolioapp.R
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private val Context.backupDataStore by preferencesDataStore(name = "backup_settings")
@@ -27,6 +29,9 @@ class BackupManager(private val context: Context) {
         const val BACKUP_FILE_PREFIX = "portfolio_backup_"
         const val BACKUP_FILE_EXTENSION = ".json"
         const val BACKUP_FOLDER_NAME = "backups"
+
+        private val fileNameFormat =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss_SSS", Locale.US)
     }
 
     private val backupDir: File
@@ -69,8 +74,7 @@ class BackupManager(private val context: Context) {
     }
 
     fun generateBackupFileName(): String {
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH:mm:ss_SSS", Locale.US)
-        val timestamp = dateFormat.format(Date())
+        val timestamp = LocalDateTime.now().format(fileNameFormat)
         return "$BACKUP_FILE_PREFIX$timestamp$BACKUP_FILE_EXTENSION"
     }
 
@@ -148,7 +152,11 @@ data class BackupSettings(
     val frequency: BackupFrequency = BackupFrequency.MANUAL,
     val lastBackupTime: Long? = null,
     val lastBackupStatus: String? = null
-)
+) {
+    /** Single source of truth for interpreting [lastBackupStatus]. */
+    val isLastBackupSuccess: Boolean
+        get() = lastBackupStatus == "Success"
+}
 
 data class BackupFile(
     val name: String,
@@ -157,10 +165,10 @@ data class BackupFile(
     val modifiedTime: Long
 )
 
-enum class BackupFrequency(val displayName: String, val intervalHours: Long) {
-    MANUAL("Manual", 0),
-    DAILY("Daily", 24),
-    WEEKLY("Weekly", 168);
+enum class BackupFrequency(@param:StringRes val displayNameRes: Int, val intervalHours: Long) {
+    MANUAL(R.string.frequency_manual, 0),
+    DAILY(R.string.frequency_daily, 24),
+    WEEKLY(R.string.frequency_weekly, 168);
 
     companion object {
         fun fromString(value: String?): BackupFrequency {

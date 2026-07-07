@@ -1,9 +1,7 @@
 package dev.sebastianrn.portfolioapp.ui.components.chart
 
 import dev.sebastianrn.portfolioapp.util.Constants
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Locale
 
 object ChartDataProcessor {
 
@@ -52,6 +50,22 @@ object ChartDataProcessor {
     }
 
     /**
+     * Picks the initial time range: one month when it has data, otherwise the
+     * smallest longer range that can actually draw a line. Prevents a stale
+     * asset (no recent updates) from opening onto an empty chart.
+     */
+    fun defaultTimeRange(points: List<Pair<Long, Double>>): TimeRange {
+        val preferred = listOf(
+            TimeRange.ONE_MONTH,
+            TimeRange.SIX_MONTHS,
+            TimeRange.ONE_YEAR,
+            TimeRange.ALL
+        )
+        return preferred.firstOrNull { filterPointsByTimeRange(points, it).size >= 2 }
+            ?: TimeRange.ALL
+    }
+
+    /**
      * Calculates Y-axis range with appropriate padding based on time range.
      */
     fun calculateYAxisRange(
@@ -85,16 +99,16 @@ object ChartDataProcessor {
     }
 
     /**
-     * Returns appropriate date formatter based on time range.
+     * Returns the appropriate axis/marker date pattern for a time range.
+     * Callers build a [java.time.format.DateTimeFormatter] from it.
      */
-    fun getDateFormatter(timeRange: TimeRange): SimpleDateFormat {
-        val pattern = when (timeRange) {
+    fun getDateFormatterPattern(timeRange: TimeRange): String {
+        return when (timeRange) {
             TimeRange.ONE_WEEK -> "EEE HH:mm"  // Mon 14:30 (intraday points)
             TimeRange.ONE_MONTH -> "MMM dd"    // Jan 15
             TimeRange.SIX_MONTHS -> "MMM dd"   // Jan 15
             TimeRange.ONE_YEAR, TimeRange.ALL -> "MMM yy" // Jan 25
         }
-        return SimpleDateFormat(pattern, Locale.getDefault())
     }
 
     /**

@@ -16,8 +16,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.sebastianrn.portfolioapp.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,7 +45,7 @@ fun DetailTopBar(
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
-                    "Back",
+                    stringResource(R.string.back_desc),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -58,7 +60,7 @@ fun DetailTopBar(
             ) {
                 Icon(
                     Icons.Filled.Edit,
-                    "Edit",
+                    stringResource(R.string.edit_desc),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }

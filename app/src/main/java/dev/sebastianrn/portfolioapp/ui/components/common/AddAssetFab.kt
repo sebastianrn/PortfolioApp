@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun AddAssetFab(
     onClick: () -> Unit,
-    contentDescription: String = "Add Asset"
+    contentDescription: String
 ) {
     val shape = MaterialTheme.shapes.large
     Box(

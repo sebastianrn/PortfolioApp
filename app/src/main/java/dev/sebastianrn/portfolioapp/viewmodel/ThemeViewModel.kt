@@ -1,7 +1,6 @@
 package dev.sebastianrn.portfolioapp.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.sebastianrn.portfolioapp.data.UserPreferences
 import kotlinx.coroutines.flow.SharingStarted
@@ -9,8 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class ThemeViewModel(application: Application) : AndroidViewModel(application) {
-    private val prefs = UserPreferences(application)
+class ThemeViewModel(private val prefs: UserPreferences) : ViewModel() {
 
     // Observable State
     val isDarkTheme: StateFlow<Boolean> = prefs.isDarkMode

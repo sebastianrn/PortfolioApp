@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,9 +60,12 @@ import com.patrykandpatrick.vico.core.common.shader.ShaderProvider
 import com.patrykandpatrick.vico.core.common.shape.CorneredShape
 import com.patrykandpatrick.vico.core.common.shape.DashedShape
 import com.patrykandpatrick.vico.core.common.shape.Shape
+import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.ui.components.common.TrendChip
 import dev.sebastianrn.portfolioapp.util.formatAsPercentage
 import dev.sebastianrn.portfolioapp.util.formatCurrency
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /**
  * Portfolio line chart with a range performance header, trend-colored line
@@ -77,7 +81,8 @@ fun PortfolioChart(
 ) {
     if (points.isEmpty()) return
 
-    var selectedRange by remember { mutableStateOf(TimeRange.ONE_MONTH) }
+    // Start on a range that actually has data (stale assets have nothing recent)
+    var selectedRange by remember { mutableStateOf(ChartDataProcessor.defaultTimeRange(points)) }
 
     val filteredPoints = remember(points, selectedRange) {
         ChartDataProcessor.filterPointsByTimeRange(points, selectedRange)
@@ -156,7 +161,7 @@ private fun RangeDeltaHeader(
                 color = trendColor
             )
             Text(
-                text = range.descriptor,
+                text = stringResource(range.descriptorRes),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -197,7 +202,10 @@ private fun VicoLineChart(
     }
 
     val dateFormatter = remember(timeRange) {
-        ChartDataProcessor.getDateFormatter(timeRange)
+        DateTimeFormatter.ofPattern(
+            ChartDataProcessor.getDateFormatterPattern(timeRange),
+            Locale.getDefault()
+        )
     }
 
     val axisLabelComponent = rememberAxisLabelComponent(
@@ -407,7 +415,7 @@ private fun EmptyChartState(color: Color) {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            "No data available for this period",
+            stringResource(R.string.chart_empty),
             style = MaterialTheme.typography.bodyMedium,
             color = color.copy(alpha = 0.5f)
         )

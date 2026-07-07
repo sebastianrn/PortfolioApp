@@ -17,11 +17,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
 import dev.sebastianrn.portfolioapp.ui.components.common.AnimatedCounterText
 import dev.sebastianrn.portfolioapp.ui.components.common.GlassTile
@@ -75,7 +77,7 @@ fun AssetSummaryCard(asset: GoldAsset) {
             Spacer(modifier = Modifier.height(14.dp))
 
             Text(
-                "CURRENT VALUE",
+                stringResource(R.string.current_value_label).uppercase(),
                 style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 2.sp),
                 fontWeight = FontWeight.Bold,
                 color = OnGoldMuted
@@ -101,17 +103,17 @@ fun AssetSummaryCard(asset: GoldAsset) {
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 GlassTile(
-                    label = "Unit Price",
+                    label = stringResource(R.string.tile_unit_price),
                     value = asset.currentSellPrice.formatCurrency(short = true),
                     modifier = Modifier.weight(1f)
                 )
                 GlassTile(
-                    label = "Paid",
+                    label = stringResource(R.string.tile_paid),
                     value = asset.purchasePrice.formatCurrency(short = true),
                     modifier = Modifier.weight(1f)
                 )
                 GlassTile(
-                    label = "Invested",
+                    label = stringResource(R.string.tile_invested),
                     value = totalInvested.formatCurrency(short = true),
                     modifier = Modifier.weight(1f)
                 )

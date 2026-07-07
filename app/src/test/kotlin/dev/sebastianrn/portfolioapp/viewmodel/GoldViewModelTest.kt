@@ -10,6 +10,7 @@ import dev.sebastianrn.portfolioapp.data.repository.GoldRepository
 import dev.sebastianrn.portfolioapp.domain.usecase.CalculateHistoricalStatsUseCase
 import dev.sebastianrn.portfolioapp.domain.usecase.CalculatePortfolioCurveUseCase
 import dev.sebastianrn.portfolioapp.domain.usecase.CalculatePortfolioStatsUseCase
+import dev.sebastianrn.portfolioapp.domain.usecase.PriceUpdateResult
 import dev.sebastianrn.portfolioapp.domain.usecase.UpdatePricesUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -72,7 +73,8 @@ class GoldViewModelTest {
             calculateStats = calculateStats,
             calculateCurve = calculateCurve,
             calculateHistoricalStats = calculateHistoricalStats,
-            updatePrices = updatePrices
+            updatePrices = updatePrices,
+            ioDispatcher = testDispatcher
         )
     }
 
@@ -245,12 +247,16 @@ class GoldViewModelTest {
             // Should receive "Fetching Spot Price..." toast first
             val event1 = awaitItem()
             assertTrue(event1 is UiEvent.ShowToast)
+
+            // Followed by the success toast
+            val event2 = awaitItem()
+            assertTrue(event2 is UiEvent.ShowToast)
         }
     }
 
     @Test
     fun `updatePricesFromScraper calls updatePrices fromPhiloroApi`() = runTest {
-        coEvery { updatePrices.fromPhiloroApi() } returns Result.success(3)
+        coEvery { updatePrices.fromPhiloroApi() } returns Result.success(PriceUpdateResult(updated = 3, total = 3))
 
         viewModel.updatePricesFromScraper()
 
@@ -325,7 +331,8 @@ class GoldViewModelTest {
             calculateStats = calculateStats,
             calculateCurve = calculateCurve,
             calculateHistoricalStats = calculateHistoricalStats,
-            updatePrices = updatePrices
+            updatePrices = updatePrices,
+            ioDispatcher = testDispatcher
         )
 
         testViewModel.addDailyRate(
@@ -358,7 +365,8 @@ class GoldViewModelTest {
             calculateStats = calculateStats,
             calculateCurve = calculateCurve,
             calculateHistoricalStats = calculateHistoricalStats,
-            updatePrices = updatePrices
+            updatePrices = updatePrices,
+            ioDispatcher = testDispatcher
         )
 
         advanceUntilIdle()
@@ -395,6 +403,7 @@ class GoldViewModelTest {
 
         chartPoints.test {
             assertEquals(emptyList<Pair<Long, Double>>(), awaitItem())
+            awaitComplete()
         }
     }
 

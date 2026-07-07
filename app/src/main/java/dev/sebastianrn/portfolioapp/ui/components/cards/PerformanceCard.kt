@@ -18,9 +18,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.ui.components.chart.PortfolioChart
 import dev.sebastianrn.portfolioapp.ui.theme.AppGradients
 
@@ -56,7 +58,7 @@ fun PerformanceCard(
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    "PERFORMANCE",
+                    stringResource(R.string.performance_title).uppercase(),
                     style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 2.sp),
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant

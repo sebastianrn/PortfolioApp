@@ -1,5 +1,6 @@
 package dev.sebastianrn.portfolioapp.viewmodel
 
+import dev.sebastianrn.portfolioapp.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -13,32 +14,34 @@ class UiEventTest {
     // --- ShowToast Tests ---
 
     @Test
-    fun `ShowToast contains message`() {
-        val event = UiEvent.ShowToast("Test message")
+    fun `ShowToast contains message resource`() {
+        val event = UiEvent.ShowToast(R.string.toast_backup_success)
 
-        assertEquals("Test message", event.message)
+        assertEquals(R.string.toast_backup_success, event.messageRes)
+        assertTrue(event.args.isEmpty())
+    }
+
+    @Test
+    fun `ShowToast carries format args`() {
+        val event = UiEvent.ShowToast(R.string.toast_updated_assets, listOf(5))
+
+        assertEquals(R.string.toast_updated_assets, event.messageRes)
+        assertEquals(listOf<Any>(5), event.args)
     }
 
     @Test
     fun `ShowToast equality works correctly`() {
-        val event1 = UiEvent.ShowToast("Same message")
-        val event2 = UiEvent.ShowToast("Same message")
-        val event3 = UiEvent.ShowToast("Different message")
+        val event1 = UiEvent.ShowToast(R.string.toast_backup_success)
+        val event2 = UiEvent.ShowToast(R.string.toast_backup_success)
+        val event3 = UiEvent.ShowToast(R.string.toast_backup_deleted)
 
         assertEquals(event1, event2)
         assertNotEquals(event1, event3)
     }
 
     @Test
-    fun `ShowToast handles empty message`() {
-        val event = UiEvent.ShowToast("")
-
-        assertEquals("", event.message)
-    }
-
-    @Test
     fun `ShowToast is instance of UiEvent`() {
-        val event: UiEvent = UiEvent.ShowToast("Test")
+        val event: UiEvent = UiEvent.ShowToast(R.string.toast_backup_success)
 
         assertTrue(event is UiEvent.ShowToast)
     }
@@ -88,18 +91,18 @@ class UiEventTest {
     @Test
     fun `when expression handles all UiEvent cases`() {
         val events = listOf(
-            UiEvent.ShowToast("Toast"),
+            UiEvent.ShowToast(R.string.toast_backup_success),
             UiEvent.ShowError(RuntimeException("Error"))
         )
 
         val results = events.map { event ->
             when (event) {
-                is UiEvent.ShowToast -> "toast:${event.message}"
+                is UiEvent.ShowToast -> "toast:${event.messageRes}"
                 is UiEvent.ShowError -> "error:${event.error.message}"
             }
         }
 
-        assertEquals("toast:Toast", results[0])
+        assertEquals("toast:${R.string.toast_backup_success}", results[0])
         assertEquals("error:Error", results[1])
     }
 
@@ -108,7 +111,7 @@ class UiEventTest {
         // This test verifies the sealed class pattern works
         // If a new subclass were added, this would fail to compile
         // until the new case is handled
-        val event: UiEvent = UiEvent.ShowToast("Test")
+        val event: UiEvent = UiEvent.ShowToast(R.string.toast_backup_success)
 
         val handled = when (event) {
             is UiEvent.ShowToast -> true
@@ -122,11 +125,11 @@ class UiEventTest {
 
     @Test
     fun `ShowToast copy works correctly`() {
-        val original = UiEvent.ShowToast("Original")
-        val copy = original.copy(message = "Modified")
+        val original = UiEvent.ShowToast(R.string.toast_backup_success)
+        val copy = original.copy(messageRes = R.string.toast_backup_deleted)
 
-        assertEquals("Original", original.message)
-        assertEquals("Modified", copy.message)
+        assertEquals(R.string.toast_backup_success, original.messageRes)
+        assertEquals(R.string.toast_backup_deleted, copy.messageRes)
     }
 
     @Test

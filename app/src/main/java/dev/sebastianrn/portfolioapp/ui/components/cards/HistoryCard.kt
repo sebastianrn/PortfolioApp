@@ -22,20 +22,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.model.PriceHistory
+import dev.sebastianrn.portfolioapp.util.DateFormats
 import dev.sebastianrn.portfolioapp.util.formatCurrency
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import dev.sebastianrn.portfolioapp.util.formatDate
 
 @Composable
 fun HistoryCard(
     record: PriceHistory,
     onEditClick: () -> Unit
 ) {
-    val sdf = remember { SimpleDateFormat("MMM dd, yyyy · HH:mm", Locale.getDefault()) }
     val tint = if (record.isManual) {
         MaterialTheme.colorScheme.primary
     } else {
@@ -81,13 +81,13 @@ fun HistoryCard(
 
                 Column {
                     Text(
-                        sdf.format(Date(record.dateTimestamp)),
+                        remember(record.dateTimestamp) { record.dateTimestamp.formatDate(DateFormats.listRow) },
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        if (record.isManual) "Manual entry · tap to edit" else "Auto price update",
+                        stringResource(if (record.isManual) R.string.history_manual_entry else R.string.history_auto_update),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

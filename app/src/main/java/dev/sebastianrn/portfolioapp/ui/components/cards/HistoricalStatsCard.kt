@@ -28,18 +28,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.model.HistoricalStats
 import dev.sebastianrn.portfolioapp.ui.theme.AppGradients
+import dev.sebastianrn.portfolioapp.util.DateFormats
 import dev.sebastianrn.portfolioapp.util.formatAsPercentage
 import dev.sebastianrn.portfolioapp.util.formatCurrency
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import dev.sebastianrn.portfolioapp.util.formatDate
 
 /**
  * "Records" grid: six tinted stat tiles in a 2-column layout.
@@ -77,7 +78,7 @@ fun HistoricalStatsCard(
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    "RECORDS",
+                    stringResource(R.string.records_title).uppercase(),
                     style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 2.sp),
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -86,7 +87,7 @@ fun HistoricalStatsCard(
 
             if (!hasData) {
                 Text(
-                    "Not enough data yet — records appear once your portfolio has some history.",
+                    stringResource(R.string.records_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -95,7 +96,7 @@ fun HistoricalStatsCard(
                     StatTile(
                         icon = Icons.Filled.EmojiEvents,
                         tint = gold,
-                        label = "All-Time High",
+                        label = stringResource(R.string.stat_ath),
                         value = stats.allTimeHigh.formatCurrency(),
                         caption = formatDate(stats.allTimeHighDate),
                         modifier = Modifier.weight(1f)
@@ -103,7 +104,7 @@ fun HistoricalStatsCard(
                     StatTile(
                         icon = Icons.Filled.SouthEast,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        label = "All-Time Low",
+                        label = stringResource(R.string.stat_atl),
                         value = stats.allTimeLow.formatCurrency(),
                         caption = formatDate(stats.allTimeLowDate),
                         modifier = Modifier.weight(1f)
@@ -113,7 +114,7 @@ fun HistoricalStatsCard(
                     StatTile(
                         icon = Icons.AutoMirrored.Filled.TrendingUp,
                         tint = gain,
-                        label = "Best Day",
+                        label = stringResource(R.string.stat_best_day),
                         value = stats.bestDayAbsolute.formatCurrency(),
                         caption = "${stats.bestDayPercent.formatAsPercentage(showSign = true)} · ${formatDate(stats.bestDayDate)}",
                         modifier = Modifier.weight(1f)
@@ -121,9 +122,9 @@ fun HistoricalStatsCard(
                     StatTile(
                         icon = Icons.AutoMirrored.Filled.TrendingDown,
                         tint = loss,
-                        label = "Worst Day",
+                        label = stringResource(R.string.stat_worst_day),
                         value = stats.worstDayAbsolute.formatCurrency(),
-                        caption = "${stats.worstDayPercent.formatAsPercentage()} · ${formatDate(stats.worstDayDate)}",
+                        caption = "${stats.worstDayPercent.formatAsPercentage(showSign = true)} · ${formatDate(stats.worstDayDate)}",
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -131,17 +132,17 @@ fun HistoricalStatsCard(
                     StatTile(
                         icon = Icons.Filled.WaterfallChart,
                         tint = loss,
-                        label = "Max Drawdown",
+                        label = stringResource(R.string.stat_max_drawdown),
                         value = (-stats.maxDrawdownPercent).formatAsPercentage(),
-                        caption = "peak to trough",
+                        caption = stringResource(R.string.stat_peak_to_trough),
                         modifier = Modifier.weight(1f)
                     )
                     StatTile(
                         icon = Icons.Filled.Timeline,
                         tint = if (stats.totalReturnPercent >= 0) gain else loss,
-                        label = "Total Return",
+                        label = stringResource(R.string.total_return),
                         value = stats.totalReturnPercent.formatAsPercentage(showSign = true),
-                        caption = "since first entry",
+                        caption = stringResource(R.string.stat_since_first_entry),
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -202,5 +203,4 @@ private fun StatTile(
     }
 }
 
-private fun formatDate(timestamp: Long): String =
-    SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(timestamp))
+private fun formatDate(timestamp: Long): String = timestamp.formatDate(DateFormats.fullDate)

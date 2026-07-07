@@ -40,6 +40,7 @@ fun AppNavigation(
                 MainScreen(
                     viewModel = goldViewModel,
                     backupViewModel = backupViewModel,
+                    themeViewModel = themeViewModel,
                     selectedTab = selectedTab,
                     onTabSelected = { selectedTab = it },
                     onAssetClick = { assetId ->

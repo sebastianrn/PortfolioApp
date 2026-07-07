@@ -21,8 +21,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.model.AssetType
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
 import dev.sebastianrn.portfolioapp.ui.components.common.TrendChip
@@ -79,7 +81,12 @@ fun AssetCard(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "${asset.quantity} × ${asset.weightInGrams}g · ${asset.type.name.lowercase().replaceFirstChar { it.uppercase() }}",
+                        text = stringResource(
+                            R.string.asset_meta,
+                            asset.quantity,
+                            asset.weightInGrams.toString(),
+                            stringResource(if (asset.type == AssetType.COIN) R.string.type_coin else R.string.type_bar)
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

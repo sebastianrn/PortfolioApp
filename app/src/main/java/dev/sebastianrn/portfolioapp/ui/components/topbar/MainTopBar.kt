@@ -19,14 +19,16 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.sebastianrn.portfolioapp.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainTopBar(
-    title: String = "Gold Portfolio",
+    title: String,
     onRefreshClick: () -> Unit,
     onMenuClick: () -> Unit
 ) {
@@ -34,7 +36,7 @@ fun MainTopBar(
         title = {
             Column {
                 Text(
-                    "GOLD VAULT",
+                    stringResource(R.string.brand_overline).uppercase(),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 3.sp),
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -57,7 +59,7 @@ fun MainTopBar(
             ) {
                 Icon(
                     Icons.Default.Refresh,
-                    "Update prices",
+                    stringResource(R.string.update_prices_desc),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -70,7 +72,7 @@ fun MainTopBar(
             ) {
                 Icon(
                     Icons.Filled.MoreVert,
-                    "Menu",
+                    stringResource(R.string.menu_desc),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
