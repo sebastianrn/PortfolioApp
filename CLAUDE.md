@@ -76,9 +76,14 @@ app/src/main/java/dev/sebastianrn/portfolioapp/
 │   │   └── AppNavigation.kt     # NavHost + FloatingNavBar overlay (owns tab state)
 │   ├── components/
 │   │   ├── common/              # Reusable atomic components
-│   │   │   ├── StatItem.kt      # Stat display with optional percentage
+│   │   │   ├── AnimatedCounterText.kt  # Counting currency text
+│   │   │   ├── TrendChip.kt     # Trend pill with arrow (supports on-gold variant)
+│   │   │   ├── GlassTile.kt     # Frosted stat tile for gold hero cards
+│   │   │   ├── SectionHeader.kt # Gold accent bar + uppercase section label
+│   │   │   ├── EntranceFade.kt  # Staggered fade/slide entrance animation
+│   │   │   ├── SheetHeader.kt   # Bottom sheet title with gold accent bar
 │   │   │   ├── AppTextField.kt  # Styled text input
-│   │   │   └── AddAssetFab.kt   # Floating action button
+│   │   │   └── AddAssetFab.kt   # Gold gradient floating action button
 │   │   ├── bottombar/           # Bottom navigation
 │   │   │   ├── FloatingNavBar.kt  # Revolut-style floating pill nav bar
 │   │   │   └── MainTab.kt      # Tab enum (Portfolio, Assets)
@@ -110,7 +115,8 @@ app/src/main/java/dev/sebastianrn/portfolioapp/
 │   │       └── ChartFormatters.kt   # Axis/marker formatting
 │   └── theme/
 │       ├── Theme.kt             # Material3 theme definition
-│       ├── Color.kt             # Color palette
+│       ├── Color.kt             # "Gold vault" palette (obsidian dark / ivory light)
+│       ├── Gradients.kt         # AppGradients: gold card/coin/bar/shimmer brushes
 │       ├── Font.kt              # Google Fonts provider + FontFamily (Inter)
 │       ├── Shapes.kt            # Material3 shape definitions
 │       └── Typography.kt        # Typography using GoogleSansFlexFamily

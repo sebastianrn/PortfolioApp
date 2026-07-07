@@ -20,7 +20,9 @@ object ChartDataProcessor {
     }
 
     /**
-     * Filters points based on selected time range and ensures only one data point per day.
+     * Filters points based on selected time range. The one-week range keeps
+     * intraday points (downsampled) so short-term movement stays visible;
+     * longer ranges collapse to one point per day (the last one).
      */
     fun filterPointsByTimeRange(
         points: List<Pair<Long, Double>>,
@@ -36,7 +38,10 @@ object ChartDataProcessor {
 
         val filtered = points.filter { it.first >= cutoffTime }
 
-        // Process to ensure only one data point per day (take the last one)
+        if (timeRange == TimeRange.ONE_WEEK) {
+            return downsample(filtered.sortedBy { it.first })
+        }
+
         val calendar = Calendar.getInstance()
         return filtered.groupBy { (timestamp, _) ->
             calendar.timeInMillis = timestamp
@@ -84,7 +89,7 @@ object ChartDataProcessor {
      */
     fun getDateFormatter(timeRange: TimeRange): SimpleDateFormat {
         val pattern = when (timeRange) {
-            TimeRange.ONE_WEEK -> "EEE"        // Mon, Tue
+            TimeRange.ONE_WEEK -> "EEE HH:mm"  // Mon 14:30 (intraday points)
             TimeRange.ONE_MONTH -> "MMM dd"    // Jan 15
             TimeRange.SIX_MONTHS -> "MMM dd"   // Jan 15
             TimeRange.ONE_YEAR, TimeRange.ALL -> "MMM yy" // Jan 25

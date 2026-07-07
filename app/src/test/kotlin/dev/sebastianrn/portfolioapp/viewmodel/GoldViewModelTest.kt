@@ -419,9 +419,11 @@ class GoldViewModelTest {
     @Test
     fun `portfolioCurve updates when history and assets change`() = runTest {
         val asset = TestDataFactory.createGoldAsset(id = 1, quantity = 1)
+        // The curve groups points by minute, so entries must be minutes apart
+        val baseTimestamp = 1_700_000_040_000L // exact minute boundary
         val history = listOf(
-            TestDataFactory.createPriceHistory(assetId = 1, dateTimestamp = 1000L, sellPrice = 100.0),
-            TestDataFactory.createPriceHistory(assetId = 1, dateTimestamp = 2000L, sellPrice = 150.0)
+            TestDataFactory.createPriceHistory(assetId = 1, dateTimestamp = baseTimestamp, sellPrice = 100.0),
+            TestDataFactory.createPriceHistory(assetId = 1, dateTimestamp = baseTimestamp + 60_000L, sellPrice = 150.0)
         )
 
         viewModel.portfolioCurve.test {

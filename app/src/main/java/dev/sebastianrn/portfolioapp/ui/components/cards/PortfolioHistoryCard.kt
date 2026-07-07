@@ -1,11 +1,14 @@
 package dev.sebastianrn.portfolioapp.ui.components.cards
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingFlat
@@ -19,9 +22,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import dev.sebastianrn.portfolioapp.ui.components.common.CircularIconBox
 import dev.sebastianrn.portfolioapp.util.formatAsPercentage
 import dev.sebastianrn.portfolioapp.util.formatCurrency
 import java.text.SimpleDateFormat
@@ -36,8 +39,7 @@ fun PortfolioHistoryCard(
     changePercent: Double,
     modifier: Modifier = Modifier
 ) {
-    val sdf = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
-    val timeSdf = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+    val sdf = remember { SimpleDateFormat("MMM dd, yyyy · HH:mm", Locale.getDefault()) }
     val isPositive = change > 0
     val isNeutral = change == 0.0
 
@@ -55,49 +57,50 @@ fun PortfolioHistoryCard(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
             ) {
-                CircularIconBox(
-                    backgroundColor = trendColor.copy(alpha = 0.15f)
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(trendColor.copy(alpha = 0.14f)),
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         trendIcon,
                         contentDescription = null,
                         tint = trendColor,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
 
                 Column {
                     Text(
                         sdf.format(Date(timestamp)),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        timeSdf.format(Date(timestamp)),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (!isNeutral) {
                         Text(
-                            "${if (isPositive) "+" else ""}${change.formatCurrency()} (${changePercent.formatAsPercentage()})",
+                            "${change.formatCurrency()} (${changePercent.formatAsPercentage()})",
                             style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
                             color = trendColor
                         )
                     }
@@ -106,9 +109,11 @@ fun PortfolioHistoryCard(
 
             Text(
                 value.formatCurrency(),
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                modifier = Modifier.padding(start = 8.dp)
             )
         }
     }

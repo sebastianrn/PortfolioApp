@@ -1,6 +1,7 @@
 package dev.sebastianrn.portfolioapp.ui.components.topbar
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,9 +34,16 @@ fun MainTopBar(
         title = {
             Column {
                 Text(
+                    "GOLD VAULT",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 3.sp),
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
                     title,
                     style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Black
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
         },
@@ -43,22 +52,29 @@ fun MainTopBar(
                 onClick = onRefreshClick,
                 modifier = Modifier
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                    .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f), CircleShape)
             ) {
                 Icon(
                     Icons.Default.Refresh,
-                    "Update",
+                    "Update prices",
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
-            Spacer(modifier = Modifier.width(4.dp))
-            IconButton(onClick = onMenuClick) {
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(
+                onClick = onMenuClick,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            ) {
                 Icon(
                     Icons.Filled.MoreVert,
                     "Menu",
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
+            Spacer(modifier = Modifier.width(4.dp))
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.background

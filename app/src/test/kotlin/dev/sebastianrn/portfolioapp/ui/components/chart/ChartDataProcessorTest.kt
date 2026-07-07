@@ -106,7 +106,7 @@ class ChartDataProcessorTest {
     }
 
     @Test
-    fun `filterPointsByTimeRange keeps one point per day`() {
+    fun `filterPointsByTimeRange keeps one point per day for month range`() {
         val now = System.currentTimeMillis()
         // Multiple points on the same day
         val points = listOf(
@@ -115,10 +115,25 @@ class ChartDataProcessorTest {
             now to 200.0
         )
 
-        val result = ChartDataProcessor.filterPointsByTimeRange(points, TimeRange.ONE_WEEK)
+        val result = ChartDataProcessor.filterPointsByTimeRange(points, TimeRange.ONE_MONTH)
 
         // Should consolidate to one point per day
         assertEquals(1, result.size)
+    }
+
+    @Test
+    fun `filterPointsByTimeRange keeps intraday points for week range`() {
+        val now = System.currentTimeMillis()
+        val points = listOf(
+            now - 1000 to 100.0,
+            now - 500 to 150.0,
+            now to 200.0
+        )
+
+        val result = ChartDataProcessor.filterPointsByTimeRange(points, TimeRange.ONE_WEEK)
+
+        // The one-week range preserves intraday granularity
+        assertEquals(3, result.size)
     }
 
     @Test
@@ -134,7 +149,7 @@ class ChartDataProcessorTest {
             today to 200.0
         )
 
-        val result = ChartDataProcessor.filterPointsByTimeRange(points, TimeRange.ONE_WEEK)
+        val result = ChartDataProcessor.filterPointsByTimeRange(points, TimeRange.ONE_MONTH)
 
         // Find yesterday's point
         val yesterdayPoint = result.find {
@@ -255,12 +270,12 @@ class ChartDataProcessorTest {
     // --- getDateFormatter Tests ---
 
     @Test
-    fun `getDateFormatter for ONE_WEEK uses day abbreviation format`() {
+    fun `getDateFormatter for ONE_WEEK uses day and time format`() {
         val formatter = ChartDataProcessor.getDateFormatter(TimeRange.ONE_WEEK)
         val pattern = formatter.toPattern()
 
-        // Should use "EEE" for day abbreviation
-        assertEquals("EEE", pattern)
+        // Day abbreviation plus time, since the week range keeps intraday points
+        assertEquals("EEE HH:mm", pattern)
     }
 
     @Test

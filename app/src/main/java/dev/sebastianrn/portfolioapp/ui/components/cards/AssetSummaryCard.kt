@@ -9,23 +9,33 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
-import dev.sebastianrn.portfolioapp.ui.components.common.Badge
-import dev.sebastianrn.portfolioapp.ui.components.common.StatItem
+import dev.sebastianrn.portfolioapp.ui.components.common.AnimatedCounterText
+import dev.sebastianrn.portfolioapp.ui.components.common.GlassTile
+import dev.sebastianrn.portfolioapp.ui.components.common.TrendChip
+import dev.sebastianrn.portfolioapp.ui.theme.AppGradients
+import dev.sebastianrn.portfolioapp.ui.theme.GoldDeep
+import dev.sebastianrn.portfolioapp.ui.theme.OnGold
+import dev.sebastianrn.portfolioapp.ui.theme.OnGoldMuted
+import dev.sebastianrn.portfolioapp.util.formatAsPercentage
 import dev.sebastianrn.portfolioapp.util.formatCurrency
 
+/**
+ * Gold hero header for the asset detail screen.
+ */
 @Composable
 fun AssetSummaryCard(asset: GoldAsset) {
     val isPositive = asset.totalProfitOrLoss >= 0
@@ -34,130 +44,94 @@ fun AssetSummaryCard(asset: GoldAsset) {
         (asset.totalProfitOrLoss / totalInvested) * 100
     } else 0.0
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+    val shape = MaterialTheme.shapes.extraLarge
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 24.dp, shape = shape, ambientColor = GoldDeep, spotColor = GoldDeep)
+            .clip(shape)
+            .background(AppGradients.goldCard)
     ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth()
+                .matchParentSize()
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                            Color.Transparent
-                        )
+                        colors = listOf(Color.Transparent, GoldDeep.copy(alpha = 0.25f)),
+                        startY = 300f
                     )
                 )
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+        )
+
+        Column(modifier = Modifier.padding(20.dp)) {
+            // Meta chips
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                MetaChip(asset.type.name)
+                MetaChip("${asset.weightInGrams}g")
+                MetaChip("×${asset.quantity}")
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Text(
+                "CURRENT VALUE",
+                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 2.sp),
+                fontWeight = FontWeight.Bold,
+                color = OnGoldMuted
+            )
+            AnimatedCounterText(
+                value = asset.totalCurrentValue,
+                style = MaterialTheme.typography.displaySmall.copy(letterSpacing = (-1).sp),
+                color = OnGold
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            TrendChip(
+                text = "${asset.totalProfitOrLoss.formatCurrency()} (${percentage.formatAsPercentage()})",
+                positive = isPositive,
+                onGold = true
+            )
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Top row: Badges and Return indicator
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Asset badges
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Badge(
-                            text = asset.type.name,
-                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                            contentColor = MaterialTheme.colorScheme.primary
-                        )
-                        Badge(
-                            text = "${asset.weightInGrams}g",
-                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                            contentColor = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Current Value - prominent display
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Column {
-                        Text(
-                            "Current Value",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            asset.totalCurrentValue.formatCurrency(),
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    // Total return value
-                    Column(horizontalAlignment = Alignment.End) {
-                        StatItem(
-                            label = "Return",
-                            value = asset.totalProfitOrLoss,
-                            isValueFormatShort = false,
-                            percentage = percentage,
-                            neutralColorNeeded = false,
-                            isPositive = isPositive,
-                            isCurrency = true,
-                            alignment = Alignment.End
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Bottom stats row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    StatItem(
-                        label = "Quantity",
-                        value = asset.quantity.toDouble(),
-                        isValueFormatShort = false,
-                        percentage = null,
-                        neutralColorNeeded = true,
-                        isPositive = null,
-                        isCurrency = false,
-                        alignment = Alignment.CenterHorizontally
-                    )
-
-                    StatItem(
-                        label = "Purchase Price",
-                        value = asset.purchasePrice,
-                        isValueFormatShort = true,
-                        percentage = null,
-                        neutralColorNeeded = true,
-                        isPositive = null,
-                        alignment = Alignment.CenterHorizontally
-                    )
-
-                    StatItem(
-                        label = "Invested",
-                        value = totalInvested,
-                        isValueFormatShort = true,
-                        percentage = null,
-                        neutralColorNeeded = true,
-                        isPositive = null,
-                        alignment = Alignment.End
-                    )
-                }
+                GlassTile(
+                    label = "Unit Price",
+                    value = asset.currentSellPrice.formatCurrency(short = true),
+                    modifier = Modifier.weight(1f)
+                )
+                GlassTile(
+                    label = "Paid",
+                    value = asset.purchasePrice.formatCurrency(short = true),
+                    modifier = Modifier.weight(1f)
+                )
+                GlassTile(
+                    label = "Invested",
+                    value = totalInvested.formatCurrency(short = true),
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }
 }
 
+@Composable
+private fun MetaChip(text: String) {
+    Surface(
+        shape = CircleShape,
+        color = Color.White.copy(alpha = 0.30f)
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = OnGold
+        )
+    }
+}

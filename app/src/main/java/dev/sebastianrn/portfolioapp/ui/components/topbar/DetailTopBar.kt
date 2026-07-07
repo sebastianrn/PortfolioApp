@@ -1,6 +1,7 @@
 package dev.sebastianrn.portfolioapp.ui.components.topbar
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -16,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,7 +39,7 @@ fun DetailTopBar(
                 onClick = onBackClick,
                 modifier = Modifier
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
@@ -51,7 +53,8 @@ fun DetailTopBar(
                 onClick = onEditClick,
                 modifier = Modifier
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                    .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f), CircleShape)
             ) {
                 Icon(
                     Icons.Filled.Edit,
