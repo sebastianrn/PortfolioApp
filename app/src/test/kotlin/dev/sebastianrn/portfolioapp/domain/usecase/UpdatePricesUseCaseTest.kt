@@ -181,7 +181,7 @@ class UpdatePricesUseCaseTest {
         val result = useCase.fromPhiloroApi()
 
         assertTrue(result.isSuccess)
-        assertEquals(0, result.getOrNull())
+        assertEquals(PriceUpdateResult(updated = 0, total = 0), result.getOrNull())
     }
 
     @Test
@@ -204,8 +204,8 @@ class UpdatePricesUseCaseTest {
             name = "Gold Bar 100g",
             description = "Weight: 100g",
             weight = "100g",
-            buyPrice = "5500.00",
-            sellPrice = "5200.00"
+            buyPrice = 5500.00,
+            sellPrice = 5200.00
         )
 
         coEvery { repository.getAssetWithPhiloroId() } returns listOf(asset)
@@ -214,7 +214,7 @@ class UpdatePricesUseCaseTest {
         val result = useCase.fromPhiloroApi()
 
         assertTrue(result.isSuccess)
-        assertEquals(1, result.getOrNull())
+        assertEquals(PriceUpdateResult(updated = 1, total = 1), result.getOrNull())
         coVerify { repository.updatePricesByPhiloroId(1991, 5200.00, 5500.00) }
         coVerify { repository.addHistory(any()) }
     }
@@ -227,8 +227,8 @@ class UpdatePricesUseCaseTest {
             name = "Gold Bar 100g",
             description = "Weight: 100g",
             weight = "100g",
-            buyPrice = "0.0",
-            sellPrice = "5200.00"
+            buyPrice = 0.0,
+            sellPrice = 5200.00
         )
 
         coEvery { repository.getAssetWithPhiloroId() } returns listOf(asset)
@@ -237,7 +237,7 @@ class UpdatePricesUseCaseTest {
         val result = useCase.fromPhiloroApi()
 
         assertTrue(result.isSuccess)
-        assertEquals(0, result.getOrNull())
+        assertEquals(PriceUpdateResult(updated = 0, total = 1), result.getOrNull())
         coVerify(exactly = 0) { repository.updatePricesByPhiloroId(any(), any(), any()) }
     }
 
@@ -248,8 +248,8 @@ class UpdatePricesUseCaseTest {
             TestDataFactory.createGoldBar(id = 2, philoroId = 2000)
         )
         val scrapedAssets = listOf(
-            ScrapedAsset("1991", "Bar 1", "", "100g", "5500.00", "5200.00"),
-            ScrapedAsset("2000", "Bar 2", "", "50g", "2800.00", "2600.00")
+            ScrapedAsset("1991", "Bar 1", "", "100g", 5500.00, 5200.00),
+            ScrapedAsset("2000", "Bar 2", "", "50g", 2800.00, 2600.00)
         )
 
         coEvery { repository.getAssetWithPhiloroId() } returns assets
@@ -258,7 +258,7 @@ class UpdatePricesUseCaseTest {
         val result = useCase.fromPhiloroApi()
 
         assertTrue(result.isSuccess)
-        assertEquals(2, result.getOrNull())
+        assertEquals(PriceUpdateResult(updated = 2, total = 2), result.getOrNull())
     }
 
     @Test
@@ -269,8 +269,8 @@ class UpdatePricesUseCaseTest {
             name = "Other Bar",
             description = "",
             weight = "100g",
-            buyPrice = "5500.00",
-            sellPrice = "5200.00"
+            buyPrice = 5500.00,
+            sellPrice = 5200.00
         )
 
         coEvery { repository.getAssetWithPhiloroId() } returns listOf(asset)
@@ -279,7 +279,7 @@ class UpdatePricesUseCaseTest {
         val result = useCase.fromPhiloroApi()
 
         assertTrue(result.isSuccess)
-        assertEquals(0, result.getOrNull())
+        assertEquals(PriceUpdateResult(updated = 0, total = 1), result.getOrNull())
     }
 
     @Test
@@ -295,28 +295,6 @@ class UpdatePricesUseCaseTest {
     }
 
     @Test
-    fun `fromPhiloroApi handles invalid price strings`() = runTest {
-        val asset = TestDataFactory.createGoldBar(id = 1, philoroId = 1991)
-        val scrapedAsset = ScrapedAsset(
-            id = "1991",
-            name = "Gold Bar",
-            description = "",
-            weight = "100g",
-            buyPrice = "invalid",
-            sellPrice = "also_invalid"
-        )
-
-        coEvery { repository.getAssetWithPhiloroId() } returns listOf(asset)
-        coEvery { scrapingService.fetchPrices(any()) } returns listOf(scrapedAsset)
-
-        val result = useCase.fromPhiloroApi()
-
-        // Should succeed but not update (buy price would be 0)
-        assertTrue(result.isSuccess)
-        assertEquals(0, result.getOrNull())
-    }
-
-    @Test
     fun `fromPhiloroApi sets isManual to false for history`() = runTest {
         val asset = TestDataFactory.createGoldBar(id = 1, philoroId = 1991)
         val scrapedAsset = ScrapedAsset(
@@ -324,8 +302,8 @@ class UpdatePricesUseCaseTest {
             name = "Gold Bar",
             description = "",
             weight = "100g",
-            buyPrice = "5500.00",
-            sellPrice = "5200.00"
+            buyPrice = 5500.00,
+            sellPrice = 5200.00
         )
 
         coEvery { repository.getAssetWithPhiloroId() } returns listOf(asset)

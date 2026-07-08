@@ -1,13 +1,17 @@
 package dev.sebastianrn.portfolioapp.ui.components.sheets
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,6 +25,7 @@ import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -32,11 +37,17 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.backup.BackupFile
-import java.text.SimpleDateFormat
-import java.util.Date
+import dev.sebastianrn.portfolioapp.backup.BackupManager
+import dev.sebastianrn.portfolioapp.ui.components.common.SheetHeader
+import dev.sebastianrn.portfolioapp.util.DateFormats
+import dev.sebastianrn.portfolioapp.util.formatDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,36 +62,17 @@ fun BackupListSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp)
+                .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Saved Backups",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                OutlinedButton(
-                    onClick = onImportFromFile
-                ) {
-                    Icon(
-                        Icons.Default.FileOpen,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text("Import")
-                }
-            }
+            SheetHeader(title = stringResource(R.string.saved_backups_title))
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -95,12 +87,12 @@ fun BackupListSheet(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            "No backups found",
+                            stringResource(R.string.no_backups_found),
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            "Create a backup to see it here",
+                            stringResource(R.string.create_backup_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -123,6 +115,23 @@ fun BackupListSheet(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedButton(
+                onClick = onImportFromFile,
+                modifier = Modifier.fillMaxWidth(),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+            ) {
+                Icon(
+                    Icons.Default.FileOpen,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.import_from_file), color = MaterialTheme.colorScheme.primary)
+            }
         }
     }
 }
@@ -135,7 +144,11 @@ private fun BackupFileItem(
     onDelete: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        )
     ) {
         Column(
             modifier = Modifier
@@ -177,7 +190,7 @@ private fun BackupFileItem(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(4.dp))
-                    Text("Share")
+                    Text(stringResource(R.string.share_action))
                 }
                 TextButton(onClick = onRestore) {
                     Icon(
@@ -186,7 +199,7 @@ private fun BackupFileItem(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(4.dp))
-                    Text("Restore")
+                    Text(stringResource(R.string.restore_action))
                 }
                 TextButton(
                     onClick = onDelete,
@@ -200,31 +213,30 @@ private fun BackupFileItem(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(4.dp))
-                    Text("Delete")
+                    Text(stringResource(R.string.delete_action))
                 }
             }
         }
     }
 }
 
+private val backupFileNameFormat =
+    DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss_SSS", Locale.US)
+
 private fun formatFileName(name: String): String {
     return try {
         val dateStr = name
-            .removePrefix("portfolio_backup_")
-            .removeSuffix(".json")
-        val inputFormat = SimpleDateFormat("yyyy-MM-dd_HH:mm:ss_SSS", Locale.US)
-        val outputFormat = SimpleDateFormat("MMM d, yyyy 'at' HH:mm", Locale.getDefault())
-        val date = inputFormat.parse(dateStr)
-        if (date != null) outputFormat.format(date) else name
+            .removePrefix(BackupManager.BACKUP_FILE_PREFIX)
+            .removeSuffix(BackupManager.BACKUP_FILE_EXTENSION)
+        val date = LocalDateTime.parse(dateStr, backupFileNameFormat)
+        DateFormats.backupTimestamp.format(date)
     } catch (e: Exception) {
         name
     }
 }
 
-private fun formatModifiedTime(timestamp: Long): String {
-    val dateFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-    return dateFormat.format(Date(timestamp))
-}
+private fun formatModifiedTime(timestamp: Long): String =
+    timestamp.formatDate(DateFormats.backupDate)
 
 private fun formatFileSize(bytes: Long): String {
     return when {

@@ -106,7 +106,7 @@ class ChartDataProcessorTest {
     }
 
     @Test
-    fun `filterPointsByTimeRange keeps one point per day`() {
+    fun `filterPointsByTimeRange keeps one point per day for month range`() {
         val now = System.currentTimeMillis()
         // Multiple points on the same day
         val points = listOf(
@@ -115,10 +115,25 @@ class ChartDataProcessorTest {
             now to 200.0
         )
 
-        val result = ChartDataProcessor.filterPointsByTimeRange(points, TimeRange.ONE_WEEK)
+        val result = ChartDataProcessor.filterPointsByTimeRange(points, TimeRange.ONE_MONTH)
 
         // Should consolidate to one point per day
         assertEquals(1, result.size)
+    }
+
+    @Test
+    fun `filterPointsByTimeRange keeps intraday points for week range`() {
+        val now = System.currentTimeMillis()
+        val points = listOf(
+            now - 1000 to 100.0,
+            now - 500 to 150.0,
+            now to 200.0
+        )
+
+        val result = ChartDataProcessor.filterPointsByTimeRange(points, TimeRange.ONE_WEEK)
+
+        // The one-week range preserves intraday granularity
+        assertEquals(3, result.size)
     }
 
     @Test
@@ -134,7 +149,7 @@ class ChartDataProcessorTest {
             today to 200.0
         )
 
-        val result = ChartDataProcessor.filterPointsByTimeRange(points, TimeRange.ONE_WEEK)
+        val result = ChartDataProcessor.filterPointsByTimeRange(points, TimeRange.ONE_MONTH)
 
         // Find yesterday's point
         val yesterdayPoint = result.find {
@@ -252,47 +267,71 @@ class ChartDataProcessorTest {
         assertTrue(result.second >= 1000.0)
     }
 
-    // --- getDateFormatter Tests ---
+    // --- defaultTimeRange Tests ---
 
     @Test
-    fun `getDateFormatter for ONE_WEEK uses day abbreviation format`() {
-        val formatter = ChartDataProcessor.getDateFormatter(TimeRange.ONE_WEEK)
-        val pattern = formatter.toPattern()
+    fun `defaultTimeRange prefers one month when it has data`() {
+        val now = System.currentTimeMillis()
+        val dayMs = 24 * 60 * 60 * 1000L
+        val points = listOf(
+            (now - 10 * dayMs) to 100.0,
+            now to 110.0
+        )
 
-        // Should use "EEE" for day abbreviation
-        assertEquals("EEE", pattern)
+        assertEquals(TimeRange.ONE_MONTH, ChartDataProcessor.defaultTimeRange(points))
     }
 
     @Test
-    fun `getDateFormatter for ONE_MONTH uses month day format`() {
-        val formatter = ChartDataProcessor.getDateFormatter(TimeRange.ONE_MONTH)
-        val pattern = formatter.toPattern()
+    fun `defaultTimeRange falls back to a longer range for stale data`() {
+        val now = System.currentTimeMillis()
+        val dayMs = 24 * 60 * 60 * 1000L
+        // Newest point is ~80 days old: 1M is empty, 6M has both points
+        val points = listOf(
+            (now - 150 * dayMs) to 100.0,
+            (now - 80 * dayMs) to 110.0
+        )
 
-        assertEquals("MMM dd", pattern)
+        assertEquals(TimeRange.SIX_MONTHS, ChartDataProcessor.defaultTimeRange(points))
     }
 
     @Test
-    fun `getDateFormatter for SIX_MONTHS uses month day format`() {
-        val formatter = ChartDataProcessor.getDateFormatter(TimeRange.SIX_MONTHS)
-        val pattern = formatter.toPattern()
+    fun `defaultTimeRange falls back to ALL for very old data`() {
+        val now = System.currentTimeMillis()
+        val dayMs = 24 * 60 * 60 * 1000L
+        val points = listOf(
+            (now - 900 * dayMs) to 100.0,
+            (now - 800 * dayMs) to 110.0
+        )
 
-        assertEquals("MMM dd", pattern)
+        assertEquals(TimeRange.ALL, ChartDataProcessor.defaultTimeRange(points))
+    }
+
+    // --- getDateFormatterPattern Tests ---
+
+    @Test
+    fun `getDateFormatterPattern for ONE_WEEK uses day and time format`() {
+        // Day abbreviation plus time, since the week range keeps intraday points
+        assertEquals("EEE HH:mm", ChartDataProcessor.getDateFormatterPattern(TimeRange.ONE_WEEK))
     }
 
     @Test
-    fun `getDateFormatter for ONE_YEAR uses month year format`() {
-        val formatter = ChartDataProcessor.getDateFormatter(TimeRange.ONE_YEAR)
-        val pattern = formatter.toPattern()
-
-        assertEquals("MMM yy", pattern)
+    fun `getDateFormatterPattern for ONE_MONTH uses month day format`() {
+        assertEquals("MMM dd", ChartDataProcessor.getDateFormatterPattern(TimeRange.ONE_MONTH))
     }
 
     @Test
-    fun `getDateFormatter for ALL uses month year format`() {
-        val formatter = ChartDataProcessor.getDateFormatter(TimeRange.ALL)
-        val pattern = formatter.toPattern()
+    fun `getDateFormatterPattern for SIX_MONTHS uses month day format`() {
+        assertEquals("MMM dd", ChartDataProcessor.getDateFormatterPattern(TimeRange.SIX_MONTHS))
+    }
 
-        assertEquals("MMM yy", pattern)
+    @Test
+    fun `getDateFormatterPattern for ONE_YEAR uses month year format`() {
+        assertEquals("MMM yy", ChartDataProcessor.getDateFormatterPattern(TimeRange.ONE_YEAR))
+    }
+
+    @Test
+    fun `getDateFormatterPattern for ALL uses month year format`() {
+        assertEquals("MMM yy", ChartDataProcessor.getDateFormatterPattern(TimeRange.ALL))
     }
 
     // --- calculateAxisLabelSpacing Tests ---

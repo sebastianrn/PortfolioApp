@@ -12,12 +12,9 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
@@ -38,16 +35,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.ui.components.common.AppTextField
+import dev.sebastianrn.portfolioapp.ui.components.common.GoldButton
 import dev.sebastianrn.portfolioapp.ui.components.common.SheetHeader
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import dev.sebastianrn.portfolioapp.util.DateFormats
+import dev.sebastianrn.portfolioapp.util.formatDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,7 +61,6 @@ fun EditHistorySheet(
     var buyPrice by remember { mutableStateOf(initialBuyPrice?.toString() ?: "") }
     var selectedDate by remember { mutableLongStateOf(initialDate ?: System.currentTimeMillis()) }
     var showDatePicker by remember { mutableStateOf(false) }
-    val sdf = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -130,7 +125,7 @@ fun EditHistorySheet(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             SheetHeader(
-                title = if (isEditMode) "Edit Record" else stringResource(R.string.update_value_title)
+                title = stringResource(if (isEditMode) R.string.sheet_edit_record else R.string.update_value_title)
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -138,9 +133,9 @@ fun EditHistorySheet(
             // Date Picker Field
             Box(modifier = Modifier.fillMaxWidth()) {
                 AppTextField(
-                    value = sdf.format(Date(selectedDate)),
+                    value = remember(selectedDate) { selectedDate.formatDate(DateFormats.shortDate) },
                     onValueChange = {},
-                    label = "Date",
+                    label = stringResource(R.string.date_field_label),
                     readOnly = true,
                     trailingIcon = {
                         Icon(
@@ -165,9 +160,10 @@ fun EditHistorySheet(
                     sellPrice = it
                     isSellError = false
                 },
-                label = if (isEditMode) "Sell Price" else stringResource(R.string.new_sell_price_label),
+                label = stringResource(if (isEditMode) R.string.sell_price_label else R.string.new_sell_price_label),
+                keyboardType = KeyboardType.Decimal,
                 isError = isSellError,
-                errorMessage = "Enter a valid sell price",
+                errorMessage = stringResource(R.string.sell_price_error),
                 suffix = "CHF"
             )
 
@@ -179,15 +175,17 @@ fun EditHistorySheet(
                     buyPrice = it
                     isBuyError = false
                 },
-                label = if (isEditMode) "Buy Price" else stringResource(R.string.new_buy_price_label),
+                label = stringResource(if (isEditMode) R.string.buy_price_label else R.string.new_buy_price_label),
+                keyboardType = KeyboardType.Decimal,
                 isError = isBuyError,
-                errorMessage = "Enter a valid buy price",
+                errorMessage = stringResource(R.string.buy_price_error),
                 suffix = "CHF"
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
+            GoldButton(
+                text = stringResource(if (isEditMode) R.string.update_action else R.string.save_action),
                 onClick = {
                     val validSell = sellPrice.toDoubleOrNull()
                     val validBuy = buyPrice.toDoubleOrNull()
@@ -198,22 +196,8 @@ fun EditHistorySheet(
                     if (validSell != null && validBuy != null) {
                         onSave(validSell, validBuy, selectedDate)
                     }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.Black
-                )
-            ) {
-                Text(
-                    text = if (isEditMode) "Update" else stringResource(R.string.save_action),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+                }
+            )
         }
     }
 }

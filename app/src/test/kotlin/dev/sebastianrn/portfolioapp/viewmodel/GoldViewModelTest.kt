@@ -10,6 +10,7 @@ import dev.sebastianrn.portfolioapp.data.repository.GoldRepository
 import dev.sebastianrn.portfolioapp.domain.usecase.CalculateHistoricalStatsUseCase
 import dev.sebastianrn.portfolioapp.domain.usecase.CalculatePortfolioCurveUseCase
 import dev.sebastianrn.portfolioapp.domain.usecase.CalculatePortfolioStatsUseCase
+import dev.sebastianrn.portfolioapp.domain.usecase.PriceUpdateResult
 import dev.sebastianrn.portfolioapp.domain.usecase.UpdatePricesUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -72,7 +73,9 @@ class GoldViewModelTest {
             calculateStats = calculateStats,
             calculateCurve = calculateCurve,
             calculateHistoricalStats = calculateHistoricalStats,
-            updatePrices = updatePrices
+            updatePrices = updatePrices,
+            ioDispatcher = testDispatcher,
+            defaultDispatcher = testDispatcher
         )
     }
 
@@ -245,12 +248,16 @@ class GoldViewModelTest {
             // Should receive "Fetching Spot Price..." toast first
             val event1 = awaitItem()
             assertTrue(event1 is UiEvent.ShowToast)
+
+            // Followed by the success toast
+            val event2 = awaitItem()
+            assertTrue(event2 is UiEvent.ShowToast)
         }
     }
 
     @Test
     fun `updatePricesFromScraper calls updatePrices fromPhiloroApi`() = runTest {
-        coEvery { updatePrices.fromPhiloroApi() } returns Result.success(3)
+        coEvery { updatePrices.fromPhiloroApi() } returns Result.success(PriceUpdateResult(updated = 3, total = 3))
 
         viewModel.updatePricesFromScraper()
 
@@ -325,7 +332,9 @@ class GoldViewModelTest {
             calculateStats = calculateStats,
             calculateCurve = calculateCurve,
             calculateHistoricalStats = calculateHistoricalStats,
-            updatePrices = updatePrices
+            updatePrices = updatePrices,
+            ioDispatcher = testDispatcher,
+            defaultDispatcher = testDispatcher
         )
 
         testViewModel.addDailyRate(
@@ -358,7 +367,9 @@ class GoldViewModelTest {
             calculateStats = calculateStats,
             calculateCurve = calculateCurve,
             calculateHistoricalStats = calculateHistoricalStats,
-            updatePrices = updatePrices
+            updatePrices = updatePrices,
+            ioDispatcher = testDispatcher,
+            defaultDispatcher = testDispatcher
         )
 
         advanceUntilIdle()
@@ -395,6 +406,7 @@ class GoldViewModelTest {
 
         chartPoints.test {
             assertEquals(emptyList<Pair<Long, Double>>(), awaitItem())
+            awaitComplete()
         }
     }
 
@@ -419,9 +431,11 @@ class GoldViewModelTest {
     @Test
     fun `portfolioCurve updates when history and assets change`() = runTest {
         val asset = TestDataFactory.createGoldAsset(id = 1, quantity = 1)
+        // The curve groups points by minute, so entries must be minutes apart
+        val baseTimestamp = 1_700_000_040_000L // exact minute boundary
         val history = listOf(
-            TestDataFactory.createPriceHistory(assetId = 1, dateTimestamp = 1000L, sellPrice = 100.0),
-            TestDataFactory.createPriceHistory(assetId = 1, dateTimestamp = 2000L, sellPrice = 150.0)
+            TestDataFactory.createPriceHistory(assetId = 1, dateTimestamp = baseTimestamp, sellPrice = 100.0),
+            TestDataFactory.createPriceHistory(assetId = 1, dateTimestamp = baseTimestamp + 60_000L, sellPrice = 150.0)
         )
 
         viewModel.portfolioCurve.test {

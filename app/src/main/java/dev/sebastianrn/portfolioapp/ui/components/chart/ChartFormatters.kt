@@ -1,8 +1,8 @@
 package dev.sebastianrn.portfolioapp.ui.components.chart
 
+import dev.sebastianrn.portfolioapp.util.formatDate
 import java.text.NumberFormat
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -11,15 +11,20 @@ private val numberFormat = NumberFormat.getInstance(Locale.GERMAN)
 object ChartFormatters {
 
     /**
-     * Formats Y-axis values with k/M suffixes for readability.
+     * Formats Y-axis values with K/M suffixes. Values below 10K keep their
+     * full form and K/M keep one decimal — whole-thousand rounding collapses
+     * nearby axis labels into duplicates (e.g. "3K, 3K, 3K").
      */
     fun formatYAxisValue(value: Double): String {
         return when {
-            value >= 1_000_000 -> "${(value / 1_000_000).roundToInt()}M"
-            value >= 1_000 -> "${(value / 1_000).roundToInt()}k"
-            else -> value.toInt().toString()
+            value >= 1_000_000 -> "${trimOneDecimal(value / 1_000_000)}M"
+            value >= 10_000 -> "${trimOneDecimal(value / 1_000)}K"
+            else -> numberFormat.format(value.roundToInt())
         }
     }
+
+    private fun trimOneDecimal(value: Double): String =
+        String.format(Locale.US, "%.1f", value).removeSuffix(".0")
 
     /**
      * Formats marker value with CHF prefix.
@@ -34,10 +39,10 @@ object ChartFormatters {
     fun formatMarkerDate(
         index: Int,
         points: List<Pair<Long, Double>>,
-        dateFormatter: SimpleDateFormat
+        dateFormatter: DateTimeFormatter
     ): String {
         return if (index in points.indices) {
-            dateFormatter.format(Date(points[index].first))
+            points[index].first.formatDate(dateFormatter)
         } else {
             "–"
         }

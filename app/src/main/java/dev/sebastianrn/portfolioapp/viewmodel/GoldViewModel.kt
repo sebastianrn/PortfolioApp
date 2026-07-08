@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.sebastianrn.portfolioapp.backup.BackupSerializer
 import dev.sebastianrn.portfolioapp.BuildConfig
+import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.model.AssetType
 import dev.sebastianrn.portfolioapp.ui.components.chart.ChartDataProcessor
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
@@ -18,6 +19,7 @@ import dev.sebastianrn.portfolioapp.domain.usecase.CalculatePortfolioStatsUseCas
 import dev.sebastianrn.portfolioapp.domain.usecase.UpdatePricesUseCase
 import dev.sebastianrn.portfolioapp.util.Constants
 import dev.sebastianrn.portfolioapp.util.mergeTimeIntoDate
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -45,7 +47,9 @@ class GoldViewModel(
     private val calculateStats: CalculatePortfolioStatsUseCase,
     private val calculateCurve: CalculatePortfolioCurveUseCase,
     private val calculateHistoricalStats: CalculateHistoricalStatsUseCase,
-    private val updatePrices: UpdatePricesUseCase
+    private val updatePrices: UpdatePricesUseCase,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
     // One-time UI events channel
@@ -79,7 +83,7 @@ class GoldViewModel(
         .combine(allAssets) { history, assets ->
             calculateCurve(history, assets)
         }
-        .flowOn(Dispatchers.Default)
+        .flowOn(defaultDispatcher)
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     // Daily change calculation (delegated to UseCase)
@@ -90,7 +94,7 @@ class GoldViewModel(
     // Historical performance stats (delegated to UseCase)
     val historicalStats: StateFlow<HistoricalStats> = portfolioCurve
         .map { curve -> calculateHistoricalStats(curve) }
-        .flowOn(Dispatchers.Default)
+        .flowOn(defaultDispatcher)
         .stateIn(viewModelScope, SharingStarted.Lazily, HistoricalStats())
 
     // --- Asset Operations ---
@@ -104,7 +108,7 @@ class GoldViewModel(
         weight: Double,
         philoroId: Int
     ) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             val asset = GoldAsset(
                 name = name,
                 type = type,
@@ -137,7 +141,7 @@ class GoldViewModel(
         weight: Double,
         philoroId: Int
     ) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             val oldAsset = repository.getAssetById(id).first()
 
             val updatedAsset = oldAsset.copy(
@@ -161,15 +165,15 @@ class GoldViewModel(
     // --- Price Update Operations ---
 
     fun updateAllPricesFromApi() {
-        viewModelScope.launch(Dispatchers.IO) {
-            sendEvent(UiEvent.ShowToast("Fetching Spot Price..."))
+        viewModelScope.launch(ioDispatcher) {
+            sendEvent(UiEvent.ShowToast(R.string.toast_fetching_spot))
 
             val currency = currentCurrency.value
             val apiKey = BuildConfig.GOLD_API_KEY
 
             updatePrices.fromSpotPriceApi(currency, apiKey, allAssets.value)
                 .onSuccess { count ->
-                    sendEvent(UiEvent.ShowToast("Updated $count assets in $currency."))
+                    sendEvent(UiEvent.ShowToast(R.string.toast_updated_assets_currency, listOf(count, currency)))
                 }
                 .onFailure { error ->
                     sendEvent(UiEvent.ShowError(error))
@@ -178,16 +182,20 @@ class GoldViewModel(
     }
 
     fun updatePricesFromScraper() {
-        viewModelScope.launch(Dispatchers.IO) {
-            sendEvent(UiEvent.ShowToast("Updating prices via API..."))
+        viewModelScope.launch(ioDispatcher) {
+            sendEvent(UiEvent.ShowToast(R.string.toast_updating_prices))
 
             updatePrices.fromPhiloroApi()
-                .onSuccess { count ->
-                    if (count > 0) {
-                        sendEvent(UiEvent.ShowToast("Updated $count assets via API!"))
-                    } else {
-                        sendEvent(UiEvent.ShowToast("No Philoro assets to update."))
+                .onSuccess { result ->
+                    val event = when {
+                        result.total == 0 -> UiEvent.ShowToast(R.string.toast_no_philoro_assets)
+                        result.updated < result.total -> UiEvent.ShowToast(
+                            R.string.toast_updated_assets_partial,
+                            listOf(result.updated, result.total)
+                        )
+                        else -> UiEvent.ShowToast(R.string.toast_updated_assets, listOf(result.updated))
                     }
+                    sendEvent(event)
                 }
                 .onFailure { error ->
                     sendEvent(UiEvent.ShowError(error))
@@ -209,7 +217,7 @@ class GoldViewModel(
 
         val finalTimestamp = mergeTimeIntoDate(selectedDate)
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             repository.addHistory(
                 PriceHistory(
                     assetId = assetId,
@@ -230,7 +238,7 @@ class GoldViewModel(
         newDate: Long,
         isManual: Boolean
     ) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             val updatedRecord = PriceHistory(
                 historyId = historyId,
                 assetId = assetId,
@@ -278,15 +286,19 @@ class GoldViewModel(
 
     // --- Chart Data ---
 
-    fun getChartPointsForAsset(assetId: Int): StateFlow<List<Pair<Long, Double>>> {
+    /**
+     * Cold flow on purpose: collected with a lifecycle-aware collector in the
+     * UI so the Room subscription ends with the screen (a `stateIn` here would
+     * pin one collection per visited asset to the ViewModel scope forever).
+     */
+    fun getChartPointsForAsset(assetId: Int): Flow<List<Pair<Long, Double>>> {
         return repository.getHistoryForAsset(assetId)
             .map { history ->
                 if (history.isEmpty()) return@map emptyList()
                 val rawPoints = history.reversed().map { it.dateTimestamp to it.sellPrice }
                 ChartDataProcessor.downsample(rawPoints)
             }
-            .flowOn(Dispatchers.Default)
-            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+            .flowOn(defaultDispatcher)
     }
 
     // --- Data Access ---

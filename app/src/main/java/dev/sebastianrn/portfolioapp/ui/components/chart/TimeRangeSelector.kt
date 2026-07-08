@@ -1,21 +1,31 @@
 package dev.sebastianrn.portfolioapp.ui.components.chart
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
+/**
+ * Segmented pill selector; the active segment fills with gold.
+ */
 @Composable
 fun TimeRangeSelector(
     selectedRange: TimeRange,
@@ -25,46 +35,51 @@ fun TimeRangeSelector(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            .padding(4.dp)
     ) {
         TimeRange.entries.forEach { range ->
-            TimeRangeChip(
-                label = range.label,
-                selected = selectedRange == range,
-                onClick = { onRangeSelected(range) },
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
+            val selected = selectedRange == range
 
-@Composable
-private fun TimeRangeChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val backgroundColor = MaterialTheme.colorScheme.background
-
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
-        color = if (selected) primaryColor else backgroundColor,
-        modifier = modifier
-    ) {
-        Box(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (selected) Color.Black else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+            val segmentColor by animateColorAsState(
+                targetValue = if (selected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    Color.Transparent
+                },
+                animationSpec = tween(250),
+                label = "segment_bg"
             )
+            val textColor by animateColorAsState(
+                targetValue = if (selected) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                animationSpec = tween(250),
+                label = "segment_text"
+            )
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 44.dp)
+                    .clip(CircleShape)
+                    .background(segmentColor)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { onRangeSelected(range) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = range.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                    color = textColor
+                )
+            }
         }
     }
 }

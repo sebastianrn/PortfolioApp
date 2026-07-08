@@ -1,131 +1,149 @@
 package dev.sebastianrn.portfolioapp.ui.components.cards
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.SouthEast
+import androidx.compose.material.icons.filled.Timeline
+import androidx.compose.material.icons.filled.WaterfallChart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.model.HistoricalStats
+import dev.sebastianrn.portfolioapp.ui.theme.AppGradients
+import dev.sebastianrn.portfolioapp.util.DateFormats
 import dev.sebastianrn.portfolioapp.util.formatAsPercentage
 import dev.sebastianrn.portfolioapp.util.formatCurrency
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import dev.sebastianrn.portfolioapp.util.formatDate
 
+/**
+ * "Records" grid: six tinted stat tiles in a 2-column layout.
+ */
 @Composable
 fun HistoricalStatsCard(
     stats: HistoricalStats,
     modifier: Modifier = Modifier
 ) {
     val hasData = stats.allTimeHighDate != 0L
+    val gain = MaterialTheme.colorScheme.secondary
+    val loss = MaterialTheme.colorScheme.error
+    val gold = MaterialTheme.colorScheme.primary
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
+        shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(
-                "Historical Performance",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .width(4.dp)
+                        .height(18.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(AppGradients.goldAccentLine)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    stringResource(R.string.records_title).uppercase(),
+                    style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 2.sp),
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
             if (!hasData) {
                 Text(
-                    "Not enough data yet",
+                    stringResource(R.string.records_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                // Row 1: All-Time High | All-Time Low
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    HistoricalStatItem(
-                        label = "All-Time High",
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    StatTile(
+                        icon = Icons.Filled.EmojiEvents,
+                        tint = gold,
+                        label = stringResource(R.string.stat_ath),
                         value = stats.allTimeHigh.formatCurrency(),
-                        date = stats.allTimeHighDate,
-                        color = MaterialTheme.colorScheme.secondary,
-                        alignment = Alignment.Start
+                        caption = formatDate(stats.allTimeHighDate),
+                        modifier = Modifier.weight(1f)
                     )
-                    HistoricalStatItem(
-                        label = "All-Time Low",
+                    StatTile(
+                        icon = Icons.Filled.SouthEast,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        label = stringResource(R.string.stat_atl),
                         value = stats.allTimeLow.formatCurrency(),
-                        date = stats.allTimeLowDate,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        alignment = Alignment.End
+                        caption = formatDate(stats.allTimeLowDate),
+                        modifier = Modifier.weight(1f)
                     )
                 }
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                // Row 2: Best Day | Worst Day
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    HistoricalStatItem(
-                        label = "Best Day",
-                        value = "+${stats.bestDayAbsolute.formatCurrency()}",
-                        percentage = stats.bestDayPercent,
-                        date = stats.bestDayDate,
-                        color = MaterialTheme.colorScheme.secondary,
-                        alignment = Alignment.Start
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    StatTile(
+                        icon = Icons.AutoMirrored.Filled.TrendingUp,
+                        tint = gain,
+                        label = stringResource(R.string.stat_best_day),
+                        value = stats.bestDayAbsolute.formatCurrency(),
+                        caption = "${stats.bestDayPercent.formatAsPercentage(showSign = true)} · ${formatDate(stats.bestDayDate)}",
+                        modifier = Modifier.weight(1f)
                     )
-                    HistoricalStatItem(
-                        label = "Worst Day",
+                    StatTile(
+                        icon = Icons.AutoMirrored.Filled.TrendingDown,
+                        tint = loss,
+                        label = stringResource(R.string.stat_worst_day),
                         value = stats.worstDayAbsolute.formatCurrency(),
-                        percentage = stats.worstDayPercent,
-                        date = stats.worstDayDate,
-                        color = MaterialTheme.colorScheme.error,
-                        alignment = Alignment.End
+                        caption = "${stats.worstDayPercent.formatAsPercentage(showSign = true)} · ${formatDate(stats.worstDayDate)}",
+                        modifier = Modifier.weight(1f)
                     )
                 }
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                // Row 3: Max Drawdown | Total Return
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    PercentStatItem(
-                        label = "Max Drawdown",
-                        percentage = -stats.maxDrawdownPercent,
-                        color = MaterialTheme.colorScheme.error,
-                        alignment = Alignment.Start
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    StatTile(
+                        icon = Icons.Filled.WaterfallChart,
+                        tint = loss,
+                        label = stringResource(R.string.stat_max_drawdown),
+                        value = (-stats.maxDrawdownPercent).formatAsPercentage(),
+                        caption = stringResource(R.string.stat_peak_to_trough),
+                        modifier = Modifier.weight(1f)
                     )
-                    PercentStatItem(
-                        label = "Total Return",
-                        percentage = stats.totalReturnPercent,
-                        color = if (stats.totalReturnPercent >= 0) {
-                            MaterialTheme.colorScheme.secondary
-                        } else {
-                            MaterialTheme.colorScheme.error
-                        },
-                        alignment = Alignment.End
+                    StatTile(
+                        icon = Icons.Filled.Timeline,
+                        tint = if (stats.totalReturnPercent >= 0) gain else loss,
+                        label = stringResource(R.string.total_return),
+                        value = stats.totalReturnPercent.formatAsPercentage(showSign = true),
+                        caption = stringResource(R.string.stat_since_first_entry),
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
@@ -134,63 +152,55 @@ fun HistoricalStatsCard(
 }
 
 @Composable
-private fun HistoricalStatItem(
+private fun StatTile(
+    icon: ImageVector,
+    tint: Color,
     label: String,
     value: String,
-    date: Long,
-    color: Color,
-    alignment: Alignment.Horizontal,
-    percentage: Double? = null
+    caption: String,
+    modifier: Modifier = Modifier
 ) {
-    val formattedDate = remember(date) {
-        SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(date))
-    }
-
-    Column(horizontalAlignment = alignment) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = color
-        )
-        if (percentage != null) {
-            Text(
-                percentage.formatAsPercentage(),
-                style = MaterialTheme.typography.labelSmall,
-                color = color
+    val shape = RoundedCornerShape(18.dp)
+    Column(
+        modifier = modifier
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(tint.copy(alpha = 0.14f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(18.dp)
             )
         }
-        Text(
-            formattedDate,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = tint
+            )
+            Text(
+                text = caption,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+        }
     }
 }
 
-@Composable
-private fun PercentStatItem(
-    label: String,
-    percentage: Double,
-    color: Color,
-    alignment: Alignment.Horizontal
-) {
-    Column(horizontalAlignment = alignment) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            percentage.formatAsPercentage(),
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = color
-        )
-    }
-}
+private fun formatDate(timestamp: Long): String = timestamp.formatDate(DateFormats.fullDate)

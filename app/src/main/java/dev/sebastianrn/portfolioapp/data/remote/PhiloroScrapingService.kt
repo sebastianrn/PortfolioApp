@@ -4,7 +4,11 @@ import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import dev.sebastianrn.portfolioapp.util.Constants
-import java.net.URL
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.io.IOException
 
 data class ApiResponse(
     @SerializedName("products") val products: List<ApiProduct>
@@ -28,12 +32,13 @@ data class ScrapedAsset(
     val name: String,
     val description: String,
     val weight: String,
-    val buyPrice: String,
-    val sellPrice: String
+    val buyPrice: Double,
+    val sellPrice: Double
 )
 
-
-class PhiloroScrapingService {
+class PhiloroScrapingService(
+    private val client: OkHttpClient = NetworkModule.okHttpClient
+) {
 
     companion object {
         private const val TAG = "PhiloroApiService"
@@ -41,61 +46,51 @@ class PhiloroScrapingService {
 
     /**
      * Fetches current prices for the specific list of Philoro IDs (SKUs).
+     * Network or parsing failures propagate as exceptions so callers can
+     * surface the real error.
+     *
      * @param skus List of IDs (e.g., ["1991", "2000"])
      */
-    fun fetchPrices(skus: List<String>): List<ScrapedAsset> {
+    suspend fun fetchPrices(skus: List<String>): List<ScrapedAsset> {
         if (skus.isEmpty()) return emptyList()
 
-        val scrapedList = mutableListOf<ScrapedAsset>()
-
-        try {
-            // 1. Construct URL with comma-separated SKUs
-            val skuParam = skus.joinToString(",")
-            val fullUrl = "${Constants.PHILORO_API_BASE_URL}$skuParam"
-
+        return withContext(Dispatchers.IO) {
+            val fullUrl = "${Constants.PHILORO_API_BASE_URL}${skus.joinToString(",")}"
             Log.d(TAG, "Calling API: $fullUrl")
 
-            // 2. Fetch JSON
-            val jsonString = URL(fullUrl).readText()
-
-            // 3. Parse JSON
-            val response = Gson().fromJson(jsonString, ApiResponse::class.java)
-
-            // 4. Map to ScrapedAsset
-            for (product in response.products) {
-                // Find "User Buys" price (In JSON: type="buy" usually means Dealer Sells to User)
-                // Find "User Sells" price (In JSON: type="sell" usually means Dealer Buys from User)
-
-                // Note based on your JSON:
-                // "sell" centAmount: "356008" (3560 CHF) -> Lower -> Dealer Buys (User Sells)
-                // "buy" centAmount: "378873" (3788 CHF) -> Higher -> Dealer Sells (User Buys)
-
-                val userSellPriceRaw = product.prices.find { it.type == "sell" }?.centAmount?.toDoubleOrNull() ?: 0.0
-                val userBuyPriceRaw = product.prices.find { it.type == "buy" }?.centAmount?.toDoubleOrNull() ?: 0.0
-
-                // Convert Cents to CHF
-                val userSellPrice = userSellPriceRaw / 100.0
-                val userBuyPrice = userBuyPriceRaw / 100.0
-
-                if (userBuyPrice > 0) {
-                    scrapedList.add(
-                        ScrapedAsset(
-                            id = product.sku,
-                            name = product.name,
-                            description = "Weight: ${product.weight}",
-                            weight = product.weight,
-                            buyPrice = userBuyPrice.toString(),
-                            sellPrice = userSellPrice.toString()
-                        )
-                    )
-                    Log.d(TAG, "✅ API SUCCESS: ${product.name} | Sell: $userSellPrice | Buy: $userBuyPrice")
+            val request = Request.Builder().url(fullUrl).build()
+            val jsonString = client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    throw IOException("Philoro API returned HTTP ${response.code}")
                 }
+                response.body?.string() ?: throw IOException("Philoro API returned an empty body")
             }
 
-        } catch (e: Exception) {
-            Log.e(TAG, "API Request failed: ${e.message}", e)
-        }
+            val apiResponse = Gson().fromJson(jsonString, ApiResponse::class.java)
+                ?: throw IOException("Philoro API returned unparseable data")
 
-        return scrapedList
+            apiResponse.products.mapNotNull { product ->
+                // In the Philoro JSON, type "buy" is the dealer's sell price (user buys,
+                // higher) and type "sell" is the dealer's buy price (user sells, lower).
+                val userSellPrice = product.prices.centAmount("sell")
+                val userBuyPrice = product.prices.centAmount("buy")
+
+                if (userBuyPrice > 0) {
+                    ScrapedAsset(
+                        id = product.sku,
+                        name = product.name,
+                        description = "Weight: ${product.weight}",
+                        weight = product.weight,
+                        buyPrice = userBuyPrice,
+                        sellPrice = userSellPrice
+                    )
+                } else {
+                    null
+                }
+            }
+        }
     }
+
+    private fun List<ApiPrice>.centAmount(type: String): Double =
+        (find { it.type == type }?.centAmount?.toDoubleOrNull() ?: 0.0) / 100.0
 }

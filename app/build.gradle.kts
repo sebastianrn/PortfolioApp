@@ -112,6 +112,7 @@ dependencies {
     // Core Android & Kotlin
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)
 
     // Jetpack Compose BOM (Bill of Materials) - Manages versions automatically

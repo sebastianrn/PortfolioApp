@@ -1,37 +1,42 @@
 package dev.sebastianrn.portfolioapp.ui.components.cards
 
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.model.AssetType
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
-import dev.sebastianrn.portfolioapp.ui.components.common.Badge
+import dev.sebastianrn.portfolioapp.ui.components.common.TrendChip
+import dev.sebastianrn.portfolioapp.ui.theme.AppGradients
+import dev.sebastianrn.portfolioapp.ui.theme.GoldBright
+import dev.sebastianrn.portfolioapp.ui.theme.OnGold
 import dev.sebastianrn.portfolioapp.util.formatAsPercentage
 import dev.sebastianrn.portfolioapp.util.formatCurrency
 
+/**
+ * Asset row: coins render as polished gold discs, bars as cast ingots.
+ */
 @Composable
 fun AssetCard(
     asset: GoldAsset,
@@ -44,122 +49,104 @@ fun AssetCard(
 
     Card(
         onClick = onAssetClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .animateContentSize(),
+        modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 0.dp,
-            pressedElevation = 2.dp
+            pressedElevation = 6.dp
         )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f)
             ) {
-                // Icon
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.linearGradient(
-                                colors = if (asset.type == AssetType.COIN)
-                                    listOf(
-                                        MaterialTheme.colorScheme.primary,
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-                                    )
-                                else
-                                    listOf(
-                                        MaterialTheme.colorScheme.tertiary,
-                                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.7f)
-                                    )
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = asset.name.take(2).uppercase(),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Black,
-                        color = Color.Black
-                    )
-                }
+                AssetIcon(asset)
 
-                // Details
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
                         text = asset.name,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Badge(
-                            text = asset.type.name,
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        Text(
-                            text = "${asset.quantity} × ${asset.weightInGrams}g",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
+                    Text(
+                        text = stringResource(
+                            R.string.asset_meta,
+                            asset.quantity,
+                            asset.weightInGrams.toString(),
+                            stringResource(if (asset.type == AssetType.COIN) R.string.type_coin else R.string.type_bar)
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 
-            // Value & Change
             Column(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
                     text = asset.totalCurrentValue.formatCurrency(short = true),
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-
-                Badge(
+                TrendChip(
                     text = changePercent.formatAsPercentage(),
-                    containerColor = if (isPositive)
-                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
-                    else
-                        MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
-                    contentColor = if (isPositive)
-                        MaterialTheme.colorScheme.secondary
-                    else
-                        MaterialTheme.colorScheme.error
+                    positive = isPositive
                 )
             }
+        }
+    }
+}
 
-            Icon(
-                Icons.Filled.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.outline,
-                modifier = Modifier
-                    .padding(start = 8.dp)
-                    .size(20.dp)
+@Composable
+private fun AssetIcon(asset: GoldAsset) {
+    if (asset.type == AssetType.COIN) {
+        // Polished coin with a milled ring
+        Box(
+            modifier = Modifier
+                .size(52.dp)
+                .clip(CircleShape)
+                .background(AppGradients.goldCoin)
+                .border(2.dp, GoldBright.copy(alpha = 0.9f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = asset.name.take(2).uppercase(),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Black,
+                color = OnGold
+            )
+        }
+    } else {
+        // Cast ingot
+        Box(
+            modifier = Modifier
+                .width(52.dp)
+                .height(40.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(AppGradients.goldBar)
+                .border(1.dp, GoldBright.copy(alpha = 0.7f), RoundedCornerShape(8.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = asset.name.take(2).uppercase(),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Black,
+                color = OnGold
             )
         }
     }

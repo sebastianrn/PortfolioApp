@@ -2,6 +2,7 @@ package dev.sebastianrn.portfolioapp.di
 
 import android.content.Context
 import dev.sebastianrn.portfolioapp.backup.BackupManager
+import dev.sebastianrn.portfolioapp.data.UserPreferences
 import dev.sebastianrn.portfolioapp.data.local.AppDatabase
 import dev.sebastianrn.portfolioapp.data.remote.NetworkModule
 import dev.sebastianrn.portfolioapp.data.remote.PhiloroScrapingService
@@ -18,6 +19,11 @@ class AppContainer(context: Context) {
     // Network layer
     private val apiService = NetworkModule.api
     private val scraper = PhiloroScrapingService()
+
+    // User preferences (DataStore wrapper)
+    val userPreferences: UserPreferences by lazy {
+        UserPreferences(context)
+    }
 
     // Backup manager
     val backupManager: BackupManager by lazy {

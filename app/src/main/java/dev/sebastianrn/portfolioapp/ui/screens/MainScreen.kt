@@ -12,6 +12,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,13 +20,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.backup.BackupFile
 import dev.sebastianrn.portfolioapp.ui.components.bottombar.MainTab
 import dev.sebastianrn.portfolioapp.ui.components.cards.AssetCard
@@ -34,16 +41,20 @@ import dev.sebastianrn.portfolioapp.ui.components.cards.PerformanceCard
 import dev.sebastianrn.portfolioapp.ui.components.cards.PortfolioHistoryCard
 import dev.sebastianrn.portfolioapp.ui.components.cards.PortfolioSummaryCard
 import dev.sebastianrn.portfolioapp.ui.components.common.AddAssetFab
-import dev.sebastianrn.portfolioapp.ui.components.common.Badge
+import dev.sebastianrn.portfolioapp.ui.components.common.AnimatedCounterText
+import dev.sebastianrn.portfolioapp.ui.components.common.EntranceFade
+import dev.sebastianrn.portfolioapp.ui.components.common.SectionHeader
+import dev.sebastianrn.portfolioapp.ui.components.common.TrendChip
 import dev.sebastianrn.portfolioapp.ui.components.dialogs.ConfirmDialog
+import dev.sebastianrn.portfolioapp.ui.theme.AppGradients
 import dev.sebastianrn.portfolioapp.util.formatAsPercentage
-import dev.sebastianrn.portfolioapp.util.formatCurrency
 import dev.sebastianrn.portfolioapp.ui.components.sheets.AssetSheet
 import dev.sebastianrn.portfolioapp.ui.components.sheets.BackupListSheet
 import dev.sebastianrn.portfolioapp.ui.components.sheets.BackupSettingsSheet
 import dev.sebastianrn.portfolioapp.ui.components.topbar.MainTopBar
 import dev.sebastianrn.portfolioapp.viewmodel.BackupViewModel
 import dev.sebastianrn.portfolioapp.viewmodel.GoldViewModel
+import dev.sebastianrn.portfolioapp.viewmodel.ThemeViewModel
 import dev.sebastianrn.portfolioapp.viewmodel.UiEvent
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,20 +62,22 @@ import dev.sebastianrn.portfolioapp.viewmodel.UiEvent
 fun MainScreen(
     viewModel: GoldViewModel,
     backupViewModel: BackupViewModel,
+    themeViewModel: ThemeViewModel,
     selectedTab: MainTab,
     onTabSelected: (MainTab) -> Unit,
     onAssetClick: (Int) -> Unit
 ) {
-    val assets by viewModel.allAssets.collectAsState()
-    val stats by viewModel.portfolioStats.collectAsState()
-    val portfolioPoints by viewModel.portfolioCurve.collectAsState()
-    val dailyChange by viewModel.portfolioChange.collectAsState()
-    val lastUpdated by viewModel.lastUpdated.collectAsState()
-    val historicalStats by viewModel.historicalStats.collectAsState()
+    val assets by viewModel.allAssets.collectAsStateWithLifecycle()
+    val isDarkTheme by themeViewModel.isDarkTheme.collectAsStateWithLifecycle()
+    val stats by viewModel.portfolioStats.collectAsStateWithLifecycle()
+    val portfolioPoints by viewModel.portfolioCurve.collectAsStateWithLifecycle()
+    val dailyChange by viewModel.portfolioChange.collectAsStateWithLifecycle()
+    val lastUpdated by viewModel.lastUpdated.collectAsStateWithLifecycle()
+    val historicalStats by viewModel.historicalStats.collectAsStateWithLifecycle()
 
     // Backup state
-    val backupSettings by backupViewModel.backupSettings.collectAsState()
-    val backupFiles by backupViewModel.backupFiles.collectAsState()
+    val backupSettings by backupViewModel.backupSettings.collectAsStateWithLifecycle()
+    val backupFiles by backupViewModel.backupFiles.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
 
@@ -73,10 +86,12 @@ fun MainScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is UiEvent.ShowToast -> {
-                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                    val message = context.getString(event.messageRes, *event.args.toTypedArray())
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 }
                 is UiEvent.ShowError -> {
-                    Toast.makeText(context, "Error: ${event.error.message}", Toast.LENGTH_LONG).show()
+                    val message = context.getString(R.string.error_prefix, event.error.message.orEmpty())
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -86,10 +101,12 @@ fun MainScreen(
         backupViewModel.events.collect { event ->
             when (event) {
                 is UiEvent.ShowToast -> {
-                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                    val message = context.getString(event.messageRes, *event.args.toTypedArray())
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 }
                 is UiEvent.ShowError -> {
-                    Toast.makeText(context, "Error: ${event.error.message}", Toast.LENGTH_LONG).show()
+                    val message = context.getString(R.string.error_prefix, event.error.message.orEmpty())
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -114,24 +131,12 @@ fun MainScreen(
         }
     }
 
-    // Animated value for progress indicators
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.6f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse"
-    )
-
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             Box(modifier = Modifier.fillMaxWidth()) {
                 MainTopBar(
-                    title = selectedTab.label,
+                    title = stringResource(selectedTab.labelRes),
                     onRefreshClick = { viewModel.updatePricesFromScraper() },
                     onMenuClick = { showMenu = true }
                 )
@@ -142,10 +147,12 @@ fun MainScreen(
                 ) {
                     DropdownMenu(
                         expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
+                        onDismissRequest = { showMenu = false },
+                        shape = MaterialTheme.shapes.medium,
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Backup Settings") },
+                            text = { Text(stringResource(R.string.menu_backup_settings)) },
                             onClick = {
                                 showMenu = false
                                 showBackupSettings = true
@@ -155,7 +162,7 @@ fun MainScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Backup Now") },
+                            text = { Text(stringResource(R.string.menu_backup_now)) },
                             onClick = {
                                 showMenu = false
                                 backupViewModel.backupNow()
@@ -165,7 +172,7 @@ fun MainScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Restore Backup") },
+                            text = { Text(stringResource(R.string.menu_restore_backup)) },
                             onClick = {
                                 showMenu = false
                                 backupViewModel.loadBackupFiles()
@@ -173,6 +180,19 @@ fun MainScreen(
                             },
                             leadingIcon = {
                                 Icon(Icons.Default.Restore, contentDescription = null)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(if (isDarkTheme) R.string.menu_light_theme else R.string.menu_dark_theme)) },
+                            onClick = {
+                                showMenu = false
+                                themeViewModel.toggleTheme()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    if (isDarkTheme) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
+                                    contentDescription = null
+                                )
                             }
                         )
                     }
@@ -185,13 +205,23 @@ fun MainScreen(
                 enter = scaleIn(tween(200)) + fadeIn(tween(200)),
                 exit = scaleOut(tween(150)) + fadeOut(tween(150))
             ) {
-                AddAssetFab(onClick = { showAssetSheet = true })
+                AddAssetFab(
+                    onClick = { showAssetSheet = true },
+                    contentDescription = stringResource(R.string.add_action)
+                )
             }
         }
     ) { padding ->
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
+            // Soft gold halo bleeding down from the header
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(AppGradients.goldHalo(centerX = 400f))
+            )
+
             Crossfade(
                 targetState = selectedTab,
                 animationSpec = tween(300),
@@ -209,21 +239,30 @@ fun MainScreen(
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             item {
-                                PortfolioSummaryCard(
-                                    totalValue = stats.totalValue,
-                                    totalInvested = stats.totalInvested,
-                                    totalProfit = stats.totalValue - stats.totalInvested,
-                                    dailyChange = dailyChange.first,
-                                    dailyChangePercent = dailyChange.second,
-                                    pulseAlpha = pulseAlpha,
-                                    lastUpdated = lastUpdated
-                                )
+                                EntranceFade(index = 0) {
+                                    PortfolioSummaryCard(
+                                        totalValue = stats.totalValue,
+                                        totalInvested = stats.totalInvested,
+                                        totalProfit = stats.totalValue - stats.totalInvested,
+                                        dailyChange = dailyChange.first,
+                                        dailyChangePercent = dailyChange.second,
+                                        lastUpdated = lastUpdated
+                                    )
+                                }
                             }
                             item {
-                                PerformanceCard(points = portfolioPoints)
+                                EntranceFade(index = 1) {
+                                    PerformanceCard(
+                                        points = portfolioPoints,
+                                        referenceValue = stats.totalInvested.takeIf { it > 0 },
+                                        referenceLabel = "Invested"
+                                    )
+                                }
                             }
                             item {
-                                HistoricalStatsCard(stats = historicalStats)
+                                EntranceFade(index = 2) {
+                                    HistoricalStatsCard(stats = historicalStats)
+                                }
                             }
 
                             // Portfolio Value History
@@ -234,37 +273,29 @@ fun MainScreen(
                                 val displayList = if (showAllHistory) reversed else reversed.take(maxPreview)
 
                                 item {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(top = 8.dp, bottom = 4.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            "Portfolio History",
-                                            style = MaterialTheme.typography.headlineSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onBackground
-                                        )
-                                        if (hasMore) {
-                                            TextButton(onClick = { showAllHistory = !showAllHistory }) {
-                                                Text(
-                                                    if (showAllHistory) "Show less" else "Show all (${reversed.size})",
-                                                    style = MaterialTheme.typography.labelLarge,
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
+                                    SectionHeader(
+                                        title = stringResource(R.string.portfolio_history_title),
+                                        modifier = Modifier.padding(top = 8.dp),
+                                        trailing = {
+                                            if (hasMore) {
+                                                TextButton(onClick = { showAllHistory = !showAllHistory }) {
+                                                    Text(
+                                                        if (showAllHistory) stringResource(R.string.show_less) else stringResource(R.string.show_all, reversed.size),
+                                                        style = MaterialTheme.typography.labelLarge,
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
                                             }
                                         }
-                                    }
+                                    )
                                 }
 
                                 items(displayList.size) { index ->
                                     val point = displayList[index]
-                                    // Find the previous point in the full reversed list
-                                    val fullIndex = if (showAllHistory) index else index
-                                    val previousValue = if (fullIndex < reversed.size - 1) {
-                                        reversed[fullIndex + 1].second
+                                    // displayList is a prefix of reversed, so the next entry in
+                                    // reversed is the chronologically previous point
+                                    val previousValue = if (index < reversed.size - 1) {
+                                        reversed[index + 1].second
                                     } else {
                                         point.second
                                     }
@@ -299,55 +330,47 @@ fun MainScreen(
                         ) {
                             // Compact portfolio summary
                             item {
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = MaterialTheme.shapes.large,
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surface
-                                    )
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
+                                EntranceFade(index = 0) {
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = MaterialTheme.shapes.large,
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                        )
                                     ) {
-                                        Column {
-                                            Text(
-                                                "Total Value",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                            Text(
-                                                stats.totalValue.formatCurrency(),
-                                                style = MaterialTheme.typography.titleLarge,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onSurface
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column {
+                                                Text(
+                                                    stringResource(R.string.total_portfolio_value).uppercase(),
+                                                    style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 2.sp),
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                                AnimatedCounterText(
+                                                    value = stats.totalValue,
+                                                    style = MaterialTheme.typography.titleLarge,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                            }
+                                            TrendChip(
+                                                text = profitPercent.formatAsPercentage(showSign = true),
+                                                positive = isProfitPositive
                                             )
                                         }
-                                        Badge(
-                                            text = profitPercent.formatAsPercentage(showSign = true),
-                                            containerColor = if (isProfitPositive)
-                                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
-                                            else
-                                                MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
-                                            contentColor = if (isProfitPositive)
-                                                MaterialTheme.colorScheme.secondary
-                                            else
-                                                MaterialTheme.colorScheme.error
-                                        )
                                     }
                                 }
                             }
 
                             // Section header + count
                             item {
-                                Text(
-                                    "Your Assets (${assets.size})",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onBackground,
+                                SectionHeader(
+                                    title = stringResource(R.string.your_assets_count, assets.size),
                                     modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
                                 )
                             }
@@ -428,10 +451,10 @@ fun MainScreen(
     // Restore Confirm Dialog
     showRestoreConfirm?.let { file ->
         ConfirmDialog(
-            title = "Restore Backup?",
-            message = "This will replace all current data with the backup.",
-            warningMessage = "This action cannot be undone.",
-            confirmText = "Restore",
+            title = stringResource(R.string.restore_backup_title),
+            message = stringResource(R.string.restore_backup_message),
+            warningMessage = stringResource(R.string.irreversible_warning),
+            confirmText = stringResource(R.string.restore_action),
             onConfirm = {
                 backupViewModel.restoreBackup(file)
                 showRestoreConfirm = null
@@ -443,9 +466,9 @@ fun MainScreen(
     // Delete Confirm Dialog
     showDeleteConfirm?.let { file ->
         ConfirmDialog(
-            title = "Delete Backup?",
-            message = "This backup will be permanently deleted.",
-            confirmText = "Delete",
+            title = stringResource(R.string.delete_backup_title),
+            message = stringResource(R.string.delete_backup_message),
+            confirmText = stringResource(R.string.delete_action),
             onConfirm = {
                 backupViewModel.deleteBackup(file)
                 showDeleteConfirm = null
@@ -457,10 +480,10 @@ fun MainScreen(
     // Import Confirm Dialog
     showImportConfirm?.let { uri ->
         ConfirmDialog(
-            title = "Restore Backup?",
-            message = "This will replace all current data with the imported file.",
-            warningMessage = "This action cannot be undone.",
-            confirmText = "Restore",
+            title = stringResource(R.string.restore_backup_title),
+            message = stringResource(R.string.restore_import_message),
+            warningMessage = stringResource(R.string.irreversible_warning),
+            confirmText = stringResource(R.string.restore_action),
             onConfirm = {
                 backupViewModel.restoreFromUri(uri)
                 showImportConfirm = null

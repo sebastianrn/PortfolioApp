@@ -7,6 +7,13 @@ import dev.sebastianrn.portfolioapp.data.repository.GoldRepository
 import dev.sebastianrn.portfolioapp.util.Constants
 
 /**
+ * Outcome of a Philoro price refresh: how many of the eligible assets
+ * actually received a price. [updated] < [total] means some Philoro IDs
+ * returned no (or a zero) price — surfaced to the user instead of hidden.
+ */
+data class PriceUpdateResult(val updated: Int, val total: Int)
+
+/**
  * Use case for updating asset prices from external sources.
  * Handles both spot price API and Philoro scraping service.
  */
@@ -59,15 +66,15 @@ class UpdatePricesUseCase(
 
     /**
      * Update prices from Philoro scraping service.
-     * @return Result with number of updated assets on success, or error on failure.
+     * @return Result with updated/total counts on success, or error on failure.
      */
-    suspend fun fromPhiloroApi(): Result<Int> {
+    suspend fun fromPhiloroApi(): Result<PriceUpdateResult> {
         return try {
             // Get all local assets that have a philoroId
             val localAssets = repository.getAssetWithPhiloroId()
 
             if (localAssets.isEmpty()) {
-                return Result.success(0)
+                return Result.success(PriceUpdateResult(updated = 0, total = 0))
             }
 
             // Extract IDs (SKUs)
@@ -90,8 +97,8 @@ class UpdatePricesUseCase(
                 val match = scrapedMap[targetId]
 
                 if (match != null) {
-                    val newBuyPrice = match.buyPrice.toDoubleOrNull() ?: 0.0
-                    val newSellPrice = match.sellPrice.toDoubleOrNull() ?: 0.0
+                    val newBuyPrice = match.buyPrice
+                    val newSellPrice = match.sellPrice
 
                     if (newBuyPrice > 0) {
                         repository.updatePricesByPhiloroId(
@@ -114,7 +121,7 @@ class UpdatePricesUseCase(
                 }
             }
 
-            Result.success(updateCount)
+            Result.success(PriceUpdateResult(updated = updateCount, total = localAssets.size))
         } catch (e: Exception) {
             Result.failure(e)
         }

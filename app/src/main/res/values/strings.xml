@@ -2,57 +2,151 @@
     <string name="app_name">Gold Portfolio</string>
     <string name="app_title">Gold Portfolio</string>
 
-    <!-- Main Screen -->
-    <string name="total_portfolio_value">Total Value</string>
-    <string name="invested_capital">Invested Capital</string>
-    <string name="daily_change">Daily Change</string>
-    <string name="total_return">Total Return</string>
-    <string name="empty_assets_list">Add assets to see performance</string>
-    <string name="your_assets">Your Assets</string>
-    <string name="add_coin_fab">Add Coin</string>
-    <string name="update_prices_desc">Update Prices</string>
-    <string name="toggle_theme_desc">Toggle Theme</string>
-    <string name="delete_action">Delete</string>
-
-    <!-- Dialogs -->
-    <string name="add_asset">Add Investment</string>
-    <string name="coin_name_label">Coin Name</string>
-    <string name="quantity_label">Quantity</string>
-    <string name="weight_label">Weight (g) [31.1 = 1oz]</string>
-    <string name="premium_label">Premium (%)</string>
-    <string name="price_paid_label">Paid Price (CHF)</string>
-    <string name="add_action">Add Asset</string>
-    <string name="cancel_action">Cancel</string>
-    <string name="save_action">Save Record</string>
-
-    <!-- Delete Dialog -->
-    <string name="delete_title">Delete Asset</string>
-    <string name="delete_message">Are you sure you want to delete \'%1$s\'? This action cannot be undone.</string>
-
-    <!-- Update price from api -->
-    <string name="fetching_price_from_api">Fetching Spot Price…</string>
-    <string name="fetching_price_from_api_failed">Update Failed:</string>
-    <string name="fetching_price_from_api_updated">Updated %1$s assets.</string>
-    <string name="api_key_missing">API Key missing in local.properties</string>
-
-    <!-- Detail Screen -->
+    <!-- Tabs & top bar -->
+    <string name="tab_portfolio">Portfolio</string>
+    <string name="tab_assets">Assets</string>
+    <string name="brand_overline">Gold Vault</string>
+    <string name="menu_desc">Menu</string>
+    <string name="edit_desc">Edit</string>
     <string name="back_desc">Back</string>
-    <string name="update_value_fab">Update Value</string>
-    <string name="performance_title">Performance</string>
-    <string name="price_history_title">Price History</string>
-    <string name="current_value_label">Current Value</string>
-    <string name="bought_at_label">Bought At</string>
-    <string name="update_value_title">Update Value</string>
-    <string name="new_sell_price_label">New Sell Price (CHF)</string>
-    <string name="new_buy_price_label">New Buy Price (CHF)</string>
-    <string name="date_label">Date: %1$s</string>
-    <string name="ok_action">OK</string>
-    <string name="empty_price_history_list">No price history available</string>
+    <string name="update_prices_desc">Update prices</string>
+    <string name="menu_backup_settings">Backup Settings</string>
+    <string name="menu_backup_now">Backup Now</string>
+    <string name="menu_restore_backup">Restore Backup</string>
+    <string name="menu_light_theme">Light Theme</string>
+    <string name="menu_dark_theme">Dark Theme</string>
 
-    <!-- Asset Types -->
+    <!-- Portfolio hero -->
+    <string name="total_balance">Total Balance</string>
+    <string name="live_label">Live</string>
+    <string name="live_updated">Live · %1$s</string>
+    <string name="all_time">all time</string>
+    <string name="tile_invested">Invested</string>
+    <string name="tile_total_gain">Total Gain</string>
+    <string name="tile_today">Today</string>
+
+    <!-- Assets tab -->
+    <string name="total_portfolio_value">Total Value</string>
+    <string name="your_assets_count">Your Assets (%1$d)</string>
+    <string name="asset_meta">%1$d × %2$sg · %3$s</string>
     <string name="type_coin">Coin</string>
     <string name="type_bar">Bar</string>
-    <string name="unit_coins">coins</string>
-    <string name="unit_units">units</string>
-    <string name="premium_suffix">% Prem.</string>
+    <string name="add_action">Add Asset</string>
+
+    <!-- Portfolio history section -->
+    <string name="portfolio_history_title">Portfolio History</string>
+    <string name="show_less">Show less</string>
+    <string name="show_all">Show all (%1$d)</string>
+
+    <!-- Records grid -->
+    <string name="records_title">Records</string>
+    <string name="stat_ath">All-Time High</string>
+    <string name="stat_atl">All-Time Low</string>
+    <string name="stat_best_day">Best Day</string>
+    <string name="stat_worst_day">Worst Day</string>
+    <string name="stat_max_drawdown">Max Drawdown</string>
+    <string name="total_return">Total Return</string>
+    <string name="stat_peak_to_trough">peak to trough</string>
+    <string name="stat_since_first_entry">since first entry</string>
+    <string name="records_empty">Not enough data yet — records appear once your portfolio has some history.</string>
+
+    <!-- Chart -->
+    <string name="performance_title">Performance</string>
+    <string name="chart_empty">No data available for this period</string>
+    <string name="range_past_week">past week</string>
+    <string name="range_past_month">past month</string>
+    <string name="range_past_6_months">past 6 months</string>
+    <string name="range_past_year">past year</string>
+    <string name="reference_paid">Paid</string>
+
+    <!-- Asset detail -->
+    <string name="current_value_label">Current Value</string>
+    <string name="tile_unit_price">Unit Price</string>
+    <string name="tile_paid">Paid</string>
+    <string name="add_price_record_desc">Add price record</string>
+    <string name="price_history_title">Price History</string>
+    <string name="history_manual_entry">Manual entry · tap to edit</string>
+    <string name="history_auto_update">Auto price update</string>
+
+    <!-- Asset sheet -->
+    <string name="sheet_edit_asset">Edit Asset</string>
+    <string name="sheet_add_asset">Add Asset</string>
+    <string name="update_asset">Update Asset</string>
+    <string name="add_to_portfolio">Add to Portfolio</string>
+    <string name="asset_name_label">Asset Name</string>
+    <string name="asset_name_placeholder">e.g. Vreneli, Krugerrand</string>
+    <string name="asset_name_error">Enter a name</string>
+    <string name="weight_type_label">Weight / Type</string>
+    <string name="quantity_label">Quantity</string>
+    <string name="quantity_error">Required</string>
+    <string name="philoro_id_label">Philoro ID</string>
+    <string name="purchase_price_total">Purchase Price (Total)</string>
+    <string name="paid_price_total">Paid Price (Total)</string>
+    <string name="price_error">Enter a valid price</string>
+    <string name="weight_coin_1oz">1 oz Coin</string>
+    <string name="weight_coin_half_oz">1/2 oz Coin</string>
+    <string name="weight_coin_quarter_oz">1/4 oz Coin</string>
+    <string name="weight_bar_500g">500g Bar</string>
+    <string name="weight_bar_250g">250g Bar</string>
+    <string name="weight_bar_100g">100g Bar</string>
+    <string name="weight_bar_50g">50g Bar</string>
+
+    <!-- Edit history sheet -->
+    <string name="sheet_edit_record">Edit Record</string>
+    <string name="update_value_title">Update Value</string>
+    <string name="sell_price_label">Sell Price</string>
+    <string name="buy_price_label">Buy Price</string>
+    <string name="new_sell_price_label">New Sell Price</string>
+    <string name="new_buy_price_label">New Buy Price</string>
+    <string name="sell_price_error">Enter a valid sell price</string>
+    <string name="buy_price_error">Enter a valid buy price</string>
+    <string name="date_field_label">Date</string>
+    <string name="update_action">Update</string>
+    <string name="save_action">Save Record</string>
+    <string name="ok_action">OK</string>
+    <string name="cancel_action">Cancel</string>
+
+    <!-- Backup sheets -->
+    <string name="backup_settings_title">Backup Settings</string>
+    <string name="backup_settings_subtitle">Backups are stored locally on your device</string>
+    <string name="auto_backup">Auto Backup</string>
+    <string name="view_backups">View Backups</string>
+    <string name="last_backup">Last Backup</string>
+    <string name="saved_backups_title">Saved Backups</string>
+    <string name="import_from_file">Import from file</string>
+    <string name="no_backups_found">No backups found</string>
+    <string name="create_backup_hint">Create a backup to see it here</string>
+    <string name="share_action">Share</string>
+    <string name="restore_action">Restore</string>
+    <string name="delete_action">Delete</string>
+    <string name="frequency_manual">Manual</string>
+    <string name="frequency_daily">Daily</string>
+    <string name="frequency_weekly">Weekly</string>
+
+    <!-- Dialogs -->
+    <string name="restore_backup_title">Restore Backup?</string>
+    <string name="restore_backup_message">This will replace all current data with the backup.</string>
+    <string name="restore_import_message">This will replace all current data with the imported file.</string>
+    <string name="irreversible_warning">This action cannot be undone.</string>
+    <string name="delete_backup_title">Delete Backup?</string>
+    <string name="delete_backup_message">This backup will be permanently deleted.</string>
+
+    <!-- ViewModel toasts -->
+    <string name="toast_fetching_spot">Fetching Spot Price…</string>
+    <string name="toast_updated_assets_currency">Updated %1$d assets in %2$s.</string>
+    <string name="toast_updating_prices">Updating prices via API…</string>
+    <string name="toast_updated_assets">Updated %1$d assets via API!</string>
+    <string name="toast_no_philoro_assets">No Philoro assets to update.</string>
+    <string name="toast_updated_assets_partial">Updated %1$d of %2$d assets — some Philoro IDs returned no price.</string>
+    <string name="toast_backup_success">Backup completed successfully</string>
+    <string name="toast_backup_failed">Backup failed: %1$s</string>
+    <string name="toast_restore_failed">Failed to restore backup: %1$s</string>
+    <string name="toast_backup_deleted">Backup deleted</string>
+    <string name="toast_delete_failed">Failed to delete backup</string>
+    <string name="toast_backup_not_found">Backup file not found</string>
+    <string name="toast_share_failed">Failed to share backup: %1$s</string>
+    <string name="toast_backup_restored">Backup restored successfully</string>
+    <string name="toast_backup_invalid">Backup file is empty or invalid</string>
+    <string name="share_backup_subject">Portfolio Backup</string>
+    <string name="error_prefix">Error: %1$s</string>
 </resources>

@@ -50,14 +50,15 @@ class CalculatePortfolioCurveUseCaseTest {
     @Test
     fun `invoke with single history entry returns single point`() {
         val asset = TestDataFactory.createGoldAsset(id = 1, quantity = 2)
+        val ts = minuteTimestamp(0)
         val history = listOf(
-            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 100.0, dateTimestamp = 1000L)
+            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 100.0, dateTimestamp = ts)
         )
 
         val result = useCase(history, listOf(asset))
 
         assertEquals(1, result.size)
-        assertEquals(1000L, result[0].first)
+        assertEquals(ts, result[0].first)
         assertEquals(200.0, result[0].second, 0.001) // 100 * 2 = 200
     }
 
@@ -80,18 +81,20 @@ class CalculatePortfolioCurveUseCaseTest {
     }
 
     @Test
-    fun `invoke groups entries by date and returns one point per day`() {
+    fun `invoke groups entries within the same minute into one point`() {
         val asset = TestDataFactory.createGoldAsset(id = 1, quantity = 1)
+        val base = minuteTimestamp(0)
         val history = listOf(
-            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 100.0, dateTimestamp = 1000L),
-            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 110.0, dateTimestamp = 1000L),
-            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 120.0, dateTimestamp = 1000L)
+            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 100.0, dateTimestamp = base + 5_000L),
+            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 110.0, dateTimestamp = base + 30_000L),
+            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 120.0, dateTimestamp = base + 59_000L)
         )
 
         val result = useCase(history, listOf(asset))
 
-        // All have same timestamp, should be grouped
+        // All within the same minute, should be grouped into one point
         assertEquals(1, result.size)
+        assertEquals(base, result[0].first)
         // Last entry's price should be used (120)
         assertEquals(120.0, result[0].second, 0.001)
     }
@@ -103,19 +106,19 @@ class CalculatePortfolioCurveUseCaseTest {
         val assets = listOf(asset1, asset2)
 
         val history = listOf(
-            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 100.0, dateTimestamp = 1000L),
-            TestDataFactory.createPriceHistory(assetId = 2, sellPrice = 50.0, dateTimestamp = 2000L),
-            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 120.0, dateTimestamp = 3000L)
+            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 100.0, dateTimestamp = minuteTimestamp(0)),
+            TestDataFactory.createPriceHistory(assetId = 2, sellPrice = 50.0, dateTimestamp = minuteTimestamp(1)),
+            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 120.0, dateTimestamp = minuteTimestamp(2))
         )
 
         val result = useCase(history, assets)
 
         assertEquals(3, result.size)
-        // At timestamp 1000: Only asset1 has price (100)
+        // At minute 0: Only asset1 has price (100)
         assertEquals(100.0, result[0].second, 0.001)
-        // At timestamp 2000: asset1 still 100, asset2 now 50 = 150
+        // At minute 1: asset1 still 100, asset2 now 50 = 150
         assertEquals(150.0, result[1].second, 0.001)
-        // At timestamp 3000: asset1 now 120, asset2 still 50 = 170
+        // At minute 2: asset1 now 120, asset2 still 50 = 170
         assertEquals(170.0, result[2].second, 0.001)
     }
 
@@ -123,33 +126,33 @@ class CalculatePortfolioCurveUseCaseTest {
     fun `invoke sorts results by timestamp`() {
         val asset = TestDataFactory.createGoldAsset(id = 1, quantity = 1)
         val history = listOf(
-            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 300.0, dateTimestamp = 3000L),
-            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 100.0, dateTimestamp = 1000L),
-            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 200.0, dateTimestamp = 2000L)
+            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 300.0, dateTimestamp = minuteTimestamp(2)),
+            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 100.0, dateTimestamp = minuteTimestamp(0)),
+            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 200.0, dateTimestamp = minuteTimestamp(1))
         )
 
         val result = useCase(history, listOf(asset))
 
         assertEquals(3, result.size)
-        assertEquals(1000L, result[0].first)
-        assertEquals(2000L, result[1].first)
-        assertEquals(3000L, result[2].first)
+        assertEquals(minuteTimestamp(0), result[0].first)
+        assertEquals(minuteTimestamp(1), result[1].first)
+        assertEquals(minuteTimestamp(2), result[2].first)
     }
 
     @Test
     fun `invoke ignores history for non-existent assets`() {
         val asset = TestDataFactory.createGoldAsset(id = 1, quantity = 1)
         val history = listOf(
-            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 100.0, dateTimestamp = 1000L),
-            TestDataFactory.createPriceHistory(assetId = 999, sellPrice = 500.0, dateTimestamp = 2000L) // Non-existent
+            TestDataFactory.createPriceHistory(assetId = 1, sellPrice = 100.0, dateTimestamp = minuteTimestamp(0)),
+            TestDataFactory.createPriceHistory(assetId = 999, sellPrice = 500.0, dateTimestamp = minuteTimestamp(1)) // Non-existent
         )
 
         val result = useCase(history, listOf(asset))
 
         assertEquals(2, result.size)
-        // At timestamp 1000: asset1 = 100
+        // At minute 0: asset1 = 100
         assertEquals(100.0, result[0].second, 0.001)
-        // At timestamp 2000: asset1 still 100, asset 999 contributes 0 (no quantity)
+        // At minute 1: asset1 still 100, asset 999 contributes 0 (no quantity)
         assertEquals(100.0, result[1].second, 0.001)
     }
 
@@ -284,6 +287,17 @@ class CalculatePortfolioCurveUseCaseTest {
     }
 
     // --- Helper Methods ---
+
+    /**
+     * The use case groups points by minute (seconds/ms truncated), so tests
+     * use timestamps on exact minute boundaries to keep expectations stable.
+     */
+    private fun minuteTimestamp(minutesFromBase: Int): Long {
+        val cal = Calendar.getInstance()
+        cal.set(2024, Calendar.JANUARY, 15, 10, 0, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        return cal.timeInMillis + minutesFromBase * 60_000L
+    }
 
     private fun getStartOfDay(timestamp: Long): Long {
         val cal = Calendar.getInstance()

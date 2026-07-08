@@ -5,11 +5,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Check
@@ -18,7 +19,6 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -36,13 +36,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.backup.BackupFrequency
 import dev.sebastianrn.portfolioapp.backup.BackupSettings
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import dev.sebastianrn.portfolioapp.ui.components.common.GoldButton
+import dev.sebastianrn.portfolioapp.ui.components.common.SheetHeader
+import dev.sebastianrn.portfolioapp.util.DateFormats
+import dev.sebastianrn.portfolioapp.util.formatDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,27 +61,26 @@ fun BackupSettingsSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp)
+                .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp)
         ) {
-            // Header
-            Text(
-                "Backup Settings",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
+            SheetHeader(title = stringResource(R.string.backup_settings_title))
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                "Backups are stored locally on your device",
+                stringResource(R.string.backup_settings_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -85,6 +88,10 @@ fun BackupSettingsSheet(
             // Frequency Selection
             Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                ),
                 onClick = { showFrequencyMenu = true }
             ) {
                 Row(
@@ -105,12 +112,12 @@ fun BackupSettingsSheet(
                         )
                         Column {
                             Text(
-                                "Auto Backup",
+                                stringResource(R.string.auto_backup),
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Medium
                             )
                             Text(
-                                settings.frequency.displayName,
+                                stringResource(settings.frequency.displayNameRes),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -124,11 +131,13 @@ fun BackupSettingsSheet(
                         )
                         DropdownMenu(
                             expanded = showFrequencyMenu,
-                            onDismissRequest = { showFrequencyMenu = false }
+                            onDismissRequest = { showFrequencyMenu = false },
+                            shape = MaterialTheme.shapes.medium,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
                         ) {
                             BackupFrequency.entries.forEach { frequency ->
                                 DropdownMenuItem(
-                                    text = { Text(frequency.displayName) },
+                                    text = { Text(stringResource(frequency.displayNameRes)) },
                                     onClick = {
                                         onFrequencyChange(frequency)
                                         showFrequencyMenu = false
@@ -143,11 +152,15 @@ fun BackupSettingsSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // View Backups
             Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                ),
                 onClick = onViewBackups
             ) {
                 Row(
@@ -167,7 +180,7 @@ fun BackupSettingsSheet(
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            "View Backups",
+                            stringResource(R.string.view_backups),
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium
                         )
@@ -182,11 +195,12 @@ fun BackupSettingsSheet(
 
             // Last Backup Status
             if (settings.lastBackupTime != null) {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                     )
                 ) {
                     Row(
@@ -197,16 +211,16 @@ fun BackupSettingsSheet(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Icon(
-                            if (settings.lastBackupStatus == "Success") Icons.Default.CheckCircle
+                            if (settings.isLastBackupSuccess) Icons.Default.CheckCircle
                             else Icons.Default.Error,
                             contentDescription = null,
-                            tint = if (settings.lastBackupStatus == "Success")
+                            tint = if (settings.isLastBackupSuccess)
                                 MaterialTheme.colorScheme.secondary
                             else MaterialTheme.colorScheme.error
                         )
                         Column {
                             Text(
-                                "Last Backup",
+                                stringResource(R.string.last_backup),
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Medium
                             )
@@ -215,7 +229,7 @@ fun BackupSettingsSheet(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            if (settings.lastBackupStatus != null && settings.lastBackupStatus != "Success") {
+                            if (settings.lastBackupStatus != null && !settings.isLastBackupSuccess) {
                                 Text(
                                     settings.lastBackupStatus,
                                     style = MaterialTheme.typography.bodySmall,
@@ -229,24 +243,14 @@ fun BackupSettingsSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Backup Now Button
-            Button(
-                onClick = onBackupNow,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    Icons.Default.Backup,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text("Backup Now")
-            }
+            GoldButton(
+                text = stringResource(R.string.menu_backup_now),
+                icon = Icons.Default.Backup,
+                onClick = onBackupNow
+            )
         }
     }
 }
 
-private fun formatLastBackupTime(timestamp: Long): String {
-    val dateFormat = SimpleDateFormat("MMM d, yyyy 'at' HH:mm", Locale.getDefault())
-    return dateFormat.format(Date(timestamp))
-}
+private fun formatLastBackupTime(timestamp: Long): String =
+    timestamp.formatDate(DateFormats.backupTimestamp)
