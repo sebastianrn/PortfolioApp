@@ -48,7 +48,8 @@ class GoldViewModel(
     private val calculateCurve: CalculatePortfolioCurveUseCase,
     private val calculateHistoricalStats: CalculateHistoricalStatsUseCase,
     private val updatePrices: UpdatePricesUseCase,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
     // One-time UI events channel
@@ -82,7 +83,7 @@ class GoldViewModel(
         .combine(allAssets) { history, assets ->
             calculateCurve(history, assets)
         }
-        .flowOn(Dispatchers.Default)
+        .flowOn(defaultDispatcher)
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     // Daily change calculation (delegated to UseCase)
@@ -93,7 +94,7 @@ class GoldViewModel(
     // Historical performance stats (delegated to UseCase)
     val historicalStats: StateFlow<HistoricalStats> = portfolioCurve
         .map { curve -> calculateHistoricalStats(curve) }
-        .flowOn(Dispatchers.Default)
+        .flowOn(defaultDispatcher)
         .stateIn(viewModelScope, SharingStarted.Lazily, HistoricalStats())
 
     // --- Asset Operations ---
@@ -297,7 +298,7 @@ class GoldViewModel(
                 val rawPoints = history.reversed().map { it.dateTimestamp to it.sellPrice }
                 ChartDataProcessor.downsample(rawPoints)
             }
-            .flowOn(Dispatchers.Default)
+            .flowOn(defaultDispatcher)
     }
 
     // --- Data Access ---

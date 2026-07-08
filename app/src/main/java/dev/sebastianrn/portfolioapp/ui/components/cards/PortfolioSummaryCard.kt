@@ -34,7 +34,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.ui.components.common.AnimatedCounterText
-import dev.sebastianrn.portfolioapp.ui.components.common.GlassTile
+import dev.sebastianrn.portfolioapp.ui.components.common.GlassStatDivider
+import dev.sebastianrn.portfolioapp.ui.components.common.GlassStatPanel
+import dev.sebastianrn.portfolioapp.ui.components.common.GlassStatRow
 import dev.sebastianrn.portfolioapp.ui.components.common.TrendChip
 import dev.sebastianrn.portfolioapp.ui.theme.AppGradients
 import dev.sebastianrn.portfolioapp.ui.theme.GoldDeep
@@ -165,39 +167,36 @@ fun PortfolioSummaryCard(
                 TrendChip(
                     text = "${totalProfit.formatCurrency(short = true)} (${profitPercent.formatAsPercentage()})",
                     positive = isPositive,
-                    onGold = true
+                    onGold = true,
+                    textStyle = MaterialTheme.typography.labelLarge
                 )
                 Text(
                     stringResource(R.string.all_time),
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelMedium,
                     color = OnGoldMuted
                 )
             }
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                GlassTile(
+            GlassStatPanel {
+                GlassStatRow(
                     label = stringResource(R.string.tile_invested),
-                    value = totalInvested.formatCurrency(short = true),
-                    modifier = Modifier.weight(1f)
+                    value = totalInvested.formatCurrency()
                 )
-                GlassTile(
+                GlassStatDivider()
+                GlassStatRow(
                     label = stringResource(R.string.tile_total_gain),
                     value = totalProfit.formatCurrency(),
                     subText = profitPercent.formatAsPercentage(showSign = true),
-                    trend = isPositive,
-                    modifier = Modifier.weight(1f)
+                    trend = isPositive
                 )
-                GlassTile(
+                GlassStatDivider()
+                GlassStatRow(
                     label = stringResource(R.string.tile_today),
                     value = dailyChange.formatCurrency(),
                     subText = dailyChangePercent.formatAsPercentage(showSign = true),
-                    trend = isDailyPositive,
-                    modifier = Modifier.weight(1f)
+                    trend = isDailyPositive
                 )
             }
         }

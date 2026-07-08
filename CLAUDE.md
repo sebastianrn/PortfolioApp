@@ -78,7 +78,7 @@ app/src/main/java/dev/sebastianrn/portfolioapp/
 │   │   ├── common/              # Reusable atomic components
 │   │   │   ├── AnimatedCounterText.kt  # Counting currency text
 │   │   │   ├── TrendChip.kt     # Trend pill with arrow (supports on-gold variant)
-│   │   │   ├── GlassTile.kt     # Frosted stat tile for gold hero cards
+│   │   │   ├── GlassStatPanel.kt # Frosted stat panel + rows for gold hero cards
 │   │   │   ├── SectionHeader.kt # Gold accent bar + uppercase section label
 │   │   │   ├── EntranceFade.kt  # Staggered fade/slide entrance animation
 │   │   │   ├── SheetHeader.kt   # Bottom sheet title with gold accent bar

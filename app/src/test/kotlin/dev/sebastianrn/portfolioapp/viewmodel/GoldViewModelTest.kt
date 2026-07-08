@@ -74,7 +74,8 @@ class GoldViewModelTest {
             calculateCurve = calculateCurve,
             calculateHistoricalStats = calculateHistoricalStats,
             updatePrices = updatePrices,
-            ioDispatcher = testDispatcher
+            ioDispatcher = testDispatcher,
+            defaultDispatcher = testDispatcher
         )
     }
 
@@ -332,7 +333,8 @@ class GoldViewModelTest {
             calculateCurve = calculateCurve,
             calculateHistoricalStats = calculateHistoricalStats,
             updatePrices = updatePrices,
-            ioDispatcher = testDispatcher
+            ioDispatcher = testDispatcher,
+            defaultDispatcher = testDispatcher
         )
 
         testViewModel.addDailyRate(
@@ -366,7 +368,8 @@ class GoldViewModelTest {
             calculateCurve = calculateCurve,
             calculateHistoricalStats = calculateHistoricalStats,
             updatePrices = updatePrices,
-            ioDispatcher = testDispatcher
+            ioDispatcher = testDispatcher,
+            defaultDispatcher = testDispatcher
         )
 
         advanceUntilIdle()

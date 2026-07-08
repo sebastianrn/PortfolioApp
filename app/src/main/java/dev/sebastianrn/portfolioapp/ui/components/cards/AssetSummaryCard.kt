@@ -26,7 +26,9 @@ import androidx.compose.ui.unit.sp
 import dev.sebastianrn.portfolioapp.R
 import dev.sebastianrn.portfolioapp.data.model.GoldAsset
 import dev.sebastianrn.portfolioapp.ui.components.common.AnimatedCounterText
-import dev.sebastianrn.portfolioapp.ui.components.common.GlassTile
+import dev.sebastianrn.portfolioapp.ui.components.common.GlassStatDivider
+import dev.sebastianrn.portfolioapp.ui.components.common.GlassStatPanel
+import dev.sebastianrn.portfolioapp.ui.components.common.GlassStatRow
 import dev.sebastianrn.portfolioapp.ui.components.common.TrendChip
 import dev.sebastianrn.portfolioapp.ui.theme.AppGradients
 import dev.sebastianrn.portfolioapp.ui.theme.GoldDeep
@@ -93,29 +95,26 @@ fun AssetSummaryCard(asset: GoldAsset) {
             TrendChip(
                 text = "${asset.totalProfitOrLoss.formatCurrency()} (${percentage.formatAsPercentage()})",
                 positive = isPositive,
-                onGold = true
+                onGold = true,
+                textStyle = MaterialTheme.typography.labelLarge
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                GlassTile(
+            GlassStatPanel {
+                GlassStatRow(
                     label = stringResource(R.string.tile_unit_price),
-                    value = asset.currentSellPrice.formatCurrency(short = true),
-                    modifier = Modifier.weight(1f)
+                    value = asset.currentSellPrice.formatCurrency()
                 )
-                GlassTile(
+                GlassStatDivider()
+                GlassStatRow(
                     label = stringResource(R.string.tile_paid),
-                    value = asset.purchasePrice.formatCurrency(short = true),
-                    modifier = Modifier.weight(1f)
+                    value = asset.purchasePrice.formatCurrency()
                 )
-                GlassTile(
+                GlassStatDivider()
+                GlassStatRow(
                     label = stringResource(R.string.tile_invested),
-                    value = totalInvested.formatCurrency(short = true),
-                    modifier = Modifier.weight(1f)
+                    value = totalInvested.formatCurrency()
                 )
             }
         }

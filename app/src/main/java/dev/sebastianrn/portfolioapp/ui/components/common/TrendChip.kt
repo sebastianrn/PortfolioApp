@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sebastianrn.portfolioapp.ui.theme.GainOnGold
@@ -31,7 +32,8 @@ fun TrendChip(
     text: String,
     positive: Boolean,
     modifier: Modifier = Modifier,
-    onGold: Boolean = false
+    onGold: Boolean = false,
+    textStyle: TextStyle = MaterialTheme.typography.labelMedium
 ) {
     val contentColor = when {
         onGold && positive -> GainOnGold
@@ -63,13 +65,14 @@ fun TrendChip(
                 },
                 contentDescription = null,
                 tint = contentColor,
-                modifier = Modifier.size(14.dp)
+                modifier = Modifier.size(16.dp)
             )
             Text(
                 text = text,
-                style = MaterialTheme.typography.labelMedium,
+                style = textStyle,
                 fontWeight = FontWeight.Bold,
-                color = contentColor
+                color = contentColor,
+                maxLines = 1
             )
         }
     }
